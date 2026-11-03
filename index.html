@@ -95,7 +95,7 @@ section{padding-block:48px}
 .selrow .scrollbar:hover i,.selrow .scrollbar.drag i{top:7px;height:8px;background:#a9a9b0}
 .selrow .scrollbar.drag i{cursor:grabbing}
 .sel{background:none;border:0;text-align:left;cursor:pointer;padding:0;display:flex;flex-direction:column;gap:14px;min-width:0}
-.sel-covers{background:var(--stage);aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 9%;overflow:hidden;transition:background .2s}
+.sel-covers{background:var(--stage);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 9%;overflow:hidden;transition:background .2s}
 .sel-covers img{height:auto;width:auto;max-height:58%;max-width:calc((100% - 28px) / 3);object-fit:contain;flex:0 1 auto;min-width:0;box-shadow:var(--vol);background:var(--paper);transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
 @media (hover:hover){.sel:hover .sel-covers{background:var(--stage-h)}.sel:hover .sel-covers img{transform:scale(1.06);box-shadow:var(--vol-h)}.sel:hover .sel-title{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}}
 .sel-title{font-size:22px;line-height:1.25;letter-spacing:-.015em}
@@ -112,6 +112,7 @@ section{padding-block:48px}
 .dd .menu label:hover{background:var(--stage)}
 .dd .menu .c{margin-left:auto;font-size:13px;color:var(--muted)}
 .dd .menu input{accent-color:var(--ink)}
+.sortdd .menu{left:auto;right:0;min-width:260px}.sortdd .sl{color:var(--muted)}
 .filters .spacer{flex:1}
 .fbtn{display:none;align-items:center;gap:8px;border:1px solid var(--ink);background:var(--paper);padding:9px 15px;border-radius:999px;cursor:pointer;font-size:15px}
 .fbtn .n{font-size:11px;background:var(--ink);color:var(--paper);border-radius:999px;padding:0 6px}
@@ -367,7 +368,8 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
   .hsearch{grid-column:1 / -1;grid-row:2}
   header.top .wrap{padding-block:8px 10px;row-gap:8px}
   .hsearch input{font-size:16px;padding:11px 16px 11px 42px}
-  .filters .dd,.filters label[for="sort"]{display:none}
+  .filters .dd:not(.sortdd),.filters label[for="sort"]{display:none}
+  .sortdd>button{font-size:14px;padding:8px 12px}.sortdd .menu{min-width:240px}
   .fbtn{display:inline-flex}
   .filters{gap:8px;padding-block:10px}
   .filters select{max-width:52%;font-size:14px;padding:9px 10px}
@@ -789,8 +791,8 @@ function renderHome(keepScroll){
       ${['type','category','lang','period'].map(k=>dd(FACETS.find(f=>f.key===k))).join('')}
       <span class="spacer"></span>
       <span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>
-      <label class="hide-s" for="sort" style="font-size:13px;color:var(--muted)">Ordonează</label>
-      <select id="sort">${[...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['aleator','Amestecate'],['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Anul apariției: recente întâi'],['an-vechi','Anul apariției: vechi întâi']].map(([v,l])=>`<option value="${v}" ${st.sort===v?'selected':''}>${l}</option>`).join('')}</select>
+      ${(()=>{const S=[...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['aleator','Amestecate'],['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Anul apariției: recente întâi'],['an-vechi','Anul apariției: vechi întâi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
+        return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div>
     <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${['ppl','tg'].map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
@@ -1087,7 +1089,7 @@ document.addEventListener('change',e=>{
     renderHome(window.scrollY);
     const btn=document.querySelector(`[data-dd="${t.dataset.f}"]`); if(btn){btn.nextElementSibling.hidden=false;btn.setAttribute('aria-expanded','true');ddHoverAt=Date.now();}
     return;}
-  if(t.id==='sort'){st.sort=t.value; st.userSort=true; refreshList();}
+  if(t.id==='sort'||t.name==='sortr'){st.sort=t.value; st.userSort=true; refreshList();}
 });
 let qTimer=null;
 document.addEventListener('input',e=>{

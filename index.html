@@ -597,6 +597,9 @@ const MEETS=[
   {date:'2026-11-26', end:'2026-12-03', kind:'Curs · Bazele fotografiei', title:'Edit', guest:'Ioana Moldovan', when:'Joi, 26 noiembrie; miercuri și joi, 2–3 decembrie, 18:00–21:00', books:['285','429','411'], text:''},
   {date:'2026-11-29', end:'', kind:'Meet the Book', title:'', guest:'Vladimir', when:'Duminică, 29 noiembrie, ora 12:00', books:[], text:''},
   {date:'2026-12-05', end:'2026-12-06', kind:'Târg', title:'FotoMarket 13', guest:'', when:'Sâmbătă și duminică, 5–6 decembrie, de la ora 12:00', books:['566','557','385'], text:''},
+  {date:'2027-02-06', end:'2027-06-24', kind:'Curs · Școala de educație vizuală', title:'Fotografie documentară', guest:'Ioana Moldovan', when:'Februarie – iunie 2027, la CdRF și online', books:['285','275','370','466'], text:''},
+  {date:'2027-02-13', end:'2027-02-14', kind:'Atelier · Școala de educație vizuală', title:'Atelier de antropologie vizuală', guest:'Ana-Cristina Irian', when:'Sâmbătă și duminică, 13–14 februarie 2027, 11:00–17:00', books:['99','506','209','174'], text:''},
+  {date:'2027-02-21', end:'2027-03-08', kind:'Curs · Școala de educație vizuală', title:'Introducere în fotografia din China și Japonia', guest:'Ana-Cristina Irian', when:'Trei duminici, de la 21 februarie 2027, 11:30–15:30', books:['315','344','57','116'], text:''},
 ];
 const todayISO=()=>{const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const upcoming=()=>MEETS.filter(m=>!m.date||(m.end||m.date)>=todayISO()).sort((a,b)=>(a.date||'').localeCompare(b.date||''));

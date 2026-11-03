@@ -35,8 +35,12 @@ function uiHtml_() {
   return HtmlService.createHtmlOutputFromFile('Index').getContent();
 }
 
-function doGet() {
-  return HtmlService.createHtmlOutput(uiHtml_())
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
+    error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
+  const html = uiHtml_().replace('<!--BOOT-->', '<script>window.BOOT=' + JSON.stringify(boot).replace(/</g, '\\u003c') + ';</script>');
+  return HtmlService.createHtmlOutput(html)
     .setTitle('Biblioteca CdRF – admin')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
@@ -44,12 +48,92 @@ function doGet() {
 
 function ss_() { return SpreadsheetApp.getActiveSpreadsheet(); }
 
-function me_() {
-  const email = (Session.getActiveUser().getEmail() || '').toLowerCase();
+function props_() { return PropertiesService.getScriptProperties(); }
+
+/*
+ * Logare cu Google (ca la FM13): aplicația rulează ca proprietarul tabelului,
+ * iar fiecare persoană se identifică prin contul Google (OAuth, fluxul „authorization code”).
+ * Proprietăți necesare (Project Settings → Script properties):
+ *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, WEBAPP_URL (adresa /exec a aplicației)
+ * Fără GOOGLE_CLIENT_ID, aplicația folosește contul cu care e deschisă (deploy „User accessing”).
+ */
+const SESSION_DAYS = 30;
+
+function userByEmail_(email) {
+  email = String(email || '').trim().toLowerCase();
   const rows = ss_().getSheetByName(SH_USERS).getDataRange().getValues().slice(1);
   const r = rows.find(x => String(x[0]).trim().toLowerCase() === email);
-  if (!email || !r) throw new Error('Contul ' + (email || 'necunoscut') + ' nu are acces. Cere-i lui Alex să te adauge în tabul „Utilizatori”.');
+  if (!email || !r) return null;
   return { email: email, name: String(r[1] || email), role: String(r[2] || 'editor').trim().toLowerCase() };
+}
+
+function me_(session) {
+  if (props_().getProperty('GOOGLE_CLIENT_ID')) {
+    if (typeof session !== 'string' || !/^[A-Za-z0-9_-]{30,80}$/.test(session)) throw new Error('AUTH');
+    const raw = props_().getProperty('S_' + hash_(session));
+    const row = raw ? JSON.parse(raw) : null;
+    if (!row || Date.now() > row.exp) throw new Error('AUTH');
+    const u = userByEmail_(row.email);
+    if (!u) throw new Error('Contul ' + row.email + ' nu mai are acces. Cere-i lui Alex să te adauge în tabul „Utilizatori”.');
+    return u;
+  }
+  const email = (Session.getActiveUser().getEmail() || '').toLowerCase();
+  const u = userByEmail_(email);
+  if (!u) throw new Error('Contul ' + (email || 'necunoscut') + ' nu are acces. Cere-i lui Alex să te adauge în tabul „Utilizatori”.');
+  return u;
+}
+
+function hash_(s) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8)).replace(/=+$/, '');
+}
+function random_() {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid() + Utilities.getUuid() + Date.now())).replace(/=+$/, '');
+}
+
+/** Pasul 1: adresa la care trimitem browserul ca să aleagă contul Google. */
+function beginLogin() {
+  const P = props_(), id = P.getProperty('GOOGLE_CLIENT_ID'), url = P.getProperty('WEBAPP_URL');
+  if (!id || !url) throw new Error('Logarea cu Google nu e configurată.');
+  const state = random_(), nonce = random_();
+  CacheService.getScriptCache().put('st_' + state, nonce, 600);
+  const q = { client_id: id, redirect_uri: url, response_type: 'code', scope: 'openid email',
+    access_type: 'online', prompt: 'select_account', state: state, nonce: nonce };
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + Object.keys(q).map(k => k + '=' + encodeURIComponent(q[k])).join('&');
+}
+
+/** Pasul 2: Google ne trimite înapoi un cod; îl schimbăm pe server și deschidem o sesiune. */
+function finishLogin(code, state) {
+  const P = props_(), cache = CacheService.getScriptCache();
+  const nonce = cache.get('st_' + state);
+  if (!nonce) throw new Error('Linkul de conectare a expirat. Încearcă din nou.');
+  cache.remove('st_' + state);
+  const r = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', { method: 'post', muteHttpExceptions: true, followRedirects: false,
+    payload: { code: code, client_id: P.getProperty('GOOGLE_CLIENT_ID'), client_secret: P.getProperty('GOOGLE_CLIENT_SECRET'),
+      redirect_uri: P.getProperty('WEBAPP_URL'), grant_type: 'authorization_code' } });
+  if (r.getResponseCode() !== 200) throw new Error('Google nu a confirmat conectarea. Încearcă din nou.');
+  const tok = JSON.parse(r.getContentText()).id_token || '';
+  const parts = tok.split('.');
+  if (parts.length !== 3) throw new Error('Răspuns Google invalid.');
+  // Tokenul vine direct de la Google pe canal securizat (server la server), deci ajunge verificarea câmpurilor.
+  const c = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[1] + '==='.slice((parts[1].length + 3) % 4))).getDataAsString('UTF-8'));
+  if (['https://accounts.google.com', 'accounts.google.com'].indexOf(c.iss) < 0 || c.aud !== P.getProperty('GOOGLE_CLIENT_ID') ||
+      c.nonce !== nonce || c.email_verified !== true || !c.email || c.exp * 1000 < Date.now()) throw new Error('Conectare respinsă.');
+  const u = userByEmail_(c.email);
+  if (!u) throw new Error('Contul ' + c.email + ' nu are acces la bibliotecă. Cere-i lui Alex să te adauge.');
+  const session = random_();
+  P.setProperty('S_' + hash_(session), JSON.stringify({ email: u.email, exp: Date.now() + SESSION_DAYS * 864e5 }));
+  cleanSessions_();
+  return { session: session, user: u };
+}
+
+function logout(session) {
+  if (typeof session === 'string') props_().deleteProperty('S_' + hash_(session));
+  return true;
+}
+
+function cleanSessions_() {
+  const all = props_().getProperties(), now = Date.now();
+  Object.keys(all).forEach(k => { if (k.indexOf('S_') === 0) { try { if (JSON.parse(all[k]).exp < now) props_().deleteProperty(k); } catch (e) { props_().deleteProperty(k); } } });
 }
 
 function headers_(sh) {
@@ -65,8 +149,8 @@ function lists_() {
 }
 
 /** Datele pentru ecranul principal. */
-function getInit() {
-  const user = me_();
+function getInit(session) {
+  const user = me_(session);
   const sh = ss_().getSheetByName(SH_BOOKS);
   const h = headers_(sh);
   const data = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), h.length).getDisplayValues();
@@ -82,8 +166,8 @@ function findRow_(sh, id) {
 }
 
 /** O fișă completă. */
-function getRecord(id) {
-  me_();
+function getRecord(session, id) {
+  me_(session);
   const sh = ss_().getSheetByName(SH_BOOKS);
   const h = headers_(sh);
   const row = findRow_(sh, id);
@@ -98,8 +182,8 @@ function getRecord(id) {
  * changes: {câmp: valoare nouă}; before: {câmp: valoarea văzută când s-a deschis fișa}
  * Dacă între timp altcineva a schimbat același câmp, nu suprascrie și întoarce conflictul.
  */
-function saveRecord(id, changes, before) {
-  const user = me_();
+function saveRecord(session, id, changes, before) {
+  const user = me_(session);
   const lock = LockService.getDocumentLock();
   lock.waitLock(20000);
   try {
@@ -129,13 +213,13 @@ function saveRecord(id, changes, before) {
       const lg = ss_().getSheetByName(SH_LOG);
       lg.getRange(lg.getLastRow() + 1, 1, log.length, 6).setValues(log);
     }
-    return { saved: log.length, conflicts: conflicts, record: getRecord(id) };
+    return { saved: log.length, conflicts: conflicts, record: getRecord(session, id) };
   } finally { lock.releaseLock(); }
 }
 
 /** Carte nouă: primește următorul ID liber, starea Ciornă. */
-function newRecord(title) {
-  const user = me_();
+function newRecord(session, title) {
+  const user = me_(session);
   const lock = LockService.getDocumentLock();
   lock.waitLock(20000);
   try {
@@ -148,22 +232,22 @@ function newRecord(title) {
     sh.getRange(r, 1, 1, h.length).setNumberFormat('@').setValues([row]);
     const lg = ss_().getSheetByName(SH_LOG);
     lg.appendRow([new Date(), user.name, id, 'Carte nouă', '', title || '']);
-    return getRecord(id);
+    return getRecord(session, id);
   } finally { lock.releaseLock(); }
 }
 
 /** Inventar: marchează cartea ca găsită la raft (sau anulează). */
-function markShelf(id, found, note) {
-  const user = me_();
+function markShelf(session, id, found, note) {
+  const user = me_(session);
   const stamp = found ? Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy') + ', ' + user.name : '';
   const ch = { 'Verificat la raft': stamp };
   if (note != null) ch['Note'] = note;
-  return saveRecord(id, ch, null);
+  return saveRecord(session, id, ch, null);
 }
 
 /** Istoricul unei cărți, cele mai noi întâi. */
-function getHistory(id) {
-  me_();
+function getHistory(session, id) {
+  me_(session);
   const lg = ss_().getSheetByName(SH_LOG);
   if (lg.getLastRow() < 2) return [];
   return lg.getRange(2, 1, lg.getLastRow() - 1, 6).getDisplayValues()

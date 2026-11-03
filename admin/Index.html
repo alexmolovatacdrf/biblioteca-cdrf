@@ -2,6 +2,7 @@
 <html lang="ro">
 <head>
 <base target="_top">
+<!--BOOT-->
 <meta charset="utf-8">
 <style>
 :root{--ink:#111;--muted:#6b6b70;--rule:#e4e4e7;--soft:#f5f5f6;--red:#dc0b1c;--ok:#1b7f3b;--warn:#b26b00;--f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -96,11 +97,30 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const $=s=>document.querySelector(s);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
-function call(fn,...a){return new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a));}
+const SKEY='bib.session';
+function getSess(){try{return localStorage.getItem(SKEY)||''}catch(e){return ''}}
+function setSess(v){try{v?localStorage.setItem(SKEY,v):localStorage.removeItem(SKEY)}catch(e){}}
+function raw(fn,...a){return new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a));}
+function call(fn,...a){return raw(fn,getSess(),...a).catch(e=>{if(String(e&&e.message||e).indexOf('AUTH')>=0&&window.BOOT&&BOOT.google){setSess('');showLogin();return new Promise(()=>{});}throw e;});}
+function showLogin(msg){
+  $('#who').textContent='';
+  $('#app').innerHTML=`<div style="max-width:420px;margin:60px auto;text-align:center"><h2 style="font-weight:600">Biblioteca CdRF</h2>
+  <p class="sub">Intră cu contul Google pe care ți l-a adăugat Alex.</p>${msg?`<p class="msg err">${esc(msg)}</p>`:''}
+  <p><a class="btn" id="gl" href="#" target="_top" style="display:inline-block;text-decoration:none;pointer-events:none;opacity:.5">Se pregătește…</a></p></div>`;
+  raw('beginLogin').then(u=>{const a=$('#gl');a.href=u;a.textContent='Intră cu Google';a.style.pointerEvents='';a.style.opacity='';}).catch(e=>{$('#gl').textContent=e.message||String(e);});
+}
+function logout(){raw('logout',getSess()).finally(()=>{setSess('');showLogin();});}
 function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.site+v;if(v.startsWith('wix:'))return 'https://static.wixstatic.com/media/'+v.slice(4)+'/v1/fit/w_300,h_300/c.jpg';if(/^https?:/.test(v))return v;return '';}
 const C=k=>S.data.cols.indexOf(k);
 
-call('getInit').then(d=>{S.data=d;$('#who').textContent=d.user.name+' · '+(d.user.role==='admin'?'admin':'editor');route();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});
+function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;route();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
+(function boot(){const B=window.BOOT||{};
+  if(B.error)return showLogin(B.error);
+  if(B.code&&B.state&&getSess())return start();
+  if(B.code&&B.state){$('#app').innerHTML='<div class="load">Se verifică contul…</div>';
+    raw('finishLogin',B.code,B.state).then(r=>{setSess(r.session);start();}).catch(e=>showLogin(e.message||String(e)));return;}
+  if(B.google&&!getSess())return showLogin();
+  start();})();
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;route();});
 window.addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
 

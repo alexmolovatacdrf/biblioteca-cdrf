@@ -74,26 +74,6 @@ footer .flogo.logo-l{display:var(--logo-l)}footer .flogo.logo-d{display:var(--lo
 .intro .facts{font-size:14px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
 .eyebrow{font-size:15px;color:var(--muted)}
 section{padding-block:48px}
-.wk{padding-block:64px 8px}
-.wkb{display:grid;grid-template-columns:minmax(220px,420px) 1fr;gap:clamp(24px,5vw,80px);align-items:center}
-.wkcv{display:flex;justify-content:center;align-items:center;background:var(--band);padding:clamp(28px,4vw,56px);aspect-ratio:1/1}
-.wkcv img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;box-shadow:var(--vol);background:var(--paper);transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
-@media (hover:hover){.wkcv:hover img{transform:scale(1.04);box-shadow:var(--vol-h)}.wkt h3 a:hover{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}}
-.wkk{font-size:15px;color:var(--muted)}
-.wkt h3{font-weight:400;font-size:clamp(30px,3.2vw,52px);line-height:1.04;letter-spacing:-.025em;margin:10px 0 8px}
-.wkt h3 a{color:inherit;text-decoration:none}
-.wkp{font-size:clamp(18px,1.6vw,24px);color:var(--muted)}
-.wkn{font-size:18px;line-height:1.5;max-width:58ch;margin:20px 0 0}
-.wkg{display:flex;gap:12px;margin-top:24px;max-width:100%;overflow:hidden;background:var(--band);padding:12px;width:fit-content}
-.wkg img{height:96px;width:auto;max-width:200px;object-fit:contain;flex:0 1 auto;min-width:0;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.14)}
-.wkg img.cut{background:transparent;box-shadow:none}
-.nw{padding-block:56px 0}
-.nwrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(180px,1fr);gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}
-.nwrow>*{scroll-snap-align:start}
-@media (max-width:760px){.nwrow{grid-auto-columns:46%}}
-.wka{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.wkm{font-size:14px;color:var(--muted);margin-top:26px}
-@media (max-width:760px){.wk{padding-block:40px 0}.wkb{grid-template-columns:1fr}.wkcv{aspect-ratio:auto;max-height:360px}.wkcv img{max-height:300px}.wkg img{height:70px}}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
 .sec-head h2{font-weight:400;font-size:clamp(30px,2.8vw,44px);line-height:1.08;letter-spacing:-.025em;margin:0}
 .sec-head .note{font-size:15px;color:var(--muted)}
@@ -626,7 +606,10 @@ const WEEK='Cartea săptămânii';
 const NEWK='Cărți noi';
 const newPick=()=>MEETS.filter(m=>m.kind===NEWK&&meetVis(m)&&(m.books||[]).some(i=>byId[i])).sort((a,b)=>(b.from||'').localeCompare(a.from||''))[0];
 const weekPick=()=>MEETS.filter(m=>m.kind===WEEK&&meetVis(m)&&(m.books||[]).some(i=>byId[i])).sort((a,b)=>(b.from||'').localeCompare(a.from||''))[0];
-const upcoming=()=>MEETS.filter(m=>m.kind!==WEEK&&m.kind!==NEWK&&meetVis(m)).sort((a,b)=>(a.date||a.from||'').localeCompare(b.date||b.from||''));
+/* toate panourile stau în același carusel; cartea săptămânii intră a doua, după primul eveniment */
+const upcoming=()=>{const ok=m=>meetVis(m)&&(m.kind!==WEEK&&m.kind!==NEWK||(m.books||[]).some(i=>byId[i]));
+  const L=MEETS.filter(m=>ok(m)&&m.kind!==WEEK).sort((a,b)=>(a.date||a.from||'').localeCompare(b.date||b.from||''));
+  const w=weekPick(); if(w) L.splice(Math.min(1,L.length),0,w); return L;};
 function panelsLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
   const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),6000);
@@ -780,8 +763,6 @@ function renderHome(keepScroll){
     <div class="facts"><span>${B.length}${B.length%100>=1&&B.length%100<=19?'':' de'} titluri</span><span>${new Set(B.flatMap(b=>b.people)).size} fotografi și autori</span><span>consultare pe loc, la CdRF</span></div>
   </div>
   ${!narrowed&&upcoming().length?meetCarousel():''}
-  ${!narrowed&&weekPick()?weekBook(weekPick()):''}
-  ${!narrowed&&newPick()?newBooks(newPick()):''}
   ${!narrowed?`<section aria-labelledby="h-sel">
     <div class="sec-head"><h2 id="h-sel">Selecții</h2><span class="note">Cărți grupate de echipa bibliotecii</span></div>
     <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>rkey('sel'+x.id)-rkey('sel'+y.id)).map(s=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${s.ids.slice(0,3).map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
@@ -807,6 +788,12 @@ function renderHome(keepScroll){
   watchHero();
 }
 function meetSlide(M,i){
+  if(M.kind===WEEK){const b=byId[(M.books||[]).find(x=>byId[x])];
+    return `<div class="mslide" data-mi="${i}">
+    <div><div class="mk"><b>${esc(WEEK)}</b><span>${esc(M.when||'')}</span></div>
+      <h2>${esc(b.title)}</h2>${b.people.length?`<div class="mp">${esc(b.people.slice(0,2).join(', '))}</div>`:''}${M.text?`<p class="mtxt">${esc(M.text)}</p>`:''}
+      <div class="mbooks"><span class="ml">${esc([b.type,b.year].filter(Boolean).join(' · '))}</span><button class="mbook" data-id="${b.id}"><b>Vezi cartea</b>${b.shelf?` <span class="msh">raft ${esc(b.shelf)}</span>`:''}</button></div></div>
+    <div class="cv"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}"></div></div>`;}
   const bks=(M.books||[]).map(id=>byId[id]).filter(Boolean);
   const head=M.title||M.kind.split(' · ')[0];
   const txt=M.text?`<p class="mtxt">${esc(M.text)}</p>`:'';
@@ -820,26 +807,6 @@ function meetSlide(M,i){
     <div><div class="mk">${M.title?`<b>${esc(M.kind)}</b>`:''}<span>${esc(M.when||'')}</span></div>
       <h2>${esc(head)}</h2>${M.guest?`<div class="mp">cu ${esc(M.guest)}</div>`:''}${txt}${booksHtml}</div>
     ${bks.length?`<div class="cv${bks.length>1?' many':''}${bks.length>3?' n4':''}">${bks.slice(0,4).map(b=>`<img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}">`).join('')}</div>`:''}</div>`;
-}
-function newBooks(M){
-  const bks=(M.books||[]).map(i=>byId[i]).filter(Boolean).slice(0,12);
-  return `<section class="nw" aria-labelledby="h-nw">
-    <div class="sec-head"><h2 id="h-nw">${esc(NEWK)}</h2>${M.when||M.text?`<span class="note">${esc([M.when,M.text].filter(Boolean).join(' · '))}</span>`:''}</div>
-    <div class="nwrow">${bks.map(b=>card(b,false)).join('')}</div>
-  </section>`;
-}
-function weekBook(M){
-  const b=byId[(M.books||[]).find(i=>byId[i])]; const ins=b.images.filter(im=>/^pages\/|^\/_blob\//.test(im.src)&&im.src!==b.cover).slice(0,3);
-  return `<section class="wk" aria-labelledby="h-wk">
-    <div class="sec-head"><h2 id="h-wk">${esc(WEEK)}</h2>${M.when?`<span class="note">${esc(M.when)}</span>`:''}</div>
-    <div class="wkb"><a class="wkcv" href="#carte-${b.id}" data-id="${b.id}" aria-label="${esc(b.title)}"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}"></a>
-      <div class="wkt"><div class="wkk">${esc([b.type,b.year].filter(Boolean).join(' · '))}</div>
-        <h3><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></h3>${b.people.length?`<div class="wkp">${esc(b.people.slice(0,2).join(', '))}</div>`:''}
-        ${M.text?`<p class="wkn">${esc(M.text)}</p>`:''}
-        ${ins.length?`<a class="wkg" href="#carte-${b.id}" data-id="${b.id}" aria-label="Vezi paginile din carte">${ins.map(im=>`<img src="${safeSrc(im.src)}"${im.cut?' class="cut"':''} alt="" loading="lazy" width="${im.w}" height="${im.h}">`).join('')}</a>`:''}
-        <div class="wka"><button class="savebig" data-save="${b.id}" aria-pressed="${isMine(b.id)}">${isMine(b.id)?BMF+'În lista mea':BM+'Adaugă în lista mea'}</button>${b.shelf?`<span class="wkm">Raft ${esc(b.shelf)} · consultare pe loc, la CdRF</span>`:''}</div>
-      </div></div>
-  </section>`;
 }
 function meetCarousel(){
   const U=upcoming(); if(meetIdx>=U.length) meetIdx=0;

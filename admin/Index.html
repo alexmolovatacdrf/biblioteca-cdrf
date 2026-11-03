@@ -81,7 +81,12 @@ label.f input[readonly]{background:var(--soft)}
 .load{padding:40px 0;color:var(--muted)}
 /* panouri */
 .pst{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap}
-.pst.on{background:#e6f5ea;color:var(--ok)}.pst.pl{background:#e7f0ff;color:#1d4fb8}.pst.off{background:#eee;color:#555}.pst.ex{background:#f5f5f6;color:#999}
+.pst.on{background:#e6f5ea;color:var(--ok)}.pst.pl{background:#e7f0ff;color:#1d4fb8}.pst.off{background:#eee;color:#555}.pst.ex{background:#f5f5f6;color:#999}.pst.pr{background:#fff4e0;color:var(--warn)}
+.pv{border:1px solid var(--rule);border-radius:14px;background:#eceeec;padding:22px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;margin:8px 0 4px}
+.pv .k{display:inline-block;border:1px solid var(--ink);border-radius:999px;padding:2px 10px;font-size:13px;margin-right:8px}.pv .w{color:var(--muted);font-size:13px}
+.pv h3{font-size:30px;line-height:1.05;font-weight:400;margin:10px 0 4px;letter-spacing:-.01em}.pv .g{color:var(--muted);font-size:18px}.pv p{margin:8px 0 0;font-size:14px}
+.pv .bl{margin-top:12px;font-size:13px}.pv .bl div{margin-top:3px}.pv .cv{display:flex;gap:10px;align-items:flex-end}.pv .cv img{height:120px;max-width:110px;object-fit:contain;box-shadow:0 6px 14px -6px rgba(0,0,0,.35);background:#fff}
+@media(max-width:760px){.pv{grid-template-columns:1fr}.pv .cv img{height:90px}}
 tr.pr td{vertical-align:top}
 .pk{font-size:12px;color:var(--muted)}
 .bchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
@@ -272,7 +277,8 @@ const KINDS=['Meet the Book','Seara de film','Curs · Bazele fotografiei','Curs 
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const addDays=(iso,n)=>{const d=new Date((iso||today())+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const fmtD=iso=>iso?new Date(iso+'T12:00').toLocaleDateString('ro-RO',{day:'numeric',month:'short',year:'numeric'}):'';
-function pStat(p){const d=today();if(!p.active)return['off','Oprit'];if(p.from&&p.from>d)return['pl','Programat'];
+const isProp=p=>!p.active&&/^propunere/i.test(p.src||'');
+function pStat(p){const d=today();if(isProp(p))return['pr','Propunere'];if(!p.active)return['off','Oprit'];if(p.from&&p.from>d)return['pl','Programat'];
   if(p.to?p.to<d:(p.date&&(p.end||p.date)<d))return['ex','Expirat'];return['on','Pe site acum'];}
 function pWin(p){const a=p.from?fmtD(p.from):'acum',b=p.to?fmtD(p.to):(p.end||p.date?fmtD(p.end||p.date)+' (sfârșitul evenimentului)':'fără termen');return 'pe site: '+a+' – '+b;}
 const canPan=()=>['admin','editor'].indexOf(S.data.user.role)>=0;
@@ -284,8 +290,8 @@ function renderPan(){
     call('getPanels').then(p=>{S.panels=p;renderPan();}).catch(e=>{const m=String(e.message||e);
       $('#app').innerHTML='<div class="load msg err">'+(/getPanels|not found|nu a fost găsit|Script function/i.test(m)?'Panourile cer versiunea nouă a scriptului (Code.gs). Cere-i lui Alex să o publice.':esc(m))+'</div>';});return;}
   const f=S.pf||'act',d=today();
-  const groups={act:p=>pStat(p)[0]==='on'||pStat(p)[0]==='pl',on:p=>pStat(p)[0]==='on',pl:p=>pStat(p)[0]==='pl',off:p=>!p.active,ex:p=>pStat(p)[0]==='ex',all:()=>true};
-  const lab={act:'Pe site și programate',on:'Pe site acum',pl:'Programate',off:'Oprite',ex:'Expirate',all:'Toate'};
+  const groups={act:p=>['on','pl','pr'].indexOf(pStat(p)[0])>=0,pr:isProp,on:p=>pStat(p)[0]==='on',pl:p=>pStat(p)[0]==='pl',off:p=>!p.active&&!isProp(p),ex:p=>pStat(p)[0]==='ex',all:()=>true};
+  const lab={act:'Pe site, programate și propuneri',pr:'Propuneri',on:'Pe site acum',pl:'Programate',off:'Oprite',ex:'Expirate',all:'Toate'};
   const L=S.panels.filter(groups[f]).sort((a,b)=>(a.from||a.date||'9').localeCompare(b.from||b.date||'9'));
   $('#app').innerHTML=`<div class="stats">${Object.keys(lab).map(k=>`<span data-pf="${k}" class="${f===k?'on':''}">${lab[k]} · ${S.panels.filter(groups[k]).length}</span>`).join('')}</div>
   <div class="tools"><span class="sub">Panourile din capul primei pagini. Schimbările apar pe site în cel mult câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
@@ -293,13 +299,17 @@ function renderPan(){
   ${L.map(p=>{const [c,t]=pStat(p);return `<tr class="pr"><td><span class="pst ${c}">${t}</span></td>
    <td><div class="pk">${esc(p.kind)} · ${esc(p.id)}</div><div class="t">${esc(p.title||p.guest||'(fără titlu)')}</div>${p.title&&p.guest?`<div class="sub">cu ${esc(p.guest)}</div>`:''}<div class="sub">${esc(pWin(p))}</div></td>
    <td class="hide-m sub">${esc(p.when)}</td><td class="hide-m sub">${p.books.length}</td>
-   <td style="white-space:nowrap;text-align:right">${canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="5" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`;
+   <td style="white-space:nowrap;text-align:right">${canPan()&&isProp(p)?`<button class="linkbtn" data-pok="${esc(p.id)}">Aprobă</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pno="${esc(p.id)}">Respinge</button>`:canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="5" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`;
   document.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{S.pf=b.dataset.pf;renderPan();});
   const P=id=>S.panels.find(p=>p.id===id);
   document.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>openPan(JSON.parse(JSON.stringify(P(b.dataset.pe)))));
   document.querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const c=JSON.parse(JSON.stringify(P(b.dataset.pd)));c.id='';c.active=false;c.src='manual';openPan(c);toast('Copie: completează și salvează');});
   document.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{const p=JSON.parse(JSON.stringify(P(b.dataset.pt)));p.active=!p.active;b.disabled=true;
     call('savePanel',p).then(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);renderPan();toast(r.active?'Pornit':'Oprit');}).catch(e=>{alert(e.message||e);renderPan();});});
+  document.querySelectorAll('[data-pok]').forEach(b=>b.onclick=()=>{const p=JSON.parse(JSON.stringify(P(b.dataset.pok)));p.active=true;p.src=String(p.src||'').replace(/^propunere\s*·?\s*/i,'')||'manual';b.disabled=true;
+    call('savePanel',p).then(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);renderPan();toast('Aprobat · '+pStat(r)[1].toLowerCase());}).catch(e=>{alert(e.message||e);renderPan();});});
+  document.querySelectorAll('[data-pno]').forEach(b=>b.onclick=()=>{if(!confirm('Respingi propunerea? Se șterge din listă.'))return;b.disabled=true;
+    call('deletePanel',b.dataset.pno).then(()=>{S.panels=S.panels.filter(x=>x.id!==b.dataset.pno);renderPan();toast('Propunere respinsă');}).catch(e=>{alert(e.message||e);renderPan();});});
   const a=$('#padd');if(a)a.onclick=()=>openPan({id:'',active:true,kind:'Meet the Book',title:'',guest:'',when:'',date:'',end:'',from:'',to:'',books:[],text:'',src:'manual'});
 }
 function openPan(p){S.pe=p;S.peOrig=JSON.stringify(p);renderPan();window.scrollTo(0,0);}
@@ -308,7 +318,8 @@ function renderPanEdit(){
   const p=S.pe,ro=!canPan(),dis=ro?'disabled':'',adm=S.data.user.role==='admin';
   const inp=(k,lab,type,hint)=>`<label class="f">${lab}${hint?' · '+hint:''}<input data-p="${k}" type="${type||'text'}" value="${esc(p[k]||'')}" ${dis}></label>`;
   $('#app').innerHTML=`<p><button class="linkbtn" id="pback">← Înapoi la panouri</button></p>
-  <h2 style="font-weight:600;margin:6px 0 2px">${p.id?esc(p.title||p.guest||p.kind):'Panou nou'}</h2><p class="sub">${p.id?esc(p.id)+' · ':''}<span id="pstat"></span></p>
+  <h2 style="font-weight:600;margin:6px 0 2px">${p.id?esc(p.title||p.guest||p.kind):'Panou nou'}</h2><p class="sub">${p.id?esc(p.id)+' · ':''}<span id="pstat"></span>${isProp(p)?' · propunere făcută din calendar; verifică textul și cărțile, apoi pune „Pornit” și salvează':''}</p>
+  <div class="sub" style="margin-top:10px">Așa arată pe prima pagină:</div><div id="pview"></div>
   <fieldset><legend>Pe site</legend><div class="seg" id="pact"><button type="button" data-a="1" aria-pressed="${!!p.active}" ${dis}>Pornit</button><button type="button" data-a="0" aria-pressed="${!p.active}" ${dis}>Oprit</button></div>
    <div class="grid" style="margin-top:10px">${inp('from','Afișare de la','date','gol = de acum')}${inp('to','Afișare până la','date','gol = până la eveniment')}</div>
    ${ro?'':`<div class="quick"><button type="button" class="linkbtn" data-q="w1">o săptămână de la început</button><button type="button" class="linkbtn" data-q="w2">două săptămâni</button><button type="button" class="linkbtn" data-q="ev">cu 2 săptămâni înainte, până la eveniment</button><button type="button" class="linkbtn" data-q="clr">golește</button></div>`}</fieldset>
@@ -323,7 +334,7 @@ function renderPanEdit(){
    ${ro?'':'<div class="bsr"><input type="search" id="bq" placeholder="Caută după titlu, autor sau ID…" style="width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:9px"><div class="dd" id="bdd" hidden></div></div>'}
    <div class="bchips" id="bch">${p.books.map(bchip).join('')}</div></fieldset>
   <div class="savebar">${ro?'':'<button class="btn" id="psave">Salvează</button><button class="btn sec" id="pcancel">Renunță</button>'}${adm&&p.id?'<button class="linkbtn" id="pdel" style="margin-left:auto;color:var(--red)">Șterge panoul</button>':''}<span class="msg" id="pmsg"></span></div>`;
-  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;};upd();
+  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;$('#pview').innerHTML=pView(S.pe);};upd();
   document.querySelectorAll('[data-p]').forEach(i=>i.addEventListener('input',upd));
   $('#pback').onclick=()=>{if(!leaveOk())return;S.pe=null;renderPan();};
   if(ro)return;
@@ -334,16 +345,16 @@ function renderPanEdit(){
     if(q==='clr'){P.from='';P.to='';}
     $('[data-p=from]').value=P.from;$('[data-p=to]').value=P.to;upd();});
   const bq=$('#bq'),dd=$('#bdd');
-  const pick=id=>{readPan();if(S.pe.books.indexOf(id)<0){if(S.pe.books.length>=4){alert('Cel mult 4 cărți.');return;}S.pe.books.push(id);}$('#bch').innerHTML=S.pe.books.map(bchip).join('');bindChips();bq.value='';dd.hidden=true;bq.focus();};
+  const pick=id=>{readPan();if(S.pe.books.indexOf(id)<0){if(S.pe.books.length>=4){alert('Cel mult 4 cărți.');return;}S.pe.books.push(id);}$('#bch').innerHTML=S.pe.books.map(bchip).join('');bindChips();upd();bq.value='';dd.hidden=true;bq.focus();};
   bq.addEventListener('input',()=>{const ws=norm(bq.value).split(/\s+/).filter(Boolean);if(!ws.length){dd.hidden=true;return;}
     const m=S.data.rows.filter(r=>{const h=norm([r[C('ID')],r[C('Titlu')],r[C('Fotograf / autor')]].join(' '));return ws.every(w=>h.includes(w));}).slice(0,12);
     dd.innerHTML=m.map(r=>{const u=coverUrl(r[C('Copertă')]);return `<button type="button" data-id="${esc(r[C('ID')])}">${u?`<img src="${esc(u)}" alt="">`:'<span style="width:26px"></span>'}<span><b>${esc(r[C('Titlu')])}</b> <span class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${r[C('Stare')]!=='Publicată'?' · nu e pe site':''}</span></span></button>`;}).join('')||'<div class="sub" style="padding:8px 10px">Nimic găsit.</div>';
     dd.hidden=false;dd.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>pick(b.dataset.id));});
   bq.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const f=dd.querySelector('[data-id]');if(f)pick(f.dataset.id);}if(e.key==='Escape')dd.hidden=true;});
-  function bindChips(){document.querySelectorAll('#bch .x').forEach(x=>x.onclick=()=>{readPan();const id=x.closest('[data-b]').dataset.b;S.pe.books=S.pe.books.filter(b=>b!==id);x.closest('[data-b]').remove();});}
+  function bindChips(){document.querySelectorAll('#bch .x').forEach(x=>x.onclick=()=>{readPan();const id=x.closest('[data-b]').dataset.b;S.pe.books=S.pe.books.filter(b=>b!==id);x.closest('[data-b]').remove();upd();});}
   bindChips();
   $('#pcancel').onclick=()=>{S.pe=JSON.parse(S.peOrig);renderPanEdit();};
-  $('#psave').onclick=()=>{readPan();const P=S.pe;
+  $('#psave').onclick=()=>{readPan();const P=S.pe;if(P.active&&/^propunere/i.test(P.src||''))P.src=String(P.src).replace(/^propunere\s*·?\s*/i,'')||'manual';
     if(P.from&&P.to&&P.to<P.from){$('#pmsg').className='msg err';$('#pmsg').textContent='„Afișare până la” e înainte de „Afișare de la”.';return;}
     if(P.date&&P.end&&P.end<P.date){$('#pmsg').className='msg err';$('#pmsg').textContent='Ultima zi e înainte de data evenimentului.';return;}
     $('#psave').disabled=true;$('#pmsg').className='msg';$('#pmsg').textContent='Se salvează…';
@@ -352,6 +363,12 @@ function renderPanEdit(){
   const del=$('#pdel');if(del)del.onclick=()=>{if(!confirm('Ștergi definitiv panoul? Dacă vrei doar să nu mai apară, apasă „Oprit”.'))return;
     call('deletePanel',S.pe.id).then(()=>{S.panels=S.panels.filter(x=>x.id!==S.pe.id);S.pe=null;renderPan();toast('Panou șters');}).catch(e=>alert(e.message||e));};
 }
+function pView(p){const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,p.kind==='Meet the Book'?1:4);
+  const head=p.title||String(p.kind||'').split(' · ')[0];
+  return `<div class="pv"><div><div>${p.title?`<span class="k">${esc(p.kind)}</span>`:''}<span class="w">${esc(p.when||'')}</span></div>
+   <h3>${esc(head)||'<span class=sub>(titlu)</span>'}</h3>${p.guest?`<div class="g">cu ${esc(p.guest)}</div>`:''}${p.text?`<p>${esc(p.text)}</p>`:''}
+   ${bks.length?`<div class="bl"><span class="sub">${p.kind==='Meet the Book'?'Cartea prezentată':'Din bibliotecă'}</span>${bks.map(r=>`<div>${esc(r[C('Titlu')])} <span class="sub">${esc(String(r[C('Fotograf / autor')]).split(';')[0])}${r[C('Raft')]?' · raft '+esc(r[C('Raft')]):''}</span></div>`).join('')}</div>`:'<div class="bl sub">Fără cărți legate</div>'}</div>
+   <div class="cv">${bks.map(r=>{const u=coverUrl(r[C('Copertă')]);return u?`<img src="${esc(u)}" alt="">`:'';}).join('')}</div></div>`;}
 function readPan(){if(!S.pe||!$('[data-p=kind]'))return;document.querySelectorAll('[data-p]').forEach(i=>S.pe[i.dataset.p]=i.value.trim());
   const a=document.querySelector('#pact button[aria-pressed=true]');if(a)S.pe.active=a.dataset.a==='1';
   S.pe.books=[...document.querySelectorAll('#bch [data-b]')].map(x=>x.dataset.b);}

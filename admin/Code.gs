@@ -260,6 +260,7 @@ function getHistory(session, id) {
  * Tabul „Panouri”: un rând pe panou. Site-ul public le citește prin ?api=panouri
  * (doar cele pornite și încă neexpirate), deci o schimbare apare pe site în câteva minute, fără republicare.
  * Afișare de la / până la: fereastra în care panoul e pe site. Goale = de acum până se termină evenimentul.
+ * Propunerile (Sursă începe cu „propunere”, Activ = nu) nu ajung pe site până nu le aprobă un editor.
  */
 const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat'];
 const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated'];
@@ -349,15 +350,17 @@ function savePanel(session, p) {
   } finally { lock.releaseLock(); }
 }
 
-/** Șterge un panou (doar admin). De obicei e mai bine să-l oprești. */
+/** Șterge un panou: adminul oricare, editorii doar propunerile (respinse). De obicei e mai bine să-l oprești. */
 function deletePanel(session, id) {
   const user = me_(session);
-  if (user.role !== 'admin') throw new Error('Doar adminul poate șterge un panou. Îl poți opri.');
   const lock = LockService.getDocumentLock(); lock.waitLock(20000);
   try {
     const sh = panelsSheet_();
     const ids = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 1).getDisplayValues().map(r => r[0]);
     const i = ids.indexOf(String(id)); if (i < 0) throw new Error('Nu găsesc panoul ' + id);
+    const cur = panelRows_().find(r => r.id === String(id));
+    const prop = cur && !cur.active && /^propunere/i.test(cur.src || '');
+    if (user.role !== 'admin' && !(prop && user.role === 'editor')) throw new Error('Doar adminul poate șterge un panou. Îl poți opri.');
     sh.deleteRow(i + 2);
     ss_().getSheetByName(SH_LOG).appendRow([new Date(), user.name, 'panou ' + id, 'Panou șters', '', '']);
     CacheService.getScriptCache().remove('panels');

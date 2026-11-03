@@ -263,7 +263,8 @@ function getHistory(session, id) {
  * Propunerile (Sursă începe cu „propunere”, Activ = nu) nu ajung pe site până nu le aprobă un editor.
  */
 // Tipuri speciale: „Cartea săptămânii” (o carte, cu text) și „Cărți noi” (până la 12 cărți) au secțiunile lor pe prima pagină;
-// restul sunt evenimente și intră în caruselul de sus.
+// „Sugestii căutare”: cuvinte în Text, despărțite prin virgulă, puse primele la „Încearcă”.
+// Restul sunt evenimente și intră în caruselul de sus.
 const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat'];
 const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated'];
 
@@ -324,7 +325,7 @@ function savePanel(session, p) {
   const isDate = v => !v || /^\d{4}-\d{2}-\d{2}$/.test(v);
   ['date', 'end', 'from', 'to'].forEach(k => { if (!isDate(p[k] || '')) throw new Error('Dată greșită: ' + p[k]); });
   if (!String(p.kind || '').trim()) throw new Error('Alege tipul panoului.');
-  if (!String(p.title || '').trim() && !String(p.guest || '').trim() && !(p.books || []).length) throw new Error('Panoul are nevoie de titlu, invitat sau cel puțin o carte.');
+  if (!String(p.title || '').trim() && !String(p.guest || '').trim() && !(p.books || []).length && !String(p.text || '').trim()) throw new Error('Panoul are nevoie de titlu, invitat, o carte sau un text.');
   const lock = LockService.getDocumentLock(); lock.waitLock(20000);
   try {
     const sh = panelsSheet_(), h = headers_(sh);

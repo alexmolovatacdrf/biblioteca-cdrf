@@ -273,7 +273,7 @@ function renderInv(){
 }
 
 /* ---------- panouri pe prima pagină ---------- */
-const KINDS=['Cartea săptămânii','Cărți noi','Meet the Book','Seara de film','Curs · Bazele fotografiei','Curs · Școala de educație vizuală','Atelier','Expoziție','Lansare de carte','Târg','Eveniment'];
+const KINDS=['Cartea săptămânii','Cărți noi','Sugestii căutare','Meet the Book','Seara de film','Curs · Bazele fotografiei','Curs · Școala de educație vizuală','Atelier','Expoziție','Lansare de carte','Târg','Eveniment'];
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const addDays=(iso,n)=>{const d=new Date((iso||today())+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const fmtD=iso=>iso?new Date(iso+'T12:00').toLocaleDateString('ro-RO',{day:'numeric',month:'short',year:'numeric'}):'';
@@ -334,7 +334,7 @@ function renderPanEdit(){
    ${ro?'':'<div class="bsr"><input type="search" id="bq" placeholder="Caută după titlu, autor sau ID…" style="width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:9px"><div class="dd" id="bdd" hidden></div></div>'}
    <div class="bchips" id="bch">${p.books.map(bchip).join('')}</div></fieldset>
   <div class="savebar">${ro?'':'<button class="btn" id="psave">Salvează</button><button class="btn sec" id="pcancel">Renunță</button>'}${adm&&p.id?'<button class="linkbtn" id="pdel" style="margin-left:auto;color:var(--red)">Șterge panoul</button>':''}<span class="msg" id="pmsg"></span></div>`;
-  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;$('#pview').innerHTML=pView(S.pe);const bl=$('#blim');if(bl)bl.textContent=S.pe.kind==='Cărți noi'?'Până la 12 cărți, în ordinea de aici.':bMax(S.pe)===1?'O singură carte.':'Cel mult 4. Apar cu coperta, în ordinea de aici.';};upd();
+  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;$('#pview').innerHTML=pView(S.pe);const bl=$('#blim');if(bl)bl.textContent=bMax(S.pe)===0?'Fără cărți: cuvintele se scriu în „Text”.':S.pe.kind==='Cărți noi'?'Până la 12 cărți, în ordinea de aici.':bMax(S.pe)===1?'O singură carte.':'Cel mult 4. Apar cu coperta, în ordinea de aici.';};upd();
   document.querySelectorAll('[data-p]').forEach(i=>i.addEventListener('input',upd));
   $('#pback').onclick=()=>{if(!leaveOk())return;S.pe=null;renderPan();};
   if(ro)return;
@@ -363,8 +363,10 @@ function renderPanEdit(){
   const del=$('#pdel');if(del)del.onclick=()=>{if(!confirm('Ștergi definitiv panoul? Dacă vrei doar să nu mai apară, apasă „Oprit”.'))return;
     call('deletePanel',S.pe.id).then(()=>{S.panels=S.panels.filter(x=>x.id!==S.pe.id);S.pe=null;renderPan();toast('Panou șters');}).catch(e=>alert(e.message||e));};
 }
-const bMax=p=>p.kind==='Cărți noi'?12:(p.kind==='Meet the Book'||p.kind==='Cartea săptămânii')?1:4;
+const bMax=p=>p.kind==='Sugestii căutare'?0:p.kind==='Cărți noi'?12:(p.kind==='Meet the Book'||p.kind==='Cartea săptămânii')?1:4;
 function pView(p){
+  if(p.kind==='Sugestii căutare'){const w=String(p.text||'').split(/[,;\n]/).map(x=>x.trim()).filter(Boolean);
+    return `<div class="pv" style="grid-template-columns:1fr;background:#fff"><div><span class="w">Încearcă:</span> ${w.map(x=>`<span style="display:inline-block;border:1px solid var(--ink);border-radius:999px;padding:3px 12px;margin:4px 4px 0 0;font-size:14px">${esc(x)}</span>`).join('')||'<span class=sub>scrie cuvintele în „Text”, despărțite prin virgulă</span>'}<p class="sub" style="font-size:13px">Apar primele în „Încearcă”, pe calculator, cât e pornit panoul. Restul se completează singur din panouri și din catalog.</p></div></div>`;}
   if(p.kind==='Cartea săptămânii'||p.kind==='Cărți noi'){const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,bMax(p));
     return `<div class="pv" style="grid-template-columns:1fr;background:#fff"><div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><h3 style="margin:0">${esc(p.kind)}</h3><span class="w">${esc(p.when||'')}</span></div>
       ${p.text?`<p>${esc(p.text)}</p>`:''}${bks.length?'':'<div class="bl sub">Alege '+(p.kind==='Cărți noi'?'cărțile':'cartea')+'</div>'}</div>

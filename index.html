@@ -154,7 +154,9 @@ section{padding-block:48px}
 .crumbs .back:hover{text-decoration:underline;text-underline-offset:4px}
 .crumbs .sep{width:1px;height:14px;background:var(--faint)}
 .titles{grid-area:titles;align-self:end;min-width:0;padding-bottom:96px}
-.kick{font-size:18px;color:var(--muted);display:flex;gap:4px 14px;flex-wrap:wrap;margin-bottom:10px}
+.kick{font-size:18px;color:var(--muted);display:flex;gap:4px 8px;flex-wrap:wrap;margin-bottom:10px}
+.kick>span:not(.mtb)+span:not(.mtb)::before{content:"·";margin-right:8px}
+.kick .mtb{margin-left:6px}
 .titles h1{font-weight:400;font-size:clamp(40px,4.3vw,80px);line-height:1;letter-spacing:-.03em;margin:0;text-wrap:balance;overflow-wrap:anywhere}
 .titles .sub{font-size:clamp(22px,1.9vw,32px);line-height:1.15;letter-spacing:-.02em;color:var(--muted);margin-top:12px;text-wrap:balance}
 .people{margin-top:16px;font-size:clamp(30px,3.2vw,60px);line-height:1.05;letter-spacing:-.03em;color:var(--muted)}

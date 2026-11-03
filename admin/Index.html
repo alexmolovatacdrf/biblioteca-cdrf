@@ -187,11 +187,11 @@ const GROUPS=[
  ['Limbă',['Limbă']],
  ['Clasificare',['Categorie','Teme','Raft']],
  ['Obiectul fizic',['Pagini','Dimensiuni (cm)','Legătură']],
- ['Text',['Descriere','Sursa descrierii','Linkuri surse']],
+ ['Text',['Descriere','Sursa descrierii','Linkuri surse','Video']],
  ['Imagini',['Copertă','Interioare','Copertă de verificat']],
  ['Inventar',['Intrată în bibliotecă','Verificat la raft','Note']],
  ['Sistem',['ID','Wix ID']]];
-const HINT={'Intrată în bibliotecă':'data, ex. 2026-11-03; o pune singur la „Carte nouă”','Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
+const HINT={'Video':'link YouTube sau Vimeo despre carte (interviu, răsfoire); mai multe, separate cu „; ”','Intrată în bibliotecă':'data, ex. 2026-11-03; o pune singur la „Carte nouă”','Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
 function openRec(id){$('#app').innerHTML='<div class="load">Se deschide fișa…</div>';call('getRecord',id).then(showRec).catch(e=>alert(e.message||e));}
 function showRec(rec){S.rec=JSON.parse(JSON.stringify(rec));S.orig=rec;route();window.scrollTo(0,0);}
 function dirty(){if(!S.rec)return false;readForm();return Object.keys(S.rec).some(k=>String(S.rec[k])!==String(S.orig[k]));}
@@ -206,7 +206,7 @@ function field(k,v){
   if(k==='Descriere')return `<label class="f w">${k}<textarea data-k="${k}" class="${ch}">${esc(v)}</textarea></label>`;
   if(k==='Teme'){const sel=String(v||'').split(/;\s*/).filter(Boolean),all=(L['Teme']||[]).concat(sel.filter(x=>(L['Teme']||[]).indexOf(x)<0));
     return `<div class="f w" style="font-size:12px;color:var(--muted)">Teme<div class="seg" id="teme" style="margin-top:4px">${all.map(t=>`<button type="button" data-t="${esc(t)}" aria-pressed="${sel.indexOf(t)>=0}">${esc(t)}</button>`).join('')}</div></div>`;}
-  if(k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
+  if(k==='Video'||k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
   return `<label class="f">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
 }
 function renderRec(){

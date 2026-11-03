@@ -723,7 +723,8 @@ function filtered(){
     if(st.sel){const s=SELECTIONS.find(x=>x.id===st.sel); if(!s.ids.includes(b.id)) return false;}
     return true;});
   const sort=(!ws.length&&st.sort==='relevanta')?'aleator':st.sort;
-  if(sort==='aleator') r.sort((a,b)=>rkey(a.id)-rkey(b.id));
+  /* Recomandate: întâi cărțile de pe panourile de acum, apoi amestecate */
+  if(sort==='aleator'){const F=new Set(MEETS.filter(meetVis).flatMap(m=>m.books||[])); r.sort((a,b)=>(F.has(b.id)-F.has(a.id))||(rkey(a.id)-rkey(b.id)));}
   if(sort==='relevanta') r.sort((a,b)=>b._sc-a._sc||coll.compare(a.title,b.title));
   if(sort==='titlu') r.sort((a,b)=>coll.compare(a.title,b.title));
   if(sort==='an-nou') r.sort((a,b)=>(+b.year||0)-(+a.year||0)||coll.compare(a.title,b.title));
@@ -760,7 +761,7 @@ function dd(f){
   const c={}; B.filter(b=>inGroup(b,st.group)).forEach(b=>[].concat(f.get(b)).filter(Boolean).forEach(v=>c[v]=(c[v]||0)+1));
   const set=st[f.key];
   const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
-  const opts=keys.map(v=>`<label><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}>${esc(f.fmt?f.fmt(v):v)}<span class="c">${c[v]}</span></label>`).join('');
+  const opts=keys.map(v=>`<label><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}>${esc(f.fmt?f.fmt(v):v)}</label>`).join('');
   return `<div class="dd"><button type="button" aria-expanded="false" class="${set.size?'on':''}" data-dd="${f.key}">${f.label}${set.size?` <span class="n">${set.size}</span>`:''}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${opts}</div></div>`;
 }
 function sideGroup(f){
@@ -768,7 +769,7 @@ function sideGroup(f){
   const set=st[f.key]; const open=st.open[f.key]||set.size>0;
   const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
   return `<div class="fg2"><button type="button" class="fh" data-fh="${f.key}" aria-expanded="${open}"><span>${f.label}${set.size?` <span class="n">${set.size}</span>`:''}</span><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="${open?'M1 7l4-4 4 4':'M1 3l4 4 4-4'}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
-    ${open?`<div class="fb">${f.search?`<input class="fs-q" type="search" placeholder="Caută un nume" data-fsq="${f.key}" value="${esc(st.fsq[f.key]||'')}" aria-label="Caută în ${f.label}">`:''}<div class="fl">${keys.map(v=>`<label data-n="${esc(norm(v))}" ${f.search&&st.fsq[f.key]&&!norm(v).includes(norm(st.fsq[f.key]))&&!set.has(v)?'hidden':''}><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}><span>${esc(f.fmt?f.fmt(v):v)}</span><span class="c">${c[v]}</span></label>`).join('')}</div>${set.size?`<button class="fclr" data-fclr="${f.key}">Șterge</button>`:''}</div>`:''}</div>`;
+    ${open?`<div class="fb">${f.search?`<input class="fs-q" type="search" placeholder="Caută un nume" data-fsq="${f.key}" value="${esc(st.fsq[f.key]||'')}" aria-label="Caută în ${f.label}">`:''}<div class="fl">${keys.map(v=>`<label data-n="${esc(norm(v))}" ${f.search&&st.fsq[f.key]&&!norm(v).includes(norm(st.fsq[f.key]))&&!set.has(v)?'hidden':''}><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}><span>${esc(f.fmt?f.fmt(v):v)}</span></label>`).join('')}</div>${set.size?`<button class="fclr" data-fclr="${f.key}">Șterge</button>`:''}</div>`:''}</div>`;
 }
 function activeChips(){
   const out=[];
@@ -813,7 +814,7 @@ function renderHome(keepScroll){
       ${['type','category','lang','period'].map(k=>dd(FACETS.find(f=>f.key===k))).join('')}
       <span class="spacer"></span>
       <span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>
-      ${(()=>{const S=[...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['aleator','Amestecate'],['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Anul apariției: recente întâi'],['an-vechi','Anul apariției: vechi întâi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
+      ${(()=>{const S=[['aleator','Recomandate'],...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Anul apariției: recente întâi'],['an-vechi','Anul apariției: vechi întâi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div>
@@ -899,7 +900,7 @@ function openPanel(){
   const p=document.createElement('div'); p.className='fpanel'; p.setAttribute('role','dialog'); p.setAttribute('aria-label','Filtre');
   const count=()=>{const keep=Object.fromEntries(FACETS.map(f=>[f.key,st[f.key]])); FACETS.forEach(f=>st[f.key]=draft[f.key]); const n=filtered().length; FACETS.forEach(f=>st[f.key]=keep[f.key]); return n;};
   const groups=FACETS.map(f=>{const c={}; B.filter(b=>inGroup(b,st.group)).forEach(b=>[].concat(f.get(b)).filter(Boolean).forEach(v=>c[v]=(c[v]||0)+1)); const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
-    return `<fieldset><legend>${f.label}</legend>${keys.map(v=>`<label><input type="checkbox" data-pf="${f.key}" value="${esc(v)}" ${draft[f.key].has(v)?'checked':''}>${esc(f.fmt?f.fmt(v):v)}<span class="c">${c[v]}</span></label>`).join('')}</fieldset>`;}).join('');
+    return `<fieldset><legend>${f.label}</legend>${keys.map(v=>`<label><input type="checkbox" data-pf="${f.key}" value="${esc(v)}" ${draft[f.key].has(v)?'checked':''}>${esc(f.fmt?f.fmt(v):v)}</label>`).join('')}</fieldset>`;}).join('');
   p.innerHTML=`<div class="sheet"><div class="sh"><b>Filtre</b><button class="x" data-pclose aria-label="Închide filtrele"><svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3l12 12M15 3 3 15" stroke="currentColor" stroke-width="2"/></svg></button></div><div class="body">${groups}</div><div class="ft"><button class="linkbtn" data-pclear>Șterge tot</button><button class="apply" data-papply>Vezi ${count()} titluri</button></div></div>`;
   const upd=()=>{p.querySelector('[data-papply]').textContent=`Vezi ${count()} ${count()===1?'titlu':'titluri'}`;};
   const close=apply=>{ if(apply){FACETS.forEach(f=>st[f.key]=draft[f.key]); renderHome(0); const el=document.getElementById('toate'); if(el) window.scrollTo({top:el.offsetTop-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||80)-8});} p.remove(); document.body.style.overflow=''; };

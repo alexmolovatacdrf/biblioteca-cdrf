@@ -182,6 +182,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .gthumbs.dragging{cursor:grabbing}
 .gthumbs.dragging button{pointer-events:none}
 .gthumbs img{-webkit-user-drag:none}
+.gthumbs>:first-child{margin-left:auto}.gthumbs>:last-child{margin-right:auto}
 .gthumbs button{height:74px;padding:5px;border:1px solid transparent;background:color-mix(in srgb,var(--paper) 55%,transparent);cursor:pointer;flex:none}
 .gthumbs button:hover{border-color:var(--faint)}
 .gthumbs button[aria-current="true"]{border-color:var(--ink)}
@@ -238,7 +239,11 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .meet .cv img{cursor:pointer}
 .meet .cv.many{gap:3%;align-items:flex-end}.meet .cv.many img{max-width:25%;max-height:62%;min-width:0}.meet .cv.many img:first-child{max-width:42%;max-height:100%}.meet .cv.n4{gap:2.5%}.meet .cv.n4 img{max-width:18%;max-height:55%}.meet .cv.n4 img:first-child{max-width:36%}
 .mslide h2{font-weight:400;font-size:clamp(44px,5.2vw,88px);line-height:1.02;letter-spacing:-.03em;margin:0;text-wrap:balance}
-.mnav{display:flex;align-items:center;gap:10px;margin-top:26px}
+.mnav{display:flex;align-items:center;gap:10px;margin-top:26px;flex-wrap:wrap}
+.marr{width:36px;height:36px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.marr:first-child{margin-right:6px}.marr:last-child{margin-left:6px}
+.marr:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media (hover:hover) and (pointer:fine){.mtrack{cursor:grab}.mtrack.drag{cursor:grabbing;user-select:none}}
 .mdot{width:9px;height:9px;border-radius:50%;border:0;padding:0;background:color-mix(in srgb,var(--ink) 25%,transparent);cursor:pointer}
 .mdot[aria-current="true"]{background:var(--ink);width:26px;border-radius:5px}
 .mar{width:34px;height:34px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);background:none;cursor:pointer;font-size:18px;line-height:1}
@@ -367,28 +372,30 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
   .filters{gap:8px;padding-block:10px}
   .filters select{max-width:52%;font-size:14px;padding:9px 10px}
   .filters .count{font-size:13px;white-space:nowrap}
-  section{padding-block:30px}
+  section{padding-block:24px}
   .sec-head{margin-bottom:16px}
   .sel-grid{grid-auto-columns:82%;gap:16px}.selrow .tsc{display:none}
   .sel-title{font-size:20px}.sel-sub{font-size:16px}
   .crumbs .back{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
   .crumbs .back svg{vertical-align:-3px;margin-right:4px}
   .crumbs .sep,.crumbs>span:last-child{display:none}
-  .hero{padding-block:14px 30px}
+  .hero{padding-block:10px 22px}
   .kick{font-size:15px}
-  .titles h1{font-size:36px}
+  .titles h1{font-size:32px}
   .titles .sub{font-size:21px}
-  .people{font-size:28px}
-  .stage{height:min(58vh,470px);padding:12px 8px}
+  .people{font-size:24px}
+  .hero{grid-template-areas:"crumbs" "gallery" "titles";gap:16px}
+  .stage{height:min(46vh,380px);padding:10px 8px}
+  .savebig{margin-top:16px}
   .stage .arr{display:none}
   .gthumbs button{height:62px}
-  .d-body{padding-top:30px}
+  .d-body{padding-top:22px}
   .tech{grid-template-columns:120px 1fr;font-size:16px}
   .raft b{font-size:36px}
   .desc{font-size:17px}
   .fmt{gap:18px}.fmt .dim{font-size:26px}
-  .rows{margin-top:44px}
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 14px}
+  .rows{margin-top:32px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 14px}
   .row .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .card{gap:10px}
   .card .cap{font-size:15px}
@@ -404,7 +411,14 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
   footer{grid-template-columns:minmax(0,1fr)}
   .right .nav.ab{display:none}
   .groups{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.groups button{flex:none;font-size:15px}
-  .meet{padding-block:26px 30px}.mslide{gap:18px}.meet .cv{height:240px}.mslide h2{font-size:38px}.meet .mp{font-size:24px}
+  .meet{padding-block:16px 20px}.mslide{gap:14px;align-self:start;align-items:start}
+  .mtrack{position:relative}.mslide:not(.on){position:absolute;top:0;left:0;right:0}
+  .meet .cv{height:auto;max-height:210px;align-items:flex-end;justify-content:flex-start}.meet .cv img{max-height:210px}
+  .meet .cv.many{height:190px}.meet .cv.many img{max-height:100%}
+  .mslide h2{font-size:32px}.meet .mp{font-size:21px;margin-top:6px}.meet .mk{font-size:14px;margin-bottom:10px;gap:8px 12px}
+  .mtxt{font-size:16px;margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .mbooks{margin-top:12px;gap:4px;max-width:100%}.mbook{font-size:16px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mbooks .mbook:nth-of-type(n+3){display:none}
+  .mnav{margin-top:14px;gap:8px}.marr{display:none}
   .li{grid-template-columns:64px minmax(0,1fr) auto;gap:14px}.li .th{display:none}.li .r{font-size:26px}.li .tt{font-size:17px}.li .pp{font-size:15px}
   .hide-s{display:none}
   .show-s{display:inline!important}
@@ -812,7 +826,7 @@ function meetCarousel(){
   const U=upcoming(); if(meetIdx>=U.length) meetIdx=0;
   return `<section class="meet band" aria-roledescription="carusel" aria-label="Evenimente la CdRF">
     <div class="mtrack">${U.map((M,i)=>meetSlide(M,i)).join('')}</div>
-    ${U.length>1?`<div class="mnav">${U.map((M,i)=>`<button class="mdot" data-mgo="${i}" aria-label="Prezentarea ${i+1}" aria-current="${i===meetIdx}"></button>`).join('')}</div>`:''}
+    ${U.length>1?`<div class="mnav"><button class="marr" data-mstep="-1" aria-label="Panoul anterior"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>${U.map((M,i)=>`<button class="mdot" data-mgo="${i}" aria-label="Prezentarea ${i+1}" aria-current="${i===meetIdx}"></button>`).join('')}<button class="marr" data-mstep="1" aria-label="Panoul următor"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div>`:''}
   </section>`;
 }
 function selBar(){const g=document.querySelector('.sel-grid'), bar=document.querySelector('.selrow .scrollbar i'); if(!g||!bar) return;
@@ -833,7 +847,8 @@ function meetShow(i){
 }
 function meetStart(){
   clearInterval(meetTimer); meetShow(meetIdx);
-  if(upcoming().length<2||window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  /* pe telefon nu se rotește singur: înălțimea urmează panoul, iar trecerea se face cu degetul */
+  if(upcoming().length<2||window.matchMedia('(prefers-reduced-motion:reduce),(max-width:760px)').matches) return;
   meetTimer=setInterval(()=>{const s=document.querySelector('.meet'); if(!s){clearInterval(meetTimer);return;} if(s.matches(':hover')||s.contains(document.activeElement)) return; meetShow(meetIdx+1);},7000);
 }
 function renderList(){
@@ -1091,6 +1106,14 @@ let sw=null;
 document.addEventListener('touchstart',e=>{const z=e.target.closest('.stage,.lb .view,.meet'); if(!z||e.touches.length!==1) return; sw={z,x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
 document.addEventListener('touchend',e=>{if(!sw) return; const t=e.changedTouches[0], dx=t.clientX-sw.x, dy=t.clientY-sw.y, z=sw.z; sw=null; if(Math.abs(dx)<40||Math.abs(dx)<Math.abs(dy)*1.3) return;
   const d=dx<0?1:-1; if(z.classList.contains('meet')){meetShow(meetIdx+d);return;} if(z.classList.contains('view')){const btn=z.querySelector(d>0?'.next':'.prev'); if(btn) btn.click(); else {const lb=z.closest('.lb'); lb&&lb.dispatchEvent(new CustomEvent('swipe',{detail:d}));}} else if(document.getElementById('counter')) setImg(galIdx+d);},{passive:true});
+/* caruselul de sus: tras cu mouse-ul, săgeți din tastatură */
+let mdrag=null, mdragged=false;
+document.addEventListener('pointerdown',e=>{const tr=e.target.closest('.mtrack'); if(!tr||e.pointerType!=='mouse'||e.button!==0) return; mdrag={x:e.clientX,y:e.clientY,tr}; mdragged=false;});
+document.addEventListener('pointermove',e=>{if(!mdrag) return; if(!mdragged&&Math.abs(e.clientX-mdrag.x)>8){mdragged=true; mdrag.tr.classList.add('drag');} if(mdragged) e.preventDefault();});
+document.addEventListener('pointerup',e=>{if(!mdrag) return; const dx=e.clientX-mdrag.x; mdrag.tr.classList.remove('drag'); mdrag=null; if(mdragged&&Math.abs(dx)>50) meetShow(meetIdx+(dx<0?1:-1)); setTimeout(()=>{mdragged=false;},0);});
+document.addEventListener('click',e=>{if(mdragged&&e.target.closest('.mtrack')){e.preventDefault();e.stopPropagation();mdragged=false;}},true);
+document.addEventListener('dragstart',e=>{if(e.target.closest('.mtrack')) e.preventDefault();});
+document.addEventListener('keydown',e=>{const m=document.querySelector('.meet'); if(!m||!m.contains(document.activeElement)||(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')) return; e.preventDefault(); meetShow(meetIdx+(e.key==='ArrowRight'?1:-1));});
 let drag=null;
 document.addEventListener('pointerdown',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||e.pointerType!=='mouse'||e.button!==0) return; drag={s,x:e.clientX,left:s.scrollLeft,moved:false,id:e.pointerId};});
 document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX-drag.x; if(!drag.moved&&Math.abs(dx)>5){drag.moved=true; drag.s.classList.add('dragging');} if(drag.moved){drag.s.scrollLeft=drag.left-dx; e.preventDefault();}});

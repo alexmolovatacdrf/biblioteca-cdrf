@@ -171,7 +171,7 @@ const GROUPS=[
  ['Imagini',['Copertă','Interioare','Copertă de verificat']],
  ['Inventar',['Verificat la raft','Note']],
  ['Sistem',['ID','Wix ID']]];
-const HINT={'Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Teme':'separate cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
+const HINT={'Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
 function openRec(id){$('#app').innerHTML='<div class="load">Se deschide fișa…</div>';call('getRecord',id).then(showRec).catch(e=>alert(e.message||e));}
 function showRec(rec){S.rec=JSON.parse(JSON.stringify(rec));S.orig=rec;route();window.scrollTo(0,0);}
 function dirty(){if(!S.rec)return false;readForm();return Object.keys(S.rec).some(k=>String(S.rec[k])!==String(S.orig[k]));}
@@ -184,7 +184,9 @@ function field(k,v){
     return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option>${arr.concat(extra).map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;}
   if(k==='Copertă de verificat')return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option><option ${v==='da'?'selected':''}>da</option></select></label>`;
   if(k==='Descriere')return `<label class="f w">${k}<textarea data-k="${k}" class="${ch}">${esc(v)}</textarea></label>`;
-  if(k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor'||k==='Teme')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
+  if(k==='Teme'){const sel=String(v||'').split(/;\s*/).filter(Boolean),all=(L['Teme']||[]).concat(sel.filter(x=>(L['Teme']||[]).indexOf(x)<0));
+    return `<div class="f w" style="font-size:12px;color:var(--muted)">Teme<div class="seg" id="teme" style="margin-top:4px">${all.map(t=>`<button type="button" data-t="${esc(t)}" aria-pressed="${sel.indexOf(t)>=0}">${esc(t)}</button>`).join('')}</div></div>`;}
+  if(k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
   return `<label class="f">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
 }
 function renderRec(){
@@ -206,7 +208,7 @@ function renderRec(){
   $('#back').onclick=()=>{if(!leaveOk())return;S.rec=null;route();};
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
   document.querySelectorAll('#stare button').forEach(b=>b.onclick=()=>{readForm();S.rec['Stare']=b.dataset.s;renderRec();});
-  document.querySelectorAll('#langs button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
+  document.querySelectorAll('#langs button,#teme button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
   $('#save').onclick=save;
@@ -220,6 +222,7 @@ function bindC(){document.querySelectorAll('#contrib .x').forEach(b=>b.onclick=(
 function readForm(){if(!S.rec||!$('#save'))return;
   document.querySelectorAll('[data-k]').forEach(i=>S.rec[i.dataset.k]=i.value.trim());
   S.rec['Limbă']=[...document.querySelectorAll('#langs button[aria-pressed=true]')].map(b=>b.dataset.l).join('; ');
+  if($('#teme'))S.rec['Teme']=[...document.querySelectorAll('#teme button[aria-pressed=true]')].map(b=>b.dataset.t).join('; ');
   S.rec['Colaboratori (nume – rol)']=[...document.querySelectorAll('#contrib .r')].map(r=>{const n=r.querySelector('input').value.trim(),ro=r.querySelector('select').value;return n?(ro?n+' – '+ro:n):'';}).filter(Boolean).join('; ');}
 function save(){
   readForm();const ch={},bf={};Object.keys(S.rec).forEach(k=>{if(String(S.rec[k])!==String(S.orig[k])){ch[k]=S.rec[k];bf[k]=S.orig[k];}});

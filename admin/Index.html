@@ -68,7 +68,9 @@ label.f input[readonly]{background:var(--soft)}
 .msg{font-size:13px;color:var(--muted)}
 .msg.err{color:var(--red)}
 .hist{font-size:13px;color:var(--muted)}
-.hist div{padding:4px 0;border-bottom:1px solid var(--rule)}
+.hist div{padding:6px 0;border-bottom:1px solid var(--rule);word-break:break-word}
+.hist del{background:#fde2e2;color:#a40000;text-decoration:line-through}
+.hist ins{background:#dcf5e3;color:#14692f;text-decoration:none}
 /* inventar */
 .inv li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule);list-style:none}
 .inv ul{padding:0;margin:0}
@@ -188,8 +190,11 @@ function renderRec(){
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
   $('#save').onclick=save;
-  $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML='<b>Istoric</b>'+(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br>${esc(x[3])}: ${esc(String(x[4]).slice(0,60))} → ${esc(String(x[5]).slice(0,60))}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
+  $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML='<b>Istoric</b>'+(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br><b>${esc(x[3])}</b><br>${diffHtml(x[4],x[5])}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
 }
+function diffHtml(a,b){a=String(a||'');b=String(b||'');let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let s=0;while(s<a.length-p&&s<b.length-p&&a[a.length-1-s]===b[b.length-1-s])s++;
+  const pre=a.slice(Math.max(0,p-40),p),post=a.slice(a.length-s,a.length-s+40),del=a.slice(p,a.length-s),ins=b.slice(p,b.length-s);
+  return (p>40?'…':'')+esc(pre)+(del?`<del>${esc(del)}</del>`:'')+(ins?`<ins>${esc(ins)}</ins>`:'')+esc(post)+(a.length-s+40<a.length?'…':'')+(!a?' <span class=sub>(câmp gol înainte)</span>':'')+(!b?' <span class=sub>(golit)</span>':'');}
 function crow(c,roles){const rs=roles.concat(c.r&&roles.indexOf(c.r)<0?[c.r]:[]);return `<div class="r"><input placeholder="Nume" value="${esc(c.n)}"><select><option value="">rol…</option>${rs.map(x=>`<option ${x===c.r?'selected':''}>${esc(x)}</option>`).join('')}</select><button type="button" class="x" title="Șterge">×</button></div>`;}
 function bindC(){document.querySelectorAll('#contrib .x').forEach(b=>b.onclick=()=>b.parentNode.remove());}
 function readForm(){if(!S.rec||!$('#save'))return;

@@ -16,9 +16,27 @@ const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raf
 // Câmpuri pe care editorii nu le pot schimba
 const ADMIN_ONLY = ['ID', 'Wix ID'];
 
+// Interfața (Index.html) se ia direct din GitHub, ca să nu mai fie nevoie de redeploy la fiecare schimbare.
+// Dacă GitHub nu răspunde, se folosește copia locală „Index” din proiect.
+const UI_URL = 'https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/main/admin/Index.html';
+
+function uiHtml_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('ui');
+  if (hit) return hit;
+  try {
+    const r = UrlFetchApp.fetch(UI_URL + '?t=' + Math.floor(Date.now() / 300000), { muteHttpExceptions: true });
+    if (r.getResponseCode() === 200) {
+      const html = r.getContentText('UTF-8');
+      if (html.length < 95000) cache.put('ui', html, 300);
+      return html;
+    }
+  } catch (e) {}
+  return HtmlService.createHtmlOutputFromFile('Index').getContent();
+}
+
 function doGet() {
-  const t = HtmlService.createTemplateFromFile('Index');
-  return t.evaluate()
+  return HtmlService.createHtmlOutput(uiHtml_())
     .setTitle('Biblioteca CdRF – admin')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);

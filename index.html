@@ -60,7 +60,7 @@ footer .flogo.logo-l{display:var(--logo-l)}footer .flogo.logo-d{display:var(--lo
 .ptitle{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22vw;opacity:0;transition:opacity .2s}
 .ptitle.on{opacity:1}
 .field{position:relative}
-.field input{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--ink);border-radius:999px}
+.field input{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--faint);border-radius:999px}
 .field input::placeholder{color:var(--muted)}
 .field input:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 25%,transparent)}
 .field svg{position:absolute;top:50%;transform:translateY(-50%);pointer-events:none}
@@ -114,7 +114,7 @@ section{padding-block:48px}
 .dd .menu input{accent-color:var(--ink)}
 .sortdd .menu{left:auto;right:0;min-width:260px}.sortdd .sl{color:var(--muted)}
 .filters .spacer{flex:1}
-.fbtn{display:none;align-items:center;gap:8px;border:1px solid var(--ink);background:var(--paper);padding:9px 15px;border-radius:999px;cursor:pointer;font-size:15px}
+.fbtn{display:none;align-items:center;gap:8px;border:1px solid var(--faint);background:var(--paper);padding:9px 15px;border-radius:999px;cursor:pointer;font-size:15px}
 .fbtn .n{font-size:11px;background:var(--ink);color:var(--paper);border-radius:999px;padding:0 6px}
 .fpanel{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.35)}
 .fpanel .sheet{background:var(--paper);border-radius:16px 16px 0 0;max-height:86vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -255,7 +255,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .meet .cv.many{gap:3%;align-items:flex-end}.meet .cv.many img{max-width:25%;max-height:62%;min-width:0}.meet .cv.many img.big{max-width:42%;max-height:100%}.meet .cv.n4{gap:2.5%}.meet .cv.n4 img{max-width:18%;max-height:55%}.meet .cv.n4 img.big{max-width:36%}
 .mslide h2{font-weight:400;font-size:clamp(44px,5.2vw,88px);line-height:1.02;letter-spacing:-.03em;margin:0;text-wrap:balance}
 .mnav{display:flex;align-items:center;gap:10px;margin-top:26px;flex-wrap:wrap}
-.marr{width:36px;height:36px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.marr{width:36px;height:36px;border-radius:50%;border:1px solid var(--faint);background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
 .marr:first-child{margin-right:6px}.marr:last-child{margin-left:6px}
 .marr:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 @media (hover:hover) and (pointer:fine){.mtrack{cursor:grab}.mtrack.drag{cursor:grabbing;user-select:none}}
@@ -264,7 +264,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .mar{width:34px;height:34px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 30%,transparent);background:none;cursor:pointer;font-size:18px;line-height:1}
 .mar:hover{background:var(--ink);color:var(--paper)}
 .meet .mk{font-size:16px;color:var(--muted);display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.meet .mk b{font-weight:400;color:var(--ink);border:1px solid var(--ink);border-radius:999px;padding:3px 12px}
+.meet .mk b{font-weight:400;color:var(--ink);border:1px solid var(--faint);border-radius:999px;padding:3px 12px}
 .meet h2{font-weight:400;font-size:clamp(44px,5.2vw,88px);line-height:1.02;letter-spacing:-.03em;margin:0;text-wrap:balance}
 .meet .mp{font-size:clamp(26px,2.6vw,44px);line-height:1.1;letter-spacing:-.025em;color:var(--ink);margin-top:12px}
 .meet .when{margin-top:26px;max-width:46ch}
@@ -295,9 +295,12 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .save[aria-pressed="true"]{opacity:1;background:var(--ink);color:var(--paper)}
 .card:hover .save,.save:focus-visible{opacity:1}
 @media (hover:none){.save{opacity:1}}
-.savebig{margin-top:26px;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--ink);background:none;border-radius:999px;padding:10px 18px;font-size:16px;cursor:pointer}
+.savebig{margin-top:26px;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--faint);background:none;border-radius:999px;padding:10px 18px;font-size:16px;cursor:pointer}
 .savebig svg{width:16px;height:16px}
-.savebig[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.savebig[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+/* toate butoanele ovale: aceeași linie gri; se închide la culoare doar la trecerea mausului sau la focus */
+@media (hover:hover){.savebig:hover,.fbtn:hover,.dd>button:hover,.try button:hover,.tag:hover,.marr:hover{border-color:var(--ink)}}
+.field input:focus{border-color:var(--ink)}
 .right .nav .n{display:inline-block;min-width:20px;text-align:center;font-size:12px;background:var(--ink);color:var(--paper);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
 .list{padding-block:40px}
 .list h1{font-weight:400;font-size:clamp(44px,5vw,84px);letter-spacing:-.035em;line-height:1;margin:0}
@@ -577,7 +580,7 @@ select.pill{font:inherit;font-size:14px}
 </style>
 
 
-<div class="proto wrap"><span><b>Prototip</b> · 383 de titluri · câmpurile nesigure sunt lăsate goale</span></div>
+<div class="proto wrap"><span><b>Prototip</b> · versiune de test</span></div>
 
 <header class="top"><div class="wrap">
   <button class="brand" id="home" aria-label="Biblioteca CdRF, pagina principală"><img class="logo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="103" height="40"><img class="logo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="103" height="40"><span class="sep" aria-hidden="true"></span><span class="lib">Biblioteca</span></button>
@@ -859,7 +862,7 @@ function meetSlide(M,i){
   bks.splice(isMtb?1:4); /* Meet the Book: o singură carte; altfel cel mult 4, toate cu copertă */
   const booksHtml=bks.length?(isMtb?`<div class="mbooks"><span class="ml">Cartea prezentată</span>${bk(bks[0])}</div>`
       :`<div class="mbooks"><span class="ml">Din bibliotecă</span>${bks.map(bk).join('')}</div>`)
-    :(isMtb?`<div class="mbooks"><span class="todo">cartea prezentată</span></div>`:'');
+    :'';
   return `<div class="mslide${bks.length?'':' nobook'}" data-mi="${i}">
     <div><div class="mk">${M.title?`<b>${esc(M.kind)}</b>`:''}<span>${esc(M.when||'')}</span></div>
       <h2>${esc(head)}</h2>${M.guest?`<div class="mp">cu ${esc(M.guest)}</div>`:''}${txt}${booksHtml}</div>
@@ -979,7 +982,7 @@ function renderBook(id){
     <div class="hero band hgrad">
       <div class="crumbs"><button class="back" data-back><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8H3m4-4L3 8l4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>${backLabel()}</button><span class="sep" aria-hidden="true"></span><span>${esc(b.category)}</span></div>
       <div class="titles">
-        <div class="kick">${[b.type,b.year].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')}${MEETS.filter(M=>(M.books||[]).includes(b.id)&&meetVis(M)).map(M=>`<span class="mtb">${esc(M.kind.split(' · ')[0])}${M.date?' · '+new Date(M.date+'T12:00').toLocaleDateString('ro-RO',{day:'numeric',month:'long'}):''}</span>`).join('')}</div>
+        <div class="kick">${[b.type,b.year].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')}</div>
         <h1>${esc(b.title)}</h1>
         ${b.subtitle?`<div class="sub">${esc(b.subtitle)}</div>`:''}
         ${ppl?`<div class="people">${ppl}</div>`:''}
@@ -1060,8 +1063,11 @@ function renderAbout(){
     ['contact','Program și contact',`<dl><dt>Adresa</dt><dd>Str. Popa Tatu nr. 68, București</dd><dt>Luni</dt><dd>închis</dd><dt>Marți–Vineri</dt><dd>09–18</dd><dt>Sâmbătă–Duminică</dt><dd>10–18</dd></dl><p style="margin-top:1em"></p>${T('adresa de e-mail a bibliotecii și persoana de contact.')}`],
   ];
   secs.forEach(s=>{const o=ABOUT_OVR[s[0]]; if(o) s[2]='<p>'+esc(o).split(/\n\s*\n/).join('</p><p>')+'</p>';});
+  /* notițele „de completat” sunt pentru echipă, nu pentru public: le scoatem, iar secțiunile rămase goale nu apar */
+  secs.forEach(s=>{s[2]=s[2].replace(/<span class="todo">[\s\S]*?<\/span>/g,'').replace(/<p style="margin-top:1em"><\/p>/g,'');});
+  for(let i=secs.length-1;i>=0;i--) if(!secs[i][2].replace(/<[^>]+>/g,'').trim()) secs.splice(i,1);
   app.innerHTML=`<div class="about">
-    <div class="ahero band"><div><h1>Biblioteca</h1><p class="amark">Pătratul roșu e semnul bibliotecii: punctul de clar din vizorul aparatului, același din sigla CdRF.</p></div><div><p>Cărți de fotografie, de consultat pe loc la CdRF. Caută în catalog înainte de vizită și vezi pe ce raft e cartea.</p><div class="acov">${B.filter(b=>b.cover).sort((a,b)=>rkey('a'+a.id)-rkey('a'+b.id)).slice(0,5).map(b=>`<img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}" loading="lazy">`).join('')}</div></div></div>
+    <div class="ahero band"><div><h1>Biblioteca</h1></div><div><p>Cărți de fotografie, de consultat pe loc la CdRF. Caută în catalog înainte de vizită și vezi pe ce raft e cartea.</p><div class="acov">${B.filter(b=>b.cover).sort((a,b)=>rkey('a'+a.id)-rkey('a'+b.id)).slice(0,5).map(b=>`<img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}" loading="lazy">`).join('')}</div></div></div>
     <nav class="anav" aria-label="Secțiuni">${secs.map(([id,h])=>`<button data-scroll="a-${id}">${h}</button>`).join('')}</nav>
     ${secs.map(([id,h,x])=>`<section class="asec" id="a-${id}"><h2>${h}</h2><div class="txt">${x}</div></section>`).join('')}
     <section class="asec"><h2>Catalogul</h2><div class="txt"><p>Toate cărțile, cu filtre după tip, categorie, limbă și anul apariției. Cu „Adaugă în lista mea” îți faci lista înainte să vii, ordonată după raft.</p><button class="savebig" data-back style="margin-top:6px">Deschide catalogul</button></div></section>

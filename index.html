@@ -314,13 +314,21 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 
 /* despre bibliotecă */
 .ahero{padding-block:72px 64px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px 64px;align-items:end}
-.ahero h1{font-weight:400;font-size:clamp(48px,5.4vw,96px);letter-spacing:-.035em;line-height:1;margin:0}
+.ahero h1{font-weight:400;font-size:clamp(48px,5.4vw,96px);letter-spacing:-.035em;line-height:1;margin:0;display:flex;align-items:center;gap:.28em}
+.ahero h1::before{content:"";width:.42em;height:.42em;border:max(3px,.055em) solid var(--accent);flex:none;box-sizing:border-box}
+.ahero .amark{font-size:15px;color:var(--muted);margin-top:18px;max-width:40ch;letter-spacing:0}
+.acov{display:flex;gap:16px;align-items:flex-end;margin-top:32px;height:150px}
+.acov img{height:100%;width:auto;max-width:22%;object-fit:contain;box-shadow:var(--vol);background:var(--paper);cursor:pointer;transition:transform .4s var(--ease)}
+.acov img.cutc{background:transparent}
+@media (hover:hover){.acov img:hover{transform:translateY(-4px)}}
+.asec h2{display:flex;align-items:center;gap:.36em}
+.asec h2::before{content:"";width:.3em;height:.3em;border:max(2px,.06em) solid var(--accent);flex:none;box-sizing:border-box;transform:translateY(.04em)}
 .ahero p{font-size:clamp(20px,1.6vw,26px);line-height:1.35;letter-spacing:-.015em;margin:0;max-width:34ch}
 .anav{display:flex;gap:8px 26px;flex-wrap:wrap;padding-block:18px;font-size:16px;position:sticky;top:var(--hh,80px);background:var(--paper);z-index:5}
 .anav button{background:none;border:0;padding:0;cursor:pointer}
 .anav button:hover{text-decoration:underline;text-underline-offset:4px}
 .asec{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px 64px;padding-block:44px;border-top:1px solid var(--rule);scroll-margin-top:calc(var(--hh,80px) + 64px)}
-.asec h2{font-weight:400;font-size:clamp(28px,2.6vw,42px);letter-spacing:-.025em;line-height:1.08;margin:0}
+.asec h2{font-weight:400;font-size:clamp(28px,2.6vw,42px);letter-spacing:-.025em;line-height:1.08;margin:0;align-self:start}
 .asec .txt{font-size:20px;line-height:1.6;letter-spacing:-.012em;max-width:62ch}
 .asec .txt p{margin:0 0 1em}
 .asec dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 28px;margin:0}
@@ -412,7 +420,7 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
   .try{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)));padding-right:16px}
   .try::-webkit-scrollbar{display:none}
   .try button,.try span{flex:none}
-  .ahero{padding-block:40px 34px}
+  .ahero{padding-block:28px 26px}.acov{height:110px;gap:10px;margin-top:22px}.acov img{max-width:23%}.acov img:nth-child(n+5){display:none}
   .asec{padding-block:30px}
   .asec .txt{font-size:17px}
   footer{grid-template-columns:minmax(0,1fr)}
@@ -672,7 +680,7 @@ const SUGK='Sugestii căutare';
 let TRY_POOL=null;
 function tryWords(){
   if(!TRY_POOL){const pc={},last={},tc={};
-    B.forEach(b=>{b.people.forEach(p=>{pc[p]=(pc[p]||0)+1; const l=p.split(' ').pop(); last[l]=(last[l]||new Set()).add(p);}); (b.tags||[]).forEach(g=>tc[g]=(tc[g]||0)+1);});
+    B.forEach(b=>{if(b.type!=='Revistă') b.people.forEach(p=>{pc[p]=(pc[p]||0)+1; const l=p.split(' ').pop(); last[l]=(last[l]||new Set()).add(p);}); (b.tags||[]).forEach(g=>tc[g]=(tc[g]||0)+1);});
     const short=p=>{const l=p.split(' ').pop(); return last[l].size===1&&l.length>3?l:p;};
     const ppl=Object.keys(pc).filter(p=>pc[p]>=2&&!/colectiv|jurnalul|fotojurnali/i.test(p)).map(short);
     const tg=Object.keys(tc).filter(g=>tc[g]>=5);
@@ -681,8 +689,9 @@ function tryWords(){
   const add=w=>{w=String(w||'').trim(); if(w&&!out.some(x=>norm(x)===norm(w))) out.push(w);};
   vis.filter(m=>m.kind==='Seara de film'||m.kind===WEEK||m.kind==='Meet the Book').forEach(m=>{const b=byId[(m.books||[]).find(i=>byId[i])]; if(b&&b.people[0]){const p=b.people[0], l=p.split(' ').pop(); add(B.filter(x=>x.people.some(q=>q.split(' ').pop()===l)).length&&l.length>3?l:p);}});
   vis.filter(m=>m.kind===SUGK).forEach(m=>String(m.text||'').split(/[,;\n]/).forEach(add));
+  const lead=out.sort((a,b)=>rkey('l'+a)-rkey('l'+b)).slice(0,2); out.length=0; lead.forEach(add);
   TRY_POOL.forEach(w=>{if(out.length<6) add(w);});
-  return out.slice(0,6);
+  return out.slice(0,6).sort((a,b)=>rkey('o'+a)-rkey('o'+b));
 }
 const st={fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);
@@ -814,7 +823,7 @@ function renderHome(keepScroll){
       ${['type','category','lang','period'].map(k=>dd(FACETS.find(f=>f.key===k))).join('')}
       <span class="spacer"></span>
       <span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>
-      ${(()=>{const S=[['aleator','Recomandate'],...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Anul apariției: recente întâi'],['an-vechi','Anul apariției: vechi întâi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
+      ${(()=>{const S=[['aleator','Recomandate'],...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Cele mai noi'],['an-vechi','Cele mai vechi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div>
@@ -1034,7 +1043,7 @@ function route(){
 function renderAbout(){
   const T=s=>`<span class="todo">${s}</span>`;
   const secs=[
-    ['fond','Fondul',`<p>Biblioteca strânge cărți despre fotografie: albume, monografii de autor, cataloage de expoziție, istorie și teorie, manuale și reviste. Catalogul online are acum 513 fișe, în curs de verificare.</p>${T('cum s-a format fondul (donații, achiziții, colecții primite), ce îl face special și ce titluri rare are.')}`],
+    ['fond','Fondul',`<p>Biblioteca strânge cărți despre fotografie: albume, monografii de autor, cataloage de expoziție, istorie și teorie, manuale și reviste. Fișele din catalog sunt în curs de verificare.</p>${T('cum s-a format fondul (donații, achiziții, colecții primite), ce îl face special și ce titluri rare are.')}`],
     ['consultare','Cum consulți cărțile',`<p>Nu avem împrumut: cărțile se citesc pe loc, la CdRF, în timpul programului. Fiecare fișă din catalog arată raftul pe care stă cartea, așa că poți veni știind exact ce cauți.</p>${T('e nevoie de programare? accesul e gratuit? se pot fotografia pagini?')}`],
     ['cercetare','Pentru studenți, cercetători și grupuri',T('dacă oferiți ajutor la căutare, prezentări ale fondului pentru grupuri sau clase, recomandări de lectură pe o temă.')],
     ['donatii','Donații de carte',T('primiți cărți donate? ce fel de titluri și cum se aduc?')],
@@ -1042,10 +1051,10 @@ function renderAbout(){
   ];
   secs.forEach(s=>{const o=ABOUT_OVR[s[0]]; if(o) s[2]='<p>'+esc(o).split(/\n\s*\n/).join('</p><p>')+'</p>';});
   app.innerHTML=`<div class="about">
-    <div class="ahero band"><h1>Biblioteca</h1><p>Cărți de fotografie, de consultat pe loc la CdRF. Caută în catalog înainte de vizită și vezi pe ce raft e cartea.</p></div>
+    <div class="ahero band"><div><h1>Biblioteca</h1><p class="amark">Pătratul roșu e semnul bibliotecii: punctul de clar din vizorul aparatului, același din sigla CdRF.</p></div><div><p>Cărți de fotografie, de consultat pe loc la CdRF. Caută în catalog înainte de vizită și vezi pe ce raft e cartea.</p><div class="acov">${B.filter(b=>b.cover).sort((a,b)=>rkey('a'+a.id)-rkey('a'+b.id)).slice(0,5).map(b=>`<img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}" loading="lazy">`).join('')}</div></div></div>
     <nav class="anav" aria-label="Secțiuni">${secs.map(([id,h])=>`<button data-scroll="a-${id}">${h}</button>`).join('')}</nav>
     ${secs.map(([id,h,x])=>`<section class="asec" id="a-${id}"><h2>${h}</h2><div class="txt">${x}</div></section>`).join('')}
-    <section class="asec"><h2>Catalogul</h2><div class="txt"><p>Toate cărțile, cu filtre după tip, categorie, limbă și anul apariției.</p><button class="linkbtn" data-back>Deschide catalogul</button></div></section>
+    <section class="asec"><h2>Catalogul</h2><div class="txt"><p>Toate cărțile, cu filtre după tip, categorie, limbă și anul apariției. Cu „Adaugă în lista mea” îți faci lista înainte să vii, ordonată după raft.</p><button class="savebig" data-back style="margin-top:6px">Deschide catalogul</button></div></section>
   </div>`;
   document.title='Despre bibliotecă · Biblioteca CdRF';
   window.scrollTo(0,0); watchHero();

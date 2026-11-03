@@ -9,6 +9,7 @@ const SH_BOOKS = 'Cărți';
 const SH_LISTS = 'Liste';
 const SH_USERS = 'Utilizatori';
 const SH_LOG = 'Istoric';
+const SH_PANELS = 'Panouri';
 const SITE = 'https://alexmolovatacdrf.github.io/biblioteca-cdrf/';
 
 // Coloane afișate în listă (restul se încarcă la deschiderea fișei)
@@ -37,6 +38,7 @@ function uiHtml_() {
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
+  if (p.api === 'panouri') return panelsApi_();
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
     error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
   const html = uiHtml_().replace('<!--BOOT-->', '<script>window.BOOT=' + JSON.stringify(boot).replace(/</g, '\\u003c') + ';</script>');
@@ -252,4 +254,113 @@ function getHistory(session, id) {
   if (lg.getLastRow() < 2) return [];
   return lg.getRange(2, 1, lg.getLastRow() - 1, 6).getDisplayValues()
     .filter(r => String(r[2]) === String(id)).reverse().slice(0, 50);
+}
+
+/* ---------------- Panouri pe prima pagină ----------------
+ * Tabul „Panouri”: un rând pe panou. Site-ul public le citește prin ?api=panouri
+ * (doar cele pornite și încă neexpirate), deci o schimbare apare pe site în câteva minute, fără republicare.
+ * Afișare de la / până la: fereastra în care panoul e pe site. Goale = de acum până se termină evenimentul.
+ */
+const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat'];
+const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated'];
+
+function panelsSheet_() {
+  let sh = ss_().getSheetByName(SH_PANELS);
+  if (!sh) {
+    sh = ss_().insertSheet(SH_PANELS);
+    sh.getRange(1, 1, 1, PANEL_COLS.length).setValues([PANEL_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.getRange(2, 1, 999, PANEL_COLS.length).setNumberFormat('@');
+  }
+  return sh;
+}
+
+function panelRows_() {
+  const sh = panelsSheet_();
+  if (sh.getLastRow() < 2) return [];
+  const h = headers_(sh);
+  return sh.getRange(2, 1, sh.getLastRow() - 1, h.length).getDisplayValues().filter(r => r[0]).map(r => {
+    const o = {};
+    PANEL_COLS.forEach((c, i) => { const j = h.indexOf(c); o[PANEL_KEYS[i]] = j < 0 ? '' : String(r[j]).trim(); });
+    o.active = /^(da|true|1|activ)$/i.test(o.active);
+    o.books = o.books ? o.books.split(/[\s,;]+/).filter(x => /^\d+$/.test(x)) : [];
+    return o;
+  });
+}
+
+function today_() { return Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd'); }
+
+/** Public: panourile pornite care nu au expirat (filtrarea pe ziua de azi o face și site-ul). */
+function panelsApi_() {
+  const cache = CacheService.getScriptCache();
+  let out = cache.get('panels');
+  if (!out) {
+    const d = today_();
+    const list = panelRows_().filter(p => p.active && (p.to ? p.to >= d : (!p.date || (p.end || p.date) >= d)))
+      .map(p => ({ id: p.id, active: true, kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
+        from: p.from, to: p.to, books: p.books, text: p.text }));
+    out = JSON.stringify({ panels: list, at: new Date().toISOString() });
+    cache.put('panels', out, 120);
+  }
+  return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Admin: toate panourile, inclusiv cele oprite sau expirate. */
+function getPanels(session) {
+  me_(session);
+  return panelRows_();
+}
+
+function canPanels_(user) {
+  if (user.role !== 'admin' && user.role !== 'editor') throw new Error('Doar adminii și editorii pot schimba panourile.');
+}
+
+/** Salvează un panou (nou dacă nu are ID). */
+function savePanel(session, p) {
+  const user = me_(session); canPanels_(user);
+  const isDate = v => !v || /^\d{4}-\d{2}-\d{2}$/.test(v);
+  ['date', 'end', 'from', 'to'].forEach(k => { if (!isDate(p[k] || '')) throw new Error('Dată greșită: ' + p[k]); });
+  if (!String(p.kind || '').trim()) throw new Error('Alege tipul panoului.');
+  if (!String(p.title || '').trim() && !String(p.guest || '').trim()) throw new Error('Panoul are nevoie de titlu sau invitat.');
+  const lock = LockService.getDocumentLock(); lock.waitLock(20000);
+  try {
+    const sh = panelsSheet_(), h = headers_(sh);
+    const rows = panelRows_();
+    let id = String(p.id || '');
+    let row = -1;
+    if (id) {
+      const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().map(r => r[0]) : [];
+      const i = ids.indexOf(id); if (i < 0) throw new Error('Nu găsesc panoul ' + id); row = i + 2;
+    } else {
+      const n = rows.map(r => Number(String(r.id).replace(/\D/g, '')) || 0);
+      id = 'P' + (Math.max.apply(null, n.concat([0])) + 1);
+      row = sh.getLastRow() + 1;
+    }
+    const before = rows.find(r => r.id === id);
+    const val = { id: id, active: p.active ? 'da' : 'nu', kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
+      from: p.from, to: p.to, books: (p.books || []).map(String).filter(x => /^\d+$/.test(x)).join(', '), text: p.text,
+      src: p.src || (before && before.src) || 'manual', updated: Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm') + ', ' + user.name };
+    const line = h.map(c => { const i = PANEL_COLS.indexOf(c); return i < 0 ? '' : String(val[PANEL_KEYS[i]] == null ? '' : val[PANEL_KEYS[i]]).slice(0, 2000); });
+    sh.getRange(row, 1, 1, h.length).setNumberFormat('@').setValues([line]);
+    const lg = ss_().getSheetByName(SH_LOG);
+    lg.appendRow([new Date(), user.name, 'panou ' + id, before ? 'Panou modificat' : 'Panou nou', before ? (before.title || before.kind) : '', (p.title || p.kind) + (p.active ? '' : ' (oprit)')]);
+    CacheService.getScriptCache().remove('panels');
+    return panelRows_().find(r => r.id === id);
+  } finally { lock.releaseLock(); }
+}
+
+/** Șterge un panou (doar admin). De obicei e mai bine să-l oprești. */
+function deletePanel(session, id) {
+  const user = me_(session);
+  if (user.role !== 'admin') throw new Error('Doar adminul poate șterge un panou. Îl poți opri.');
+  const lock = LockService.getDocumentLock(); lock.waitLock(20000);
+  try {
+    const sh = panelsSheet_();
+    const ids = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 1).getDisplayValues().map(r => r[0]);
+    const i = ids.indexOf(String(id)); if (i < 0) throw new Error('Nu găsesc panoul ' + id);
+    sh.deleteRow(i + 2);
+    ss_().getSheetByName(SH_LOG).appendRow([new Date(), user.name, 'panou ' + id, 'Panou șters', '', '']);
+    CacheService.getScriptCache().remove('panels');
+    return true;
+  } finally { lock.releaseLock(); }
 }

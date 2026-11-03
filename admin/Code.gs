@@ -229,7 +229,7 @@ function newRecord(session, title) {
     const h = headers_(sh);
     const ids = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => Number(r[0]) || 0);
     const id = String(Math.max.apply(null, ids.concat([0])) + 1);
-    const row = h.map(k => k === 'ID' ? id : k === 'Stare' ? 'Ciornă' : k === 'Titlu' ? (title || '') : '');
+    const row = h.map(k => k === 'ID' ? id : k === 'Stare' ? 'Ciornă' : k === 'Titlu' ? (title || '') : k === 'Intrată în bibliotecă' ? today_() : '');
     const r = sh.getLastRow() + 1;
     sh.getRange(r, 1, 1, h.length).setNumberFormat('@').setValues([row]);
     const lg = ss_().getSheetByName(SH_LOG);
@@ -262,6 +262,8 @@ function getHistory(session, id) {
  * Afișare de la / până la: fereastra în care panoul e pe site. Goale = de acum până se termină evenimentul.
  * Propunerile (Sursă începe cu „propunere”, Activ = nu) nu ajung pe site până nu le aprobă un editor.
  */
+// Tipuri speciale: „Cartea săptămânii” (o carte, cu text) și „Cărți noi” (până la 12 cărți) au secțiunile lor pe prima pagină;
+// restul sunt evenimente și intră în caruselul de sus.
 const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat'];
 const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated'];
 
@@ -322,7 +324,7 @@ function savePanel(session, p) {
   const isDate = v => !v || /^\d{4}-\d{2}-\d{2}$/.test(v);
   ['date', 'end', 'from', 'to'].forEach(k => { if (!isDate(p[k] || '')) throw new Error('Dată greșită: ' + p[k]); });
   if (!String(p.kind || '').trim()) throw new Error('Alege tipul panoului.');
-  if (!String(p.title || '').trim() && !String(p.guest || '').trim()) throw new Error('Panoul are nevoie de titlu sau invitat.');
+  if (!String(p.title || '').trim() && !String(p.guest || '').trim() && !(p.books || []).length) throw new Error('Panoul are nevoie de titlu, invitat sau cel puțin o carte.');
   const lock = LockService.getDocumentLock(); lock.waitLock(20000);
   try {
     const sh = panelsSheet_(), h = headers_(sh);

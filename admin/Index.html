@@ -105,7 +105,7 @@ tr.pr td{vertical-align:top}
 </head>
 <body>
 <header><div class="bar"><span class="logo"></span><b>Biblioteca CdRF</b>
-<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Panouri</button></nav>
+<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Editorial</button></nav>
 <div class="who" id="who"></div></div></header>
 <main id="app"><div class="load">Se încarcă…</div></main>
 <div class="toast" id="toast"></div>
@@ -189,9 +189,9 @@ const GROUPS=[
  ['Obiectul fizic',['Pagini','Dimensiuni (cm)','Legătură']],
  ['Text',['Descriere','Sursa descrierii','Linkuri surse']],
  ['Imagini',['Copertă','Interioare','Copertă de verificat']],
- ['Inventar',['Verificat la raft','Note']],
+ ['Inventar',['Intrată în bibliotecă','Verificat la raft','Note']],
  ['Sistem',['ID','Wix ID']]];
-const HINT={'Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
+const HINT={'Intrată în bibliotecă':'data, ex. 2026-11-03; o pune singur la „Carte nouă”','Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
 function openRec(id){$('#app').innerHTML='<div class="load">Se deschide fișa…</div>';call('getRecord',id).then(showRec).catch(e=>alert(e.message||e));}
 function showRec(rec){S.rec=JSON.parse(JSON.stringify(rec));S.orig=rec;route();window.scrollTo(0,0);}
 function dirty(){if(!S.rec)return false;readForm();return Object.keys(S.rec).some(k=>String(S.rec[k])!==String(S.orig[k]));}
@@ -273,7 +273,7 @@ function renderInv(){
 }
 
 /* ---------- panouri pe prima pagină ---------- */
-const KINDS=['Meet the Book','Seara de film','Curs · Bazele fotografiei','Curs · Școala de educație vizuală','Atelier','Expoziție','Lansare de carte','Târg','Eveniment'];
+const KINDS=['Cartea săptămânii','Cărți noi','Meet the Book','Seara de film','Curs · Bazele fotografiei','Curs · Școala de educație vizuală','Atelier','Expoziție','Lansare de carte','Târg','Eveniment'];
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const addDays=(iso,n)=>{const d=new Date((iso||today())+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const fmtD=iso=>iso?new Date(iso+'T12:00').toLocaleDateString('ro-RO',{day:'numeric',month:'short',year:'numeric'}):'';
@@ -294,7 +294,7 @@ function renderPan(){
   const lab={act:'Pe site, programate și propuneri',pr:'Propuneri',on:'Pe site acum',pl:'Programate',off:'Oprite',ex:'Expirate',all:'Toate'};
   const L=S.panels.filter(groups[f]).sort((a,b)=>(a.from||a.date||'9').localeCompare(b.from||b.date||'9'));
   $('#app').innerHTML=`<div class="stats">${Object.keys(lab).map(k=>`<span data-pf="${k}" class="${f===k?'on':''}">${lab[k]} · ${S.panels.filter(groups[k]).length}</span>`).join('')}</div>
-  <div class="tools"><span class="sub">Panourile din capul primei pagini. Schimbările apar pe site în cel mult câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
+  <div class="tools"><span class="sub">Ce se schimbă des pe prima pagină: evenimente, cartea săptămânii, cărți noi. Apare pe site în câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
   <table><thead><tr><th>Stare</th><th>Panou</th><th class="hide-m">Când</th><th class="hide-m">Cărți</th><th></th></tr></thead><tbody>
   ${L.map(p=>{const [c,t]=pStat(p);return `<tr class="pr"><td><span class="pst ${c}">${t}</span></td>
    <td><div class="pk">${esc(p.kind)} · ${esc(p.id)}</div><div class="t">${esc(p.title||p.guest||'(fără titlu)')}</div>${p.title&&p.guest?`<div class="sub">cu ${esc(p.guest)}</div>`:''}<div class="sub">${esc(pWin(p))}</div></td>
@@ -330,11 +330,11 @@ function renderPanEdit(){
    <label class="f w">Când · textul afișat, ex. „Duminică, 8 noiembrie, ora 12:00”<input data-p="when" value="${esc(p.when)}" ${dis}></label>
    ${inp('date','Data evenimentului','date')}${inp('end','Ultima zi','date','dacă ține mai multe zile')}
    <label class="f w">Text scurt (opțional)<textarea data-p="text" style="min-height:80px" ${dis}>${esc(p.text)}</textarea></label></div></fieldset>
-  <fieldset><legend>Cărți din bibliotecă</legend><p class="sub" style="margin:0 0 6px">Cel mult 4 (la Meet the Book, una). Apar cu coperta, în ordinea de aici.</p>
+  <fieldset><legend>Cărți din bibliotecă</legend><p class="sub" style="margin:0 0 6px" id="blim"></p>
    ${ro?'':'<div class="bsr"><input type="search" id="bq" placeholder="Caută după titlu, autor sau ID…" style="width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:9px"><div class="dd" id="bdd" hidden></div></div>'}
    <div class="bchips" id="bch">${p.books.map(bchip).join('')}</div></fieldset>
   <div class="savebar">${ro?'':'<button class="btn" id="psave">Salvează</button><button class="btn sec" id="pcancel">Renunță</button>'}${adm&&p.id?'<button class="linkbtn" id="pdel" style="margin-left:auto;color:var(--red)">Șterge panoul</button>':''}<span class="msg" id="pmsg"></span></div>`;
-  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;$('#pview').innerHTML=pView(S.pe);};upd();
+  const upd=()=>{readPan();const [c,t]=pStat(S.pe);$('#pstat').innerHTML=`<span class="pst ${c}">${t}</span> ${esc(pWin(S.pe))}`;$('#pview').innerHTML=pView(S.pe);const bl=$('#blim');if(bl)bl.textContent=S.pe.kind==='Cărți noi'?'Până la 12 cărți, în ordinea de aici.':bMax(S.pe)===1?'O singură carte.':'Cel mult 4. Apar cu coperta, în ordinea de aici.';};upd();
   document.querySelectorAll('[data-p]').forEach(i=>i.addEventListener('input',upd));
   $('#pback').onclick=()=>{if(!leaveOk())return;S.pe=null;renderPan();};
   if(ro)return;
@@ -345,7 +345,7 @@ function renderPanEdit(){
     if(q==='clr'){P.from='';P.to='';}
     $('[data-p=from]').value=P.from;$('[data-p=to]').value=P.to;upd();});
   const bq=$('#bq'),dd=$('#bdd');
-  const pick=id=>{readPan();if(S.pe.books.indexOf(id)<0){if(S.pe.books.length>=4){alert('Cel mult 4 cărți.');return;}S.pe.books.push(id);}$('#bch').innerHTML=S.pe.books.map(bchip).join('');bindChips();upd();bq.value='';dd.hidden=true;bq.focus();};
+  const pick=id=>{readPan();if(S.pe.books.indexOf(id)<0){if(S.pe.books.length>=bMax(S.pe)){alert('Cel mult '+bMax(S.pe)+(bMax(S.pe)===1?' carte.':' cărți.'));return;}S.pe.books.push(id);}$('#bch').innerHTML=S.pe.books.map(bchip).join('');bindChips();upd();bq.value='';dd.hidden=true;bq.focus();};
   bq.addEventListener('input',()=>{const ws=norm(bq.value).split(/\s+/).filter(Boolean);if(!ws.length){dd.hidden=true;return;}
     const m=S.data.rows.filter(r=>{const h=norm([r[C('ID')],r[C('Titlu')],r[C('Fotograf / autor')]].join(' '));return ws.every(w=>h.includes(w));}).slice(0,12);
     dd.innerHTML=m.map(r=>{const u=coverUrl(r[C('Copertă')]);return `<button type="button" data-id="${esc(r[C('ID')])}">${u?`<img src="${esc(u)}" alt="">`:'<span style="width:26px"></span>'}<span><b>${esc(r[C('Titlu')])}</b> <span class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${r[C('Stare')]!=='Publicată'?' · nu e pe site':''}</span></span></button>`;}).join('')||'<div class="sub" style="padding:8px 10px">Nimic găsit.</div>';
@@ -363,7 +363,13 @@ function renderPanEdit(){
   const del=$('#pdel');if(del)del.onclick=()=>{if(!confirm('Ștergi definitiv panoul? Dacă vrei doar să nu mai apară, apasă „Oprit”.'))return;
     call('deletePanel',S.pe.id).then(()=>{S.panels=S.panels.filter(x=>x.id!==S.pe.id);S.pe=null;renderPan();toast('Panou șters');}).catch(e=>alert(e.message||e));};
 }
-function pView(p){const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,p.kind==='Meet the Book'?1:4);
+const bMax=p=>p.kind==='Cărți noi'?12:(p.kind==='Meet the Book'||p.kind==='Cartea săptămânii')?1:4;
+function pView(p){
+  if(p.kind==='Cartea săptămânii'||p.kind==='Cărți noi'){const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,bMax(p));
+    return `<div class="pv" style="grid-template-columns:1fr;background:#fff"><div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><h3 style="margin:0">${esc(p.kind)}</h3><span class="w">${esc(p.when||'')}</span></div>
+      ${p.text?`<p>${esc(p.text)}</p>`:''}${bks.length?'':'<div class="bl sub">Alege '+(p.kind==='Cărți noi'?'cărțile':'cartea')+'</div>'}</div>
+      <div class="cv" style="flex-wrap:wrap">${bks.map(r=>{const u=coverUrl(r[C('Copertă')]);return `<div style="width:${p.kind==='Cărți noi'?96:150}px;font-size:12px">${u?`<img src="${esc(u)}" alt="" style="height:${p.kind==='Cărți noi'?120:200}px;max-width:100%">`:''}<div style="margin-top:6px">${esc(r[C('Titlu')])}</div></div>`;}).join('')}</div></div>`;}
+const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,p.kind==='Meet the Book'?1:4);
   const head=p.title||String(p.kind||'').split(' · ')[0];
   return `<div class="pv"><div><div>${p.title?`<span class="k">${esc(p.kind)}</span>`:''}<span class="w">${esc(p.when||'')}</span></div>
    <h3>${esc(head)||'<span class=sub>(titlu)</span>'}</h3>${p.guest?`<div class="g">cu ${esc(p.guest)}</div>`:''}${p.text?`<p>${esc(p.text)}</p>`:''}

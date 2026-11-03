@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biblioteca CdRF pe telefon</title>
+<meta name="robots" content="noindex">
+<style>
+@font-face{font-family:"Inter";src:url(fonts/inter-latin-opsz-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";src:url(fonts/inter-latin-ext-opsz-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{--bg:#1c1d20;--ink:#f3f3f0;--muted:#a4a7ad;--chip:#2b2c30}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-serif;overflow:hidden}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 24px;justify-content:center}
+.top b{font-weight:500;margin-right:10px}
+.top button{border:1px solid #45474d;background:var(--chip);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}
+.top button:hover{background:#3a3b40}
+.top label{font-size:14px;color:var(--muted);display:flex;gap:6px;align-items:center;margin-left:8px}
+.stage{display:flex;justify-content:center;align-items:flex-start;gap:72px;padding-top:8px}
+.dev{display:flex;flex-direction:column;align-items:center;gap:14px;transform-origin:top center}
+.cap{font-size:15px;color:var(--muted)}
+.cap b{color:var(--ink);font-weight:500}
+/* carcasa */
+.phone{position:relative;background:#0b0b0c;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 0 0 2px #3a3b3f}
+.screen{position:relative;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.status{height:var(--sb);display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:600 14px/1 -apple-system,"SF Pro Text","Roboto",system-ui,sans-serif;color:#111;background:#fff;flex:none}
+.status .ic{display:flex;gap:6px;align-items:center}
+.status .ic i{display:block;background:#111;border-radius:2px}
+iframe{border:0;width:100%;flex:1;display:block;background:#fff}
+.bar{flex:none;display:flex;align-items:center;gap:10px;background:#f2f2f3;color:#333;font:14px/1 -apple-system,"Roboto",system-ui,sans-serif}
+.bar .url{flex:1;background:#fff;border-radius:999px;padding:9px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#444}
+/* Android (Pixel 8): ecran 412×915 */
+.android .phone{border-radius:44px}
+.android .screen{width:412px;height:915px;border-radius:32px;--sb:32px}
+.android .punch{position:absolute;top:10px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#0b0b0c;z-index:3}
+.android .bar{height:58px;padding:0 12px;border-bottom:1px solid #e3e3e5}
+.android .nav{height:22px;flex:none;background:#fff;display:flex;justify-content:center;align-items:center}
+.android .nav i{width:110px;height:4px;border-radius:2px;background:#333}
+/* iPhone 15: ecran 393×852 */
+.ios .phone{border-radius:58px;padding:13px}
+.ios .screen{width:393px;height:852px;border-radius:46px;--sb:50px}
+.ios .island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#0b0b0c;z-index:3}
+.ios .status{padding:8px 34px 0 36px}
+.ios .bar{height:86px;padding:8px 14px 30px;flex-direction:column;align-items:stretch;gap:0;background:#f6f6f7;border-top:1px solid #e3e3e5;justify-content:center}
+.ios .bar .url{text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ios .home{position:absolute;bottom:8px;left:50%;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:#111;z-index:3}
+.note{position:fixed;left:0;right:0;bottom:10px;text-align:center;font-size:13px;color:#7d8086}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>Biblioteca CdRF pe telefon</b>
+  <button data-go="">Prima pagină</button>
+  <button data-go="#carte-474">O carte</button>
+  <button data-go="#lista">Lista mea</button>
+  <button data-go="#despre">Despre</button>
+  <button id="reload">Reîncarcă</button>
+  <label><input type="checkbox" id="sync" checked> aceeași pagină pe ambele</label>
+</div>
+<div class="stage" id="stage">
+  <div class="dev android" id="dA">
+    <div class="phone"><div class="punch"></div><div class="screen">
+      <div class="status"><span>12:30</span><span class="ic"><i style="width:15px;height:10px"></i><i style="width:20px;height:10px"></i></span></div>
+      <div class="bar"><span class="url" id="uA">alexmolovatacdrf.github.io/biblioteca-cdrf</span><span>⋮</span></div>
+      <iframe id="fA" title="Site-ul pe Android" src="./"></iframe>
+      <div class="nav"><i></i></div>
+    </div></div>
+    <div class="cap"><b>Android</b> · Chrome · ecran 412 × 915 (Pixel 8)</div>
+  </div>
+  <div class="dev ios" id="dI">
+    <div class="phone"><div class="island"></div><div class="screen">
+      <div class="status"><span>9:41</span><span class="ic"><i style="width:17px;height:10px"></i><i style="width:24px;height:11px"></i></span></div>
+      <iframe id="fI" title="Site-ul pe iPhone" src="./"></iframe>
+      <div class="bar"><span class="url" id="uI">alexmolovatacdrf.github.io</span></div>
+      <div class="home"></div>
+    </div></div>
+    <div class="cap"><b>iPhone</b> · Safari · ecran 393 × 852 (iPhone 15)</div>
+  </div>
+</div>
+<div class="note">Simulare de mărime și aspect, în browserul acestui calculator. Pe telefoanele reale fontul sistemului și barele browserului pot arăta puțin diferit.</div>
+<script>
+const fA=document.getElementById('fA'), fI=document.getElementById('fI'), stage=document.getElementById('stage');
+function fit(){
+  const top=document.querySelector('.top').offsetHeight, H=innerHeight-top-70, W=innerWidth-60;
+  const h=915+24+40, w=412+24+393+26+72;
+  const s=Math.max(0.45,Math.min(1.6,H/h,W/w));
+  document.querySelectorAll('.dev').forEach(d=>{d.style.transform='scale('+s+')';});
+  stage.style.height=(h*s)+'px'; stage.style.gap=(72*s)+'px';
+  document.querySelectorAll('.dev').forEach(d=>{d.style.margin='0 '+((d.offsetWidth*(s-1))/2)+'px';});
+}
+addEventListener('resize',fit); fit();
+let lock=false;
+function go(f,h){ try{ if(f.contentWindow.location.hash!==h){ f.contentWindow.location.hash=h; } }catch(e){ f.src='./'+h; } }
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const h=b.dataset.go; [fA,fI].forEach(f=>{ if(!h){ try{ f.contentWindow.history.pushState('', '', f.contentWindow.location.pathname); f.contentWindow.dispatchEvent(new HashChangeEvent('hashchange')); f.contentWindow.scrollTo(0,0);}catch(e){f.src='./';} } else go(f,h); });});
+document.getElementById('reload').onclick=()=>{fA.src=fA.src; fI.src=fI.src;};
+function hook(f,other,u){
+  f.addEventListener('load',()=>{
+    try{
+      const w=f.contentWindow;
+      const upd=()=>{ u.textContent=(u.id==='uI'?'alexmolovatacdrf.github.io':'alexmolovatacdrf.github.io/biblioteca-cdrf/'+w.location.hash);
+        if(document.getElementById('sync').checked&&!lock){ lock=true; go(other,w.location.hash); setTimeout(()=>lock=false,50);} };
+      w.addEventListener('hashchange',upd); upd();
+    }catch(e){}
+  });
+}
+hook(fA,fI,document.getElementById('uA')); hook(fI,fA,document.getElementById('uI'));
+</script>
+</body>
+</html>

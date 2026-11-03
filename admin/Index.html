@@ -317,8 +317,8 @@ function bchip(id){const r=bookRow(id);const u=r?coverUrl(r[C('Copertă')]):'';r
 function renderPanEdit(){
   const p=S.pe,ro=!canPan(),dis=ro?'disabled':'',adm=S.data.user.role==='admin';
   const inp=(k,lab,type,hint)=>`<label class="f">${lab}${hint?' · '+hint:''}<input data-p="${k}" type="${type||'text'}" value="${esc(p[k]||'')}" ${dis}></label>`;
-  $('#app').innerHTML=`<p><button class="linkbtn" id="pback">← Înapoi la panouri</button></p>
-  <h2 style="font-weight:600;margin:6px 0 2px">${p.id?esc(p.title||p.guest||p.kind):'Panou nou'}</h2><p class="sub">${p.id?esc(p.id)+' · ':''}<span id="pstat"></span>${isProp(p)?' · propunere făcută din calendar; verifică textul și cărțile, apoi pune „Pornit” și salvează':''}</p>
+  $('#app').innerHTML=`<p><button class="linkbtn" id="pback">← Înapoi la Editorial</button></p>
+  <h2 style="font-weight:600;margin:6px 0 2px">${p.id?esc(p.title||p.guest||p.kind):'Panou nou'}</h2><p class="sub">${p.id?esc(p.id)+' · ':''}<span id="pstat"></span>${isProp(p)?' · propunere ('+esc(String(p.src).replace(/^propunere\s*·?\s*/i,'')||'automată')+'): verifică textul și cărțile, apoi pune „Pornit” și salvează':''}</p>
   <div class="sub" style="margin-top:10px">Așa arată pe prima pagină:</div><div id="pview"></div>
   <fieldset><legend>Pe site</legend><div class="seg" id="pact"><button type="button" data-a="1" aria-pressed="${!!p.active}" ${dis}>Pornit</button><button type="button" data-a="0" aria-pressed="${!p.active}" ${dis}>Oprit</button></div>
    <div class="grid" style="margin-top:10px">${inp('from','Afișare de la','date','gol = de acum')}${inp('to','Afișare până la','date','gol = până la eveniment')}</div>

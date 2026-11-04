@@ -103,6 +103,11 @@ body.vb .lb .close:hover{color:var(--accent);opacity:1}
 body.vb .lb .thumbs button[aria-current="true"]{border-color:var(--accent)}
 @media (max-width:760px){body.vb .bnav{display:none}}
 body.vb .groups button[aria-pressed="true"]{background:var(--stage-h);color:var(--ink);border-color:var(--faint)}
+body.vb{--band:#fff;--stage:#fff}
+body.vb .band:not(.hgrad){border-block:1px solid var(--rule)}
+body.vb .hero.hgrad::before{background:#fff}
+body.vb .dd .menu label:hover{background:#f5f5f7}
+body.vb .sel:hover .sel-covers{background:#fff}
 body.vb span.n{background:var(--stage-h)!important;color:var(--ink)!important}
 body.vb .right .nav span.n{background:var(--accent)!important;color:#fff!important;font-weight:500}
 body.vb .save{width:30px;height:30px;top:8px;right:8px;box-shadow:0 1px 3px rgba(0,0,0,.14)}

@@ -537,7 +537,8 @@ function prepBook(b){
 }
 B.forEach(prepBook);
 /* Cărțile cu coperta de verificat nu apar public; le vedeți în admin, marcate cu roșu, până le confirmați. */
-function hideChk(){let n=0; for(let i=B.length-1;i>=0;i--) if(B[i].coverCheck){delete byId[B[i].id]; B.splice(i,1); n++;} return n;}
+const HID={};
+function hideChk(){let n=0; for(let i=B.length-1;i>=0;i--) if(B[i].coverCheck){HID[B[i].id]=B[i]; delete byId[B[i].id]; B.splice(i,1); n++;} return n;}
 hideChk();
 const SELECTIONS=[
   {id:'femei-fotografe',title:'Femei în fotografie',sub:'De la Julia Margaret Cameron la Nan Goldin',ids:['235','95','193','175','278','395','296','510','63']},
@@ -594,7 +595,9 @@ function booksLive(){
     let ch=false;
     j.books.forEach(r=>{
       const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
-      const ed=Array.isArray(r.edited)?r.edited:[]; const b=byId[id];
+      const ed=Array.isArray(r.edited)?r.edited:[]; let b=byId[id];
+      /* o carte ascunsă pentru copertă revine dacă în admin s-a scos marcajul */
+      if(!b&&HID[id]&&r.stare==='Publicată'){b=HID[id]; delete HID[id]; B.push(b); byId[id]=b; ch=true;}
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
       if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }

@@ -262,11 +262,12 @@ function renderRec(){
 }
 /* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
 const LK_MAP={en:'Engleză',ro:'Română',fr:'Franceză',de:'Germană',it:'Italiană',pl:'Polonă',ja:'Japoneză',nl:'Neerlandeză',es:'Spaniolă',sv:'Suedeză',sl:'Slovenă'};
-const LK_F=[['Titlu','title'],['Subtitlu','subtitle'],['Fotograf / autor','authors'],['Editură','publisher'],['Loc','place'],['An','year'],['Pagini','pages'],['ISBN','isbn'],['Limbă','lang'],['Descriere','desc']];
-function lkVal(c,f){if(f==='authors')return (c.authors||[]).join('; ');if(f==='lang')return (c.lang||[]).map(x=>LK_MAP[x]||'').filter(Boolean).join('; ');if(f==='isbn')return String(c.isbn||'');return String(c[f]||'');}
+const LK_F=[['Titlu','title'],['Subtitlu','subtitle'],['Fotograf / autor','authors'],['Editură','publisher'],['Loc','place'],['An','year'],['Pagini','pages'],['ISBN','isbn'],['Limbă','lang'],['Dimensiuni (cm)','dims'],['Descriere','desc']];
+function lkVal(c,f){if(f==='authors')return (c.authors||[]).join('; ');if(f==='lang')return (c.lang||[]).map(x=>LK_MAP[x]||'').filter(Boolean).join('; ');if(f==='isbn')return String(c.isbn||'');if(f==='dims'){const m=String(c.dims||'').match(/^([\d.,]+(?: x [\d.,]+)?) cm$/);return m?m[1]:'';}return String(c[f]||'');}
 function lkBox(){const r=S.rec,L=S.look&&S.look.id===r.ID?S.look:null;
-  let h=`<fieldset><legend>Caută informații</legend><p class="sub" style="margin:0 0 8px">Caută după ISBN sau, dacă lipsește, după titlu și autor, în Open Library${L&&L.gb?'':' (și în Google Books, când e activat)'}. Nu se schimbă nimic până nu bifezi, preiei și apeși Salvează.</p><button class="btn sec" id="lkgo">Caută cartea</button> <span class="msg" id="lkmsg"></span>`;
+  let h=`<fieldset><legend>Caută informații</legend><p class="sub" style="margin:0 0 8px">Caută după ISBN sau, dacă lipsește, după titlu și autor, în Open Library, Google Books, Library of Congress, Biblioteca Națională a Germaniei și Biblioteca Națională a Franței. Nu se schimbă nimic până nu bifezi, preiei și apeși Salvează.</p><button class="btn sec" id="lkgo">Caută cartea</button> <span class="msg" id="lkmsg"></span>`;
   if(L){h+=(L.notes||[]).map(n=>`<div class="sub">${esc(n)}</div>`).join('');
+    {const q=encodeURIComponent(String(L.isbn||L.title||''));if(q)h+=`<p class="sub" style="margin:8px 0 0">Caută și manual: <a href="https://aleph.bibnat.ro/F/?func=find-b&request=${q}&find_code=${L.isbn?'ISN':'WRD'}&local_base=NLR01" target="_blank" rel="noopener">Biblioteca Națională a României</a> · <a href="https://search.worldcat.org/search?q=${q}" target="_blank" rel="noopener">WorldCat</a>${L.ro?' <br>Cărțile românești rar apar în bazele de mai sus; bibliotecile din România nu permit căutare automată, așa că verifică în catalogul BNR.':''}</p>`;}
     if(!L.cands.length)h+='<p class="sub">Nu am găsit nimic. Încearcă cu ISBN-ul de pe carte sau cu titlul original.</p>';
     h+=L.cands.map((c,ci)=>{const rows=LK_F.map(([k,f])=>{const v=lkVal(c,f);if(!v)return '';const cur=String(r[k]||'');if(cur.replace(/[-\s]/g,'')===v.replace(/[-\s]/g,''))return '';
       const def=!cur&&f!=='authors'&&f!=='desc';const dis=f==='desc'&&cur;
@@ -277,12 +278,13 @@ function lkBox(){const r=S.rec,L=S.look&&S.look.id===r.ID?S.look:null;
       <div class="sub">${esc(c.src)} · <a href="${esc(c.url)}" target="_blank" rel="noopener">deschide sursa</a>${c.dims?' · dimensiuni: '+esc(c.dims):''}${c.binding?' · '+esc(c.binding):''}</div>
       ${rows?`<table><tr><td class="k sub">câmp</td><td class="cur sub">acum în fișă</td><td class="sub">găsit</td></tr>${rows}</table><p style="margin:8px 0 0"><button class="btn" data-lktake="${ci}">Preia ce am bifat</button></p>`:'<p class="sub">Nimic nou față de fișă.</p>'}
       ${c.desc?`<details><summary>Textul brut al sursei</summary><p>${esc(c.desc)}</p></details>`:''}
+      ${c.others&&c.others.length?`<div class="sub" style="margin-top:6px">Alți colaboratori în sursă: ${esc(c.others.join('; '))}</div>`:''}
       ${c.subjects&&c.subjects.length?`<div class="sub" style="margin-top:6px">Subiecte în sursă: ${esc(c.subjects.join(', '))}</div>`:''}</div></div>`;}).join('');}
   return h+'</fieldset>';}
 function lkBind(){const go=$('#lkgo');if(!go)return;
   go.onclick=()=>{readForm();const r=S.rec;go.disabled=true;$('#lkmsg').textContent='Caut…';
     call('lookupBook',{isbn:r['ISBN'],title:r['Titlu'],author:r['Fotograf / autor'],publisher:r['Editură'],year:r['An']})
-     .then(res=>{S.look={id:r.ID,cands:res.cands,notes:res.notes};renderRec();})
+     .then(res=>{const isb=String(r['ISBN']||'').replace(/[^0-9Xx]/g,'');S.look={id:r.ID,cands:res.cands,notes:res.notes,isbn:isb,title:r['Titlu'],ro:/^(978606|978973|973)/.test(isb)||/ă|ș|ț|â|î/i.test(r['Titlu']||'')};renderRec();})
      .catch(e=>{go.disabled=false;$('#lkmsg').className='msg err';$('#lkmsg').textContent=e.message||String(e);});};
   document.querySelectorAll('[data-lktake]').forEach(b=>b.onclick=()=>{readForm();const ci=+b.dataset.lktake,c=S.look.cands[ci];
     const fs=[...document.querySelectorAll(`[data-lk="${ci}"]:checked`)].map(i=>i.dataset.f);if(!fs.length){toast('Nu ai bifat nimic');return;}

@@ -560,13 +560,93 @@ function gbLookup_(q, notes) {
   });
 }
 
+/* ---------- Biblioteci naționale (SRU, gratuit, fără cheie): Library of Congress, Deutsche Nationalbibliothek, BnF ----------
+ * Bibliotecile românești (BNR, BCU Cluj, BCU București) nu permit acces automat: BNR are verificare anti-robot,
+ * BCU Cluj blochează serverele Google, BCU București are un catalog care merge doar în browser. */
+function unesc_(s) {
+  return String(s || '').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n))
+    .replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16))).replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+}
+function dcRecords_(xml) {
+  return String(xml).split(/<(?:\w+:)?recordData>/).slice(1).map(r => {
+    r = r.split(/<\/(?:\w+:)?recordData>/)[0];
+    const o = { _raw: r.slice(0, 20000) };
+    r.replace(/<(?:\w+:)?(title|creator|contributor|publisher|date|format|language|identifier|subject|description)\b[^>]*>([\s\S]*?)<\/(?:\w+:)?\1>/g,
+      (m, k, v) => { const t = unesc_(v); if (t) (o[k] = o[k] || []).push(t); return m; });
+    return o;
+  });
+}
+function cleanName_(s) {
+  let n = String(s || '').replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  n = n.replace(/\.\s+[A-ZÀ-Ý][\p{L}\s,-]*$/u, '');            // BnF: „… . Photographe”
+  const parts = n.split(/\s*,\s*/).filter(Boolean);
+  // „Nume, Prenume, rol.” → „Prenume Nume”
+  if (parts.length >= 2 && !/\d/.test(parts[1]) && parts[1].split(' ').length <= 3) return (parts[1] + ' ' + parts[0]).replace(/[.,;:\s]+$/, '');
+  return n.replace(/[.,;:\s]+$/, '');
+}
+function dcToCand_(o, src, fallbackUrl) {
+  const g = k => (o[k] || [])[0] || '';
+  let title = g('title').split(' / ')[0].replace(/\s*[\/:;,]\s*$/, '');
+  let sub = '';
+  const ti = title.indexOf(' : ');
+  if (ti > 0) { sub = title.slice(ti + 3); title = title.slice(0, ti); }
+  let pub = g('publisher'), place = '';
+  let m = pub.match(/^(.*?)\s*:\s*(.+)$/);
+  if (m) { place = m[1]; pub = m[2]; }
+  m = pub.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (m) { pub = m[1]; place = place || m[2]; }
+  pub = pub.replace(/[,;]\s*$/, '').replace(/,?\s*\[?\d{4}\]?\.?$/, '').trim();
+  const fmt = (o.format || []).join(' ; ');
+  const pg = fmt.match(/(\d+)\s*(?:p\b|pages|S\.|Seiten|unnumbered|non pag)/i);
+  const dm = fmt.match(/(\d+(?:[.,]\d+)?)\s*(?:x\s*(\d+(?:[.,]\d+)?)\s*)?cm/i);
+  const ids = (o.identifier || []).join(' ');
+  const isb = ids.match(/97[89][\d-]{10,14}|\b\d{9}[\dXx]\b/);
+  const link = (o.identifier || []).filter(x => /^https?:\/\//.test(x))[0] || fallbackUrl;
+  const lang = (o.language || []).map(l => LANG3[String(l).toLowerCase()] || String(l).toLowerCase()).filter(Boolean);
+  return {
+    src: src, url: link, title: title, subtitle: sub, authors: (o.creator || []).map(cleanName_).filter(Boolean),
+    others: (o.contributor || []).slice(0, 12), publisher: pub, place: place.replace(/[\[\]]/g, ''),
+    year: (g('date').match(/\d{4}/) || [''])[0], pages: pg ? pg[1] : '', isbn: isb ? cleanIsbn_(isb[0]) : '',
+    lang: lang, dims: dm ? (dm[2] ? dm[1] + ' x ' + dm[2] : dm[1]) + ' cm' : '', binding: '', desc: (o.description || []).join(' ').slice(0, 3000),
+    cover: '', subjects: (o.subject || []).slice(0, 12), raw: o._raw
+  };
+}
+function sruLookup_(q, notes) {
+  const isbn = cleanIsbn_(q.isbn);
+  const has = isbn.length === 10 || isbn.length === 13;
+  const t = String(q.title || '').replace(/"/g, '').trim(), a = String(q.author || '').split(/[;,]/)[0].replace(/"/g, '').trim();
+  if (!has && !t) return [];
+  const S = [
+    { src: 'Library of Congress', url: 'http://lx2.loc.gov:210/LCDB?version=1.1&operation=searchRetrieve&maximumRecords=2&recordSchema=dc&query=',
+      q: has ? 'bath.isbn=' + isbn : 'dc.title="' + t + '"' + (a ? ' and dc.creator="' + a + '"' : ''),
+      link: 'https://search.catalog.loc.gov/search?q=' + encodeURIComponent(has ? isbn : t) },
+    { src: 'Deutsche Nationalbibliothek', url: 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&maximumRecords=2&recordSchema=oai_dc&query=',
+      q: has ? 'num=' + isbn : 'tit="' + t + '"' + (a ? ' and per="' + a + '"' : ''),
+      link: 'https://portal.dnb.de/opac.htm?method=simpleSearch&query=' + encodeURIComponent(has ? isbn : t) },
+    { src: 'Bibliothèque nationale de France', url: 'https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&maximumRecords=2&recordSchema=dublincore&query=',
+      q: has ? 'bib.isbn adj "' + isbn + '"' : 'bib.title all "' + t + '"' + (a ? ' and bib.author all "' + a + '"' : ''),
+      link: 'https://catalogue.bnf.fr/rechercher.do?motRecherche=' + encodeURIComponent(has ? isbn : t) }
+  ];
+  let res;
+  try {
+    res = UrlFetchApp.fetchAll(S.map(x => ({ url: x.url + encodeURIComponent(x.q), muteHttpExceptions: true, headers: { 'User-Agent': 'BibliotecaCdRF/1.0' } })));
+  } catch (e) { notes.push('Bibliotecile naționale nu răspund acum.'); return []; }
+  const out = [];
+  res.forEach((r, i) => {
+    if (r.getResponseCode() !== 200) { notes.push(S[i].src + ' nu răspunde acum (' + r.getResponseCode() + ').'); return; }
+    dcRecords_(r.getContentText()).slice(0, 2).forEach(o => { const c = dcToCand_(o, S[i].src, S[i].link); if (c.title) out.push(c); });
+  });
+  return out;
+}
+
 /** Caută cartea în sursele gratuite. q: {isbn, title, author, publisher, year} */
 function lookupBook(session, q) {
   me_(session);
   q = q || {};
   if (!q.isbn && !q.title) throw new Error('Scrie cel puțin titlul sau ISBN-ul.');
   const notes = [];
-  const cands = olLookup_(q, notes).concat(gbLookup_(q, notes));
+  const cands = olLookup_(q, notes).concat(gbLookup_(q, notes)).concat(sruLookup_(q, notes));
   cands.forEach(c => { if (c.raw.length > 45000) c.raw = c.raw.slice(0, 45000); });
   return { cands: cands, notes: notes };
 }

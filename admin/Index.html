@@ -118,16 +118,19 @@ const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(
 const $=s=>document.querySelector(s);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
 const SKEY='bib.session';
-function getSess(){try{return localStorage.getItem(SKEY)||''}catch(e){return ''}}
-function setSess(v){try{v?localStorage.setItem(SKEY,v):localStorage.removeItem(SKEY)}catch(e){}}
+/* sesiunea stă în sessionStorage (se închide cu browserul); doar cu „rămân conectat” trece în localStorage */
+function getSess(){try{return sessionStorage.getItem(SKEY)||localStorage.getItem(SKEY)||''}catch(e){return ''}}
+function setSess(v,keep){try{sessionStorage.removeItem(SKEY);localStorage.removeItem(SKEY);if(v)(keep?localStorage:sessionStorage).setItem(SKEY,v)}catch(e){}}
 function raw(fn,...a){return new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a));}
 function call(fn,...a){return raw(fn,getSess(),...a).catch(e=>{if(String(e&&e.message||e).indexOf('AUTH')>=0&&window.BOOT&&BOOT.google){setSess('');showLogin();return new Promise(()=>{});}throw e;});}
 function showLogin(msg){
   $('#who').textContent='';
   $('#app').innerHTML=`<div style="max-width:420px;margin:60px auto;text-align:center"><h2 style="font-weight:600">Biblioteca CdRF</h2>
   <p class="sub">Intră cu contul Google pe care ți l-a adăugat Alex.</p>${msg?`<p class="msg err">${esc(msg)}</p>`:''}
-  <p><a class="btn" id="gl" href="#" target="_top" style="display:inline-block;text-decoration:none;pointer-events:none;opacity:.5">Se pregătește…</a></p></div>`;
-  raw('beginLogin').then(u=>{const a=$('#gl');a.href=u;a.textContent='Intră cu Google';a.style.pointerEvents='';a.style.opacity='';}).catch(e=>{$('#gl').textContent=e.message||String(e);});
+  <p><a class="btn" id="gl" href="#" target="_top" style="display:inline-block;text-decoration:none;pointer-events:none;opacity:.5">Se pregătește…</a></p>
+  <p class="sub" style="font-size:13px"><label><input type="checkbox" id="keep"> Rămân conectat pe acest calculator (30 de zile). Nu bifa pe un calculator folosit și de alții.</label></p></div>`;
+  const prep=()=>{const a=$('#gl');a.style.pointerEvents='none';a.style.opacity='.5';raw('beginLogin',$('#keep').checked).then(u=>{a.href=u;a.textContent='Intră cu Google';a.style.pointerEvents='';a.style.opacity='';}).catch(e=>{a.textContent=e.message||String(e);});};
+  $('#keep').onchange=prep; prep();
 }
 function logout(){raw('logout',getSess()).finally(()=>{setSess('');showLogin();});}
 function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.site+v;if(v.startsWith('wix:'))return 'https://static.wixstatic.com/media/'+v.slice(4)+'/v1/fit/w_300,h_300/c.jpg';if(/^https?:/.test(v))return v;return '';}
@@ -138,7 +141,7 @@ function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.use
   if(B.error)return showLogin(B.error);
   if(B.code&&B.state&&getSess())return start();
   if(B.code&&B.state){$('#app').innerHTML='<div class="load">Se verifică contul…</div>';
-    raw('finishLogin',B.code,B.state).then(r=>{setSess(r.session);start();}).catch(e=>showLogin(e.message||String(e)));return;}
+    raw('finishLogin',B.code,B.state).then(r=>{setSess(r.session,!!r.keep);start();}).catch(e=>showLogin(e.message||String(e)));return;}
   if(B.google&&!getSess())return showLogin();
   start();})();
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;route();});

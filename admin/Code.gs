@@ -19,14 +19,18 @@ const ADMIN_ONLY = ['ID', 'Wix ID'];
 
 // Interfața (Index.html) se ia direct din GitHub, ca să nu mai fie nevoie de redeploy la fiecare schimbare.
 // Dacă GitHub nu răspunde, se folosește copia locală „Index” din proiect.
-const UI_URL = 'https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/main/admin/Index.html';
+/* Interfața (Index.html) se ia din GitHub la o versiune FIXĂ (commit), nu de pe ramura main:
+ * o schimbare în repo nu ajunge în admin până nu se publică un Code.gs cu alt UI_REF.
+ * Pentru un test rapid, proprietatea de script UI_REF (Project Settings → Script properties) are prioritate. */
+const UI_REF = 'f584f25da89db5fd7e274cbf21bffc56cd0cd418';
+function uiUrl_() { return 'https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/' + (props_().getProperty('UI_REF') || UI_REF) + '/admin/Index.html'; }
 
 function uiHtml_() {
   const cache = CacheService.getScriptCache();
   const hit = cache.get('ui');
   if (hit) return hit;
   try {
-    const r = UrlFetchApp.fetch(UI_URL + '?t=' + Math.floor(Date.now() / 300000), { muteHttpExceptions: true });
+    const r = UrlFetchApp.fetch(uiUrl_(), { muteHttpExceptions: true });
     if (r.getResponseCode() === 200) {
       const html = r.getContentText('UTF-8');
       if (html.length < 95000) cache.put('ui', html, 300);
@@ -60,7 +64,8 @@ function props_() { return PropertiesService.getScriptProperties(); }
  *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, WEBAPP_URL (adresa /exec a aplicației)
  * Fără GOOGLE_CLIENT_ID, aplicația folosește contul cu care e deschisă (deploy „User accessing”).
  */
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 30;        // dacă bifezi „rămân conectat”
+const SESSION_HOURS_SHORT = 12; // altfel: sesiunea se închide odată cu browserul, iar pe server expiră în 12 ore
 
 function userByEmail_(email) {
   email = String(email || '').trim().toLowerCase();
@@ -94,11 +99,11 @@ function random_() {
 }
 
 /** Pasul 1: adresa la care trimitem browserul ca să aleagă contul Google. */
-function beginLogin() {
+function beginLogin(keep) {
   const P = props_(), id = P.getProperty('GOOGLE_CLIENT_ID'), url = P.getProperty('WEBAPP_URL');
   if (!id || !url) throw new Error('Logarea cu Google nu e configurată.');
   const state = random_(), nonce = random_();
-  CacheService.getScriptCache().put('st_' + state, nonce, 600);
+  CacheService.getScriptCache().put('st_' + state, nonce + (keep ? '|k' : ''), 600);
   const q = { client_id: id, redirect_uri: url, response_type: 'code', scope: 'openid email',
     access_type: 'online', prompt: 'select_account', state: state, nonce: nonce };
   return 'https://accounts.google.com/o/oauth2/v2/auth?' + Object.keys(q).map(k => k + '=' + encodeURIComponent(q[k])).join('&');
@@ -107,7 +112,8 @@ function beginLogin() {
 /** Pasul 2: Google ne trimite înapoi un cod; îl schimbăm pe server și deschidem o sesiune. */
 function finishLogin(code, state) {
   const P = props_(), cache = CacheService.getScriptCache();
-  const nonce = cache.get('st_' + state);
+  const st = cache.get('st_' + state) || '';
+  const nonce = st.split('|')[0], keep = st.indexOf('|k') > 0;
   if (!nonce) throw new Error('Linkul de conectare a expirat. Încearcă din nou.');
   cache.remove('st_' + state);
   const r = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', { method: 'post', muteHttpExceptions: true, followRedirects: false,
@@ -124,9 +130,9 @@ function finishLogin(code, state) {
   const u = userByEmail_(c.email);
   if (!u) throw new Error('Contul ' + c.email + ' nu are acces la bibliotecă. Cere-i lui Alex să te adauge.');
   const session = random_();
-  P.setProperty('S_' + hash_(session), JSON.stringify({ email: u.email, exp: Date.now() + SESSION_DAYS * 864e5 }));
+  P.setProperty('S_' + hash_(session), JSON.stringify({ email: u.email, exp: Date.now() + (keep ? SESSION_DAYS * 864e5 : SESSION_HOURS_SHORT * 36e5) }));
   cleanSessions_();
-  return { session: session, user: u };
+  return { session: session, user: u, keep: keep };
 }
 
 function logout(session) {

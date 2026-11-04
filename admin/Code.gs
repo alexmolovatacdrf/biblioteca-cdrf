@@ -22,7 +22,7 @@ const ADMIN_ONLY = ['ID', 'Wix ID'];
 /* Interfața (Index.html) se ia din GitHub la o versiune FIXĂ (commit), nu de pe ramura main:
  * o schimbare în repo nu ajunge în admin până nu se publică un Code.gs cu alt UI_REF.
  * Pentru un test rapid, proprietatea de script UI_REF (Project Settings → Script properties) are prioritate. */
-const UI_REF = 'f584f25da89db5fd7e274cbf21bffc56cd0cd418';
+const UI_REF = '4f51b59d804a7eec348b160eea716cf3eacc34b0';
 function uiUrl_() { return 'https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/' + (props_().getProperty('UI_REF') || UI_REF) + '/admin/Index.html'; }
 
 function uiHtml_() {

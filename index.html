@@ -1072,7 +1072,9 @@ document.addEventListener('click',e=>{
   if(t.matches('[data-about]')){location.hash='despre';return;}
   if(t.matches('[data-scroll]')){const el=document.getElementById(t.dataset.scroll); if(el) el.scrollIntoView({behavior:'smooth'});return;}
   if(t.matches('[data-id]')){e.preventDefault();openBook(t.dataset.id);return;}
-  if(t.id==='home'||t.matches('[data-back]')){if(location.hash){location.hash='';}else window.scrollTo({top:0,behavior:'smooth'});return;}
+  /* sigla = acasă de la zero: fără căutare, filtre, serie sau editură, ordinea implicită, sus pe pagină */
+  if(t.id==='home'){clearAll(); st.sort='aleator'; st.userSort=false; lastScroll=0; if(location.hash){history.replaceState(null,'',location.pathname+location.search);} renderHome(); window.scrollTo(0,0); return;}
+  if(t.matches('[data-back]')){if(location.hash){location.hash='';}else window.scrollTo({top:0,behavior:'smooth'});return;}
   if(t.matches('[data-go]')){location.hash='carte-'+t.dataset.go;return;}
   if(t.matches('[data-open-cur]')){lightbox(byId[location.hash.slice(7)],galIdx);return;}
   if(t.matches('[data-img]')){setImg(galIdx+(+t.dataset.img));return;}

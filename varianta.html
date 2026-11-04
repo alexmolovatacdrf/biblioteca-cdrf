@@ -83,10 +83,17 @@ section{padding-block:48px}
 @media (max-width:480px){#consent{left:12px;right:12px;bottom:12px;max-width:none}}
 /* ---------- Varianta B: aceleași meniuri, fără forme rotunjite, + / −, bife pentru Lista mea, fără negru ---------- */
 body.vb *, body.vb *::before, body.vb *::after{border-radius:0!important}
-body.vb .fh .pm{font-size:18px;line-height:1;font-weight:300;width:14px;text-align:center}
-body.vb .dd>button svg{display:none}
-body.vb .dd>button::after{content:"+";font-size:17px;line-height:1;font-weight:300;margin-left:2px}
-body.vb .dd>button[aria-expanded="true"]::after{content:"−"}
+body.vb .dd>button,body.vb .fbtn{border:0!important;background:none;padding:7px 0;margin-right:14px}
+body.vb .dd>button svg{transform:rotate(-90deg);transition:transform .15s}
+body.vb .dd>button[aria-expanded="true"] svg{transform:none}
+body.vb .dd>button:hover>span:not(.n),body.vb .dd>button:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
+body.vb .right .nav[aria-current="page"]{text-decoration:none}
+body.vb .right .nav[aria-current="page"]::before{content:"";display:inline-block;width:9px;height:9px;border:2px solid var(--accent);box-sizing:border-box;margin-right:7px;vertical-align:1px}
+body.vb .mdot{width:8px;height:8px}
+body.vb .mdot[aria-current="true"]{width:11px;height:11px;background:transparent;border:2.5px solid var(--accent)}
+body.vb .marr{border:0;width:30px}
+body.vb .marr:hover{background:none;color:var(--accent)}
+body.vb .groups button[aria-pressed="true"]{background:var(--stage-h);color:var(--ink);border-color:var(--faint)}
 body.vb .n{background:var(--stage-h)!important;color:var(--ink)!important}
 body.vb .save{width:30px;height:30px;top:8px;right:8px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 body.vb .save svg,body.vb .savebig svg{display:none}
@@ -777,7 +784,7 @@ function sideGroup(f){
   const c={}; B.forEach(b=>[].concat(f.get(b)).filter(Boolean).forEach(v=>c[v]=(c[v]||0)+1));
   const set=st[f.key]; const open=st.open[f.key]||set.size>0;
   const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
-  return `<div class="fg2"><button type="button" class="fh" data-fh="${f.key}" aria-expanded="${open}"><span>${f.label}${set.size?` <span class="n">${set.size}</span>`:''}</span>${VARB?`<span class="pm" aria-hidden="true">${open?'−':'+'}</span>`:`<svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="${open?'M1 3l4 4 4-4':'M3 1l4 4-4 4'}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>`}</button>
+  return `<div class="fg2"><button type="button" class="fh" data-fh="${f.key}" aria-expanded="${open}"><span>${f.label}${set.size?` <span class="n">${set.size}</span>`:''}</span><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="${open?'M1 3l4 4 4-4':'M3 1l4 4-4 4'}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
     ${open?`<div class="fb">${f.search?`<input class="fs-q" type="search" placeholder="Caută un nume" data-fsq="${f.key}" value="${esc(st.fsq[f.key]||'')}" aria-label="Caută în ${f.label}">`:''}<div class="fl">${keys.map(v=>`<label data-n="${esc(norm(v))}" ${f.search&&st.fsq[f.key]&&!norm(v).includes(norm(st.fsq[f.key]))&&!set.has(v)?'hidden':''}><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}><span>${esc(f.fmt?f.fmt(v):v)}</span></label>`).join('')}</div>${set.size?`<button class="fclr" data-fclr="${f.key}">Șterge</button>`:''}</div>`:''}</div>`;
 }
 function activeChips(){
@@ -1224,7 +1231,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-gr
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);
-if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (fără forme rotunjite, + / −, bife pentru Lista mea) · <a href="./">vezi varianta de acum</a>';}
+if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (fără chenare și ovale, bife pentru Lista mea, roșu în loc de negru) · <a href="./">vezi varianta de acum</a>';}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();

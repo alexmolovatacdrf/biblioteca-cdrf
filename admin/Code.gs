@@ -19,24 +19,17 @@ const ADMIN_ONLY = ['ID', 'Wix ID'];
 
 // Interfața (Index.html) se ia direct din GitHub, ca să nu mai fie nevoie de redeploy la fiecare schimbare.
 // Dacă GitHub nu răspunde, se folosește copia locală „Index” din proiect.
-/* Interfața (Index.html) se ia din GitHub la o versiune FIXĂ (commit), nu de pe ramura main:
- * o schimbare în repo nu ajunge în admin până nu se publică un Code.gs cu alt UI_REF.
- * Pentru un test rapid, proprietatea de script UI_REF (Project Settings → Script properties) are prioritate. */
-const UI_REF = '4f51b59d804a7eec348b160eea716cf3eacc34b0';
-function uiUrl_() { return 'https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/' + (props_().getProperty('UI_REF') || UI_REF) + '/admin/Index.html'; }
-
+/* Interfața (Index.html) stă în proiectul Apps Script, lângă Code.gs, și se publică împreună cu el.
+ * Nu o mai luăm din GitHub: dacă GitHub nu răspunde, adminul cădea pe o copie veche și dădea „Error: AUTH”.
+ * Doar pentru teste: proprietatea de script UI_REF (un commit din repo) încarcă interfața de acolo. */
 function uiHtml_() {
-  const cache = CacheService.getScriptCache();
-  const hit = cache.get('ui');
-  if (hit) return hit;
-  try {
-    const r = UrlFetchApp.fetch(uiUrl_(), { muteHttpExceptions: true });
-    if (r.getResponseCode() === 200) {
-      const html = r.getContentText('UTF-8');
-      if (html.length < 95000) cache.put('ui', html, 300);
-      return html;
-    }
-  } catch (e) {}
+  const ref = props_().getProperty('UI_REF');
+  if (ref) {
+    try {
+      const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/alexmolovatacdrf/biblioteca-cdrf/' + ref + '/admin/Index.html', { muteHttpExceptions: true });
+      if (r.getResponseCode() === 200) return r.getContentText('UTF-8');
+    } catch (err) {}
+  }
   return HtmlService.createHtmlOutputFromFile('Index').getContent();
 }
 

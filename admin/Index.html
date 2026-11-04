@@ -268,13 +268,15 @@ function renderRec(){
   $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML='<b>Istoric</b>'+(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br><b>${esc(x[3])}</b><br>${diffHtml(x[4],x[5])}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
 }
 /* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
+/* Atenție: Apps Script taie adresele web scrise în șiruri cu backtick, așa că ele stau în ghilimele simple. */
+const BNR_URL='https://aleph.bibnat.ro/F/?func=find-b&local_base=NLR01&request=', WC_URL='https://search.worldcat.org/search?q=';
 const LK_MAP={en:'Engleză',ro:'Română',fr:'Franceză',de:'Germană',it:'Italiană',pl:'Polonă',ja:'Japoneză',nl:'Neerlandeză',es:'Spaniolă',sv:'Suedeză',sl:'Slovenă'};
 const LK_F=[['Titlu','title'],['Subtitlu','subtitle'],['Fotograf / autor','authors'],['Editură','publisher'],['Loc','place'],['An','year'],['Pagini','pages'],['ISBN','isbn'],['Limbă','lang'],['Dimensiuni (cm)','dims'],['Descriere','desc']];
 function lkVal(c,f){if(f==='authors')return (c.authors||[]).join('; ');if(f==='lang')return (c.lang||[]).map(x=>LK_MAP[x]||'').filter(Boolean).join('; ');if(f==='isbn')return String(c.isbn||'');if(f==='dims'){const m=String(c.dims||'').match(/^([\d.,]+(?: x [\d.,]+)?) cm$/);return m?m[1]:'';}return String(c[f]||'');}
 function lkBox(){const r=S.rec,L=S.look&&S.look.id===r.ID?S.look:null;
   let h=`<fieldset><legend>Caută informații</legend><p class="sub" style="margin:0 0 8px">Caută după ISBN sau, dacă lipsește, după titlu și autor, în Open Library, Google Books, Library of Congress, Biblioteca Națională a Germaniei și Biblioteca Națională a Franței. Nu se schimbă nimic până nu bifezi, preiei și apeși Salvează.</p><button class="btn sec" id="lkgo">Caută cartea</button> <span class="msg" id="lkmsg"></span>`;
   if(L){h+=(L.notes||[]).map(n=>`<div class="sub">${esc(n)}</div>`).join('');
-    {const q=encodeURIComponent(String(L.isbn||L.title||''));if(q)h+=`<p class="sub" style="margin:8px 0 0">Caută și manual: <a href="https://aleph.bibnat.ro/F/?func=find-b&request=${q}&find_code=${L.isbn?'ISN':'WRD'}&local_base=NLR01" target="_blank" rel="noopener">Biblioteca Națională a României</a> · <a href="https://search.worldcat.org/search?q=${q}" target="_blank" rel="noopener">WorldCat</a>${L.ro?' <br>Cărțile românești rar apar în bazele de mai sus; bibliotecile din România nu permit căutare automată, așa că verifică în catalogul BNR.':''}</p>`;}
+    {const q=encodeURIComponent(String(L.isbn||L.title||''));if(q)h+=`<p class="sub" style="margin:8px 0 0">Caută și manual: <a href="${BNR_URL}${q}&find_code=${L.isbn?'ISN':'WRD'}" target="_blank" rel="noopener">Biblioteca Națională a României</a> · <a href="${WC_URL}${q}" target="_blank" rel="noopener">WorldCat</a>${L.ro?' <br>Cărțile românești rar apar în bazele de mai sus; bibliotecile din România nu permit căutare automată, așa că verifică în catalogul BNR.':''}</p>`;}
     if(!L.cands.length)h+='<p class="sub">Nu am găsit nimic. Încearcă cu ISBN-ul de pe carte sau cu titlul original.</p>';
     h+=L.cands.map((c,ci)=>{const rows=LK_F.map(([k,f])=>{const v=lkVal(c,f);if(!v)return '';const cur=String(r[k]||'');if(cur.replace(/[-\s]/g,'')===v.replace(/[-\s]/g,''))return '';
       const def=!cur&&f!=='authors'&&f!=='desc';const dis=f==='desc'&&cur;

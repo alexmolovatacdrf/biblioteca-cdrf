@@ -1079,7 +1079,7 @@ document.addEventListener('mouseover',e=>{ if(!canHover.matches) return; const d
 document.addEventListener('mouseout',e=>{ if(!canHover.matches) return; const dd=e.target.closest('.filters .dd'); if(!dd||(e.relatedTarget&&dd.contains(e.relatedTarget))) return; clearTimeout(ddTimer); ddTimer=setTimeout(()=>{ if(dd.matches(':hover')||dd.contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&false) return; const m=dd.querySelector('.menu'); if(m){m.hidden=true;m.previousElementSibling.setAttribute('aria-expanded','false');} },280); });
 function clearAll(){st.group='toate';st.q='';st.ppl.clear();st.pub.clear();st.tg.clear();FACETS.forEach(f=>st[f.key].clear());st.tag=st.person=st.sel=st.series=st.publisher=null;document.getElementById('q2').value='';if(st.sort==='relevanta')st.sort='aleator';}
 /* ---------- Statistici: Google Analytics pornește doar după acordul vizitatorului ---------- */
-const GA_ID='__GA__';
+const GA_ID='G-XYVC90BLZ2';
 const gaOn=()=>/^G-[A-Z0-9]+$/.test(GA_ID)&&/(github\.io|cdrf\.ro)$/.test(location.hostname);
 let gaReady=false, gaLast=null, gaQT=null, gaLastQ='';
 function gaGet(){try{return localStorage.getItem('cdrf_stat')||''}catch(e){return ''}}
@@ -1117,7 +1117,7 @@ function stat(t,o){
 }
 function statPage(){ const h=location.hash.slice(1); if(h===statLastH) return; statLastH=h; if(h.startsWith('carte-')&&byId[h.slice(6)]) stat('carte',{id:h.slice(6)}); }
 /* Cloudflare Web Analytics: fără cookie-uri, deci fără acord; doar pe site-ul public */
-const CF_TOKEN='__CF__';
+const CF_TOKEN='f44006c6040f4a51b455d77179d36fac';
 function cfInit(){ if(!pubHost()||!/^[0-9a-f]{32}$/.test(CF_TOKEN)) return;
   const s=document.createElement('script'); s.defer=true; s.src='https://static.cloudflareinsights.com/beacon.min.js'; s.setAttribute('data-cf-beacon',JSON.stringify({token:CF_TOKEN,spa:true})); document.head.appendChild(s); }
 function gaBanner(){

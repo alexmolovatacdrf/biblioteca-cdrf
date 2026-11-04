@@ -470,7 +470,11 @@ function fetchJson_(url) {
   try {
     const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'BibliotecaCdRF/1.0 (catalog de bibliotecă)' } });
     const c = r.getResponseCode();
-    if (c !== 200) return { __err: c };
+    if (c !== 200) {
+      let m = '';
+      try { const j = JSON.parse(r.getContentText()); m = (j.error && (j.error.message || j.error)) || ''; } catch (e) {}
+      return { __err: c + (m ? ': ' + String(m).slice(0, 160) : '') };
+    }
     return JSON.parse(r.getContentText());
   } catch (e) { return { __err: String(e.message || e) }; }
 }
@@ -533,7 +537,7 @@ function gbLookup_(q, notes) {
   if (!key) { notes.push('Google Books nu e activ încă (lipsește cheia GOOGLE_BOOKS_KEY).'); return []; }
   const isbn = cleanIsbn_(q.isbn);
   let qs = isbn.length >= 10 ? 'isbn:' + isbn : 'intitle:' + q.title + (q.author ? ' inauthor:' + String(q.author).split(/[;,]/)[0] : '');
-  const s = fetchJson_('https://www.googleapis.com/books/v1/volumes?maxResults=3&q=' + encodeURIComponent(qs) + '&key=' + encodeURIComponent(key));
+  const s = fetchJson_('https://www.googleapis.com/books/v1/volumes?maxResults=3&q=' + encodeURIComponent(qs) + '&country=RO&key=' + encodeURIComponent(key));
   if (s.__err) { notes.push('Google Books nu răspunde acum (' + s.__err + ').'); return []; }
   return (s.items || []).map(it => {
     const v = it.volumeInfo || {};

@@ -536,7 +536,8 @@ function gbLookup_(q, notes) {
   const key = props_().getProperty('GOOGLE_BOOKS_KEY');
   if (!key) { notes.push('Google Books nu e activ încă (lipsește cheia GOOGLE_BOOKS_KEY).'); return []; }
   const isbn = cleanIsbn_(q.isbn);
-  let qs = isbn.length >= 10 ? 'isbn:' + isbn : 'intitle:' + q.title + (q.author ? ' inauthor:' + String(q.author).split(/[;,]/)[0] : '');
+  const qt = s => '"' + String(s).replace(/"/g, '').trim() + '"';
+  let qs = isbn.length >= 10 ? 'isbn:' + isbn : 'intitle:' + qt(q.title) + (q.author ? ' inauthor:' + qt(String(q.author).split(/[;,]/)[0]) : '');
   const s = fetchJson_('https://www.googleapis.com/books/v1/volumes?maxResults=3&q=' + encodeURIComponent(qs) + '&country=RO&key=' + encodeURIComponent(key));
   if (s.__err) { notes.push('Google Books nu răspunde acum (' + s.__err + ').'); return []; }
   return (s.items || []).map(it => {

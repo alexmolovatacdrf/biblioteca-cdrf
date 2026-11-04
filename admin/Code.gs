@@ -579,22 +579,23 @@ function dcRecords_(xml) {
 }
 function cleanName_(s) {
   let n = String(s || '').replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
-  n = n.replace(/\.\s+[A-ZÀ-Ý][\p{L}\s,-]*$/u, '');            // BnF: „… . Photographe”
-  const parts = n.split(/\s*,\s*/).filter(Boolean);
-  // „Nume, Prenume, rol.” → „Prenume Nume”
-  if (parts.length >= 2 && !/\d/.test(parts[1]) && parts[1].split(' ').length <= 3) return (parts[1] + ' ' + parts[0]).replace(/[.,;:\s]+$/, '');
-  return n.replace(/[.,;:\s]+$/, '');
+  n = n.replace(/\s*\.\s+[A-ZÀ-Ý][^,]*$/, '');                 // BnF: „… . Auteur du texte”
+  let parts = n.split(/\s*,\s*/).map(x => x.trim()).filter(Boolean);
+  const k = parts.findIndex((x, i) => i > 0 && /^[a-zà-ÿ]/.test(x));  // „photographer.”, „host institution.”
+  if (k > 0) parts = parts.slice(0, k);
+  let out = parts.length === 2 && !/\d/.test(parts[1]) ? parts[1] + ' ' + parts[0] : parts.join(', ');
+  return out.replace(/\s+/g, ' ').replace(/[.,;:\s]+$/, '').trim();
 }
 function dcToCand_(o, src, fallbackUrl) {
   const g = k => (o[k] || [])[0] || '';
-  let title = g('title').split(' / ')[0].replace(/\s*[\/:;,]\s*$/, '');
+  let title = g('title').split(/\s\/\s|\s\(\[|\s\[(?=[a-z])/)[0].replace(/\s*[\/:;,]\s*$/, '').trim();
   let sub = '';
   const ti = title.indexOf(' : ');
   if (ti > 0) { sub = title.slice(ti + 3); title = title.slice(0, ti); }
   let pub = g('publisher'), place = '';
   let m = pub.match(/^(.*?)\s*:\s*(.+)$/);
   if (m) { place = m[1]; pub = m[2]; }
-  m = pub.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  m = pub.match(/^([^()]+?)\s*\((.+)\)\s*$/);
   if (m) { pub = m[1]; place = place || m[2]; }
   pub = pub.replace(/[,;]\s*$/, '').replace(/,?\s*\[?\d{4}\]?\.?$/, '').trim();
   const fmt = (o.format || []).join(' ; ');
@@ -608,7 +609,7 @@ function dcToCand_(o, src, fallbackUrl) {
     src: src, url: link, title: title, subtitle: sub, authors: (o.creator || []).map(cleanName_).filter(Boolean),
     others: (o.contributor || []).slice(0, 12), publisher: pub, place: place.replace(/[\[\]]/g, ''),
     year: (g('date').match(/\d{4}/) || [''])[0], pages: pg ? pg[1] : '', isbn: isb ? cleanIsbn_(isb[0]) : '',
-    lang: lang, dims: dm ? (dm[2] ? dm[1] + ' x ' + dm[2] : dm[1]) + ' cm' : '', binding: '', desc: (o.description || []).join(' ').slice(0, 3000),
+    lang: lang, dims: dm ? (dm[2] ? dm[1] + ' x ' + dm[2] : dm[1]) + ' cm' : '', binding: '', desc: (o.description || []).filter(x => !/^Code à barres|^EAN/i.test(x)).join(' ').slice(0, 3000),
     cover: '', subjects: (o.subject || []).slice(0, 12), raw: o._raw
   };
 }

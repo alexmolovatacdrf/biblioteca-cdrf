@@ -456,3 +456,130 @@ function deletePanel(session, id) {
     return true;
   } finally { lock.releaseLock(); }
 }
+
+/* ===================== Caută informații despre carte (fără AI) =====================
+ * Surse gratuite: Open Library (fără cheie) și Google Books (doar dacă există cheia
+ * GOOGLE_BOOKS_KEY în Script Properties; fără cheie, Google refuză cererile din Apps Script).
+ * Nu scrie nimic în fișă: întoarce propuneri; utilizatorul bifează ce preia și apasă Salvează.
+ */
+const SH_RAW = 'Surse brute';
+const RAW_COLS = ['Data', 'Cine', 'ID carte', 'Sursă', 'Link', 'Titlu găsit', 'Text brut (descriere)', 'Date brute (JSON)'];
+const LANG3 = { eng: 'en', rum: 'ro', ron: 'ro', fre: 'fr', fra: 'fr', ger: 'de', deu: 'de', ita: 'it', spa: 'es', jpn: 'ja', dut: 'nl', nld: 'nl', pol: 'pl', swe: 'sv', slv: 'sl', chi: 'zh', zho: 'zh', hun: 'hu', cze: 'cs', ces: 'cs', por: 'pt', rus: 'ru' };
+
+function fetchJson_(url) {
+  try {
+    const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'BibliotecaCdRF/1.0 (catalog de bibliotecă)' } });
+    const c = r.getResponseCode();
+    if (c !== 200) return { __err: c };
+    return JSON.parse(r.getContentText());
+  } catch (e) { return { __err: String(e.message || e) }; }
+}
+function txt_(d) { return !d ? '' : typeof d === 'string' ? d : (d.value || ''); }
+function cleanIsbn_(s) { return String(s || '').replace(/[^0-9Xx]/g, '').toUpperCase(); }
+
+function olEdition_(ed, workKey) {
+  /* ed: /books/OL..M.json ; completăm cu descrierea operei */
+  let work = null;
+  const wk = workKey || (ed.works && ed.works[0] && ed.works[0].key);
+  if (wk) { work = fetchJson_('https://openlibrary.org' + wk + '.json'); if (work.__err) work = null; }
+  const authors = [];
+  (ed.authors || (work && work.authors) || []).slice(0, 6).forEach(a => {
+    const k = a.key || (a.author && a.author.key);
+    if (!k) return;
+    const au = fetchJson_('https://openlibrary.org' + k + '.json');
+    if (!au.__err && au.name) authors.push(au.name);
+  });
+  const isbn = (ed.isbn_13 && ed.isbn_13[0]) || (ed.isbn_10 && ed.isbn_10[0]) || '';
+  const lang = ed.languages ? ed.languages.map(l => LANG3[String(l.key).split('/').pop()] || String(l.key).split('/').pop()) : [];
+  return {
+    src: 'Open Library', url: 'https://openlibrary.org' + ed.key,
+    title: ed.title || '', subtitle: ed.subtitle || '', authors: authors,
+    publisher: (ed.publishers || [])[0] || '', place: (ed.publish_places || [])[0] || '',
+    year: (String(ed.publish_date || '').match(/\d{4}/) || [''])[0],
+    pages: ed.number_of_pages ? String(ed.number_of_pages) : '', isbn: isbn, lang: lang,
+    dims: ed.physical_dimensions || '', binding: ed.physical_format || '',
+    desc: txt_(ed.description) || (work ? txt_(work.description) : ''),
+    cover: ed.covers && ed.covers[0] > 0 ? 'https://covers.openlibrary.org/b/id/' + ed.covers[0] + '-M.jpg' : '',
+    subjects: (work && work.subjects ? work.subjects : []).slice(0, 12),
+    raw: JSON.stringify({ edition: ed, work: work })
+  };
+}
+
+function olLookup_(q, notes) {
+  const out = [];
+  const isbn = cleanIsbn_(q.isbn);
+  if (isbn.length === 10 || isbn.length === 13) {
+    const ed = fetchJson_('https://openlibrary.org/isbn/' + isbn + '.json');
+    if (!ed.__err && ed.key) out.push(olEdition_(ed));
+    else notes.push('Open Library nu are ISBN-ul ' + isbn + '.');
+  }
+  if (!out.length && q.title) {
+    let u = 'https://openlibrary.org/search.json?limit=4&fields=key,title,author_name,edition_key,first_publish_year&title=' + encodeURIComponent(q.title);
+    if (q.author) u += '&author=' + encodeURIComponent(String(q.author).split(/[;,]/)[0]);
+    const s = fetchJson_(u);
+    if (s.__err) notes.push('Open Library nu răspunde acum (' + s.__err + ').');
+    else (s.docs || []).slice(0, 3).forEach(d => {
+      const ek = (d.edition_key || [])[0];
+      if (!ek) return;
+      const ed = fetchJson_('https://openlibrary.org/books/' + ek + '.json');
+      if (!ed.__err && ed.key) out.push(olEdition_(ed, d.key));
+    });
+  }
+  return out;
+}
+
+function gbLookup_(q, notes) {
+  const key = props_().getProperty('GOOGLE_BOOKS_KEY');
+  if (!key) { notes.push('Google Books nu e activ încă (lipsește cheia GOOGLE_BOOKS_KEY).'); return []; }
+  const isbn = cleanIsbn_(q.isbn);
+  let qs = isbn.length >= 10 ? 'isbn:' + isbn : 'intitle:' + q.title + (q.author ? ' inauthor:' + String(q.author).split(/[;,]/)[0] : '');
+  const s = fetchJson_('https://www.googleapis.com/books/v1/volumes?maxResults=3&q=' + encodeURIComponent(qs) + '&key=' + encodeURIComponent(key));
+  if (s.__err) { notes.push('Google Books nu răspunde acum (' + s.__err + ').'); return []; }
+  return (s.items || []).map(it => {
+    const v = it.volumeInfo || {};
+    const ids = v.industryIdentifiers || [];
+    const i13 = ids.filter(x => x.type === 'ISBN_13')[0] || ids.filter(x => x.type === 'ISBN_10')[0];
+    const dm = v.dimensions ? [v.dimensions.height, v.dimensions.width, v.dimensions.thickness].filter(Boolean).join(' x ') : '';
+    return {
+      src: 'Google Books', url: v.infoLink || ('https://books.google.com/books?id=' + it.id),
+      title: v.title || '', subtitle: v.subtitle || '', authors: v.authors || [],
+      publisher: v.publisher || '', place: '', year: (String(v.publishedDate || '').match(/\d{4}/) || [''])[0],
+      pages: v.pageCount ? String(v.pageCount) : '', isbn: i13 ? i13.identifier : '', lang: v.language ? [v.language] : [],
+      dims: dm, binding: v.printType || '', desc: String(v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+      cover: v.imageLinks ? String(v.imageLinks.thumbnail || '').replace('http:', 'https:') : '',
+      subjects: v.categories || [], raw: JSON.stringify(it)
+    };
+  });
+}
+
+/** Caută cartea în sursele gratuite. q: {isbn, title, author, publisher, year} */
+function lookupBook(session, q) {
+  me_(session);
+  q = q || {};
+  if (!q.isbn && !q.title) throw new Error('Scrie cel puțin titlul sau ISBN-ul.');
+  const notes = [];
+  const cands = olLookup_(q, notes).concat(gbLookup_(q, notes));
+  cands.forEach(c => { if (c.raw.length > 45000) c.raw = c.raw.slice(0, 45000); });
+  return { cands: cands, notes: notes };
+}
+
+function rawSheet_() {
+  const ss = ss_();
+  let sh = ss.getSheetByName(SH_RAW);
+  if (!sh) {
+    sh = ss.insertSheet(SH_RAW);
+    sh.getRange(1, 1, 1, RAW_COLS.length).setValues([RAW_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+/** Păstrează materialul brut al sursei din care s-a preluat ceva (intern, nu apare pe site). */
+function saveRawSource(session, id, c) {
+  const user = me_(session);
+  const sh = rawSheet_();
+  const row = [new Date(), user.name, String(id), String(c.src || ''), String(c.url || ''), String(c.title || ''),
+    String(c.desc || '').slice(0, 45000), String(c.raw || '').slice(0, 45000)];
+  sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setNumberFormat('@').setValues([row.map(String)]);
+  return true;
+}

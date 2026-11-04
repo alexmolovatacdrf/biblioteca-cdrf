@@ -40,6 +40,13 @@ td.th img{width:44px;height:56px;object-fit:contain;display:block;background:#ff
 .st.c{background:#eee;color:#555}.st.l{background:#fff4e0;color:var(--warn)}.st.g{background:#e7f0ff;color:#1d4fb8}.st.p{background:#e6f5ea;color:var(--ok)}
 .ok{color:var(--ok);font-size:13px}
 .flag{color:var(--red);font-size:12px}
+.lk{border:1px solid var(--rule);border-radius:12px;padding:12px;margin:10px 0;display:grid;grid-template-columns:70px 1fr;gap:12px}
+.lk img{width:70px;height:auto;border:1px solid var(--rule)}.lk .nocov{width:70px;height:90px;border:1px dashed var(--rule)}
+.lk h4{margin:0 0 2px;font-size:15px;font-weight:600}.lk table{width:100%;border-collapse:collapse;margin-top:6px}
+.lk td{padding:4px 6px;border-top:1px solid var(--soft);font-size:13px;vertical-align:top}.lk td.k{color:var(--muted);width:120px}
+.lk td.cur{color:var(--muted);width:30%}.lk details{margin-top:6px;font-size:13px}.lk details p{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--soft);padding:8px;border-radius:8px;margin:6px 0 0}
+.lk .warn{color:var(--warn);font-size:12px}
+
 @media(max-width:760px){.hide-m{display:none}.bar{flex-wrap:wrap}.who{width:100%;text-align:left;margin:0}.tabs{margin-left:0}}
 /* fișa */
 .rec{display:grid;grid-template-columns:260px 1fr;gap:28px}
@@ -226,6 +233,7 @@ function renderRec(){
    <p class="sub">ID ${esc(r.ID)}${r['Stare']==='Publicată'?` · <a href="${S.data.site}#carte-${esc(r.ID)}" target="_blank">vezi pe site</a>`:''}</p>
    <div class="hist" id="hist"><button class="linkbtn" id="showh">Istoric modificări</button></div></div>
   <div><fieldset><legend>Stare</legend><div class="seg" id="stare">${STARI.map(s=>`<button type="button" data-s="${s}" aria-pressed="${r['Stare']===s}" ${s==='Publicată'&&!adm?'disabled title="Doar adminul publică"':''}>${s}</button>`).join('')}</div></fieldset>
+  ${lkBox()}
   ${body}
   <div class="savebar"><button class="btn" id="save">Salvează</button><button class="btn sec" id="cancel">Renunță</button><span class="msg" id="msg"></span></div></div></div>`;
   $('#back').onclick=()=>{if(!leaveOk())return;S.rec=null;route();};
@@ -235,8 +243,38 @@ function renderRec(){
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
   $('#save').onclick=save;
+  lkBind();
   $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML='<b>Istoric</b>'+(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br><b>${esc(x[3])}</b><br>${diffHtml(x[4],x[5])}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
 }
+/* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
+const LK_MAP={en:'Engleză',ro:'Română',fr:'Franceză',de:'Germană',it:'Italiană',pl:'Polonă',ja:'Japoneză',nl:'Neerlandeză',es:'Spaniolă',sv:'Suedeză',sl:'Slovenă'};
+const LK_F=[['Titlu','title'],['Subtitlu','subtitle'],['Fotograf / autor','authors'],['Editură','publisher'],['Loc','place'],['An','year'],['Pagini','pages'],['ISBN','isbn'],['Limbă','lang'],['Descriere','desc']];
+function lkVal(c,f){if(f==='authors')return (c.authors||[]).join('; ');if(f==='lang')return (c.lang||[]).map(x=>LK_MAP[x]||'').filter(Boolean).join('; ');if(f==='isbn')return String(c.isbn||'');return String(c[f]||'');}
+function lkBox(){const r=S.rec,L=S.look&&S.look.id===r.ID?S.look:null;
+  let h=`<fieldset><legend>Caută informații</legend><p class="sub" style="margin:0 0 8px">Caută după ISBN sau, dacă lipsește, după titlu și autor, în Open Library${L&&L.gb?'':' (și în Google Books, când e activat)'}. Nu se schimbă nimic până nu bifezi, preiei și apeși Salvează.</p><button class="btn sec" id="lkgo">Caută cartea</button> <span class="msg" id="lkmsg"></span>`;
+  if(L){h+=(L.notes||[]).map(n=>`<div class="sub">${esc(n)}</div>`).join('');
+    if(!L.cands.length)h+='<p class="sub">Nu am găsit nimic. Încearcă cu ISBN-ul de pe carte sau cu titlul original.</p>';
+    h+=L.cands.map((c,ci)=>{const rows=LK_F.map(([k,f])=>{const v=lkVal(c,f);if(!v)return '';const cur=String(r[k]||'');if(cur.replace(/[-\s]/g,'')===v.replace(/[-\s]/g,''))return '';
+      const def=!cur&&f!=='authors'&&f!=='desc';const dis=f==='desc'&&cur;
+      const note=f==='authors'?'<div class="warn">Atenție: sursele trec uneori și autorii de texte sau instituții. Aici rămâne doar fotograful / autorul principal.</div>':f==='desc'?'<div class="warn">Textul sursei, ca punct de plecare. Se rescrie înainte de publicare.'+(dis?' (Câmpul are deja o descriere.)':'')+'</div>':'';
+      const show=f==='desc'?esc(v.slice(0,220))+(v.length>220?'…':''):esc(v);
+      return `<tr><td class="k"><label><input type="checkbox" data-lk="${ci}" data-f="${k}" ${def?'checked':''} ${dis?'disabled':''}> ${esc(k)}</label></td><td class="cur">${cur?esc(cur.slice(0,80)):'<i>gol</i>'}</td><td>${show}${note}</td></tr>`;}).join('');
+      return `<div class="lk">${c.cover?`<img src="${esc(c.cover)}" alt="">`:'<div class="nocov"></div>'}<div><h4>${esc(c.title)}${c.subtitle?': '+esc(c.subtitle):''}</h4>
+      <div class="sub">${esc(c.src)} · <a href="${esc(c.url)}" target="_blank" rel="noopener">deschide sursa</a>${c.dims?' · dimensiuni: '+esc(c.dims):''}${c.binding?' · '+esc(c.binding):''}</div>
+      ${rows?`<table><tr><td class="k sub">câmp</td><td class="cur sub">acum în fișă</td><td class="sub">găsit</td></tr>${rows}</table><p style="margin:8px 0 0"><button class="btn" data-lktake="${ci}">Preia ce am bifat</button></p>`:'<p class="sub">Nimic nou față de fișă.</p>'}
+      ${c.desc?`<details><summary>Textul brut al sursei</summary><p>${esc(c.desc)}</p></details>`:''}
+      ${c.subjects&&c.subjects.length?`<div class="sub" style="margin-top:6px">Subiecte în sursă: ${esc(c.subjects.join(', '))}</div>`:''}</div></div>`;}).join('');}
+  return h+'</fieldset>';}
+function lkBind(){const go=$('#lkgo');if(!go)return;
+  go.onclick=()=>{readForm();const r=S.rec;go.disabled=true;$('#lkmsg').textContent='Caut…';
+    call('lookupBook',{isbn:r['ISBN'],title:r['Titlu'],author:r['Fotograf / autor'],publisher:r['Editură'],year:r['An']})
+     .then(res=>{S.look={id:r.ID,cands:res.cands,notes:res.notes};renderRec();})
+     .catch(e=>{go.disabled=false;$('#lkmsg').className='msg err';$('#lkmsg').textContent=e.message||String(e);});};
+  document.querySelectorAll('[data-lktake]').forEach(b=>b.onclick=()=>{readForm();const ci=+b.dataset.lktake,c=S.look.cands[ci];
+    const fs=[...document.querySelectorAll(`[data-lk="${ci}"]:checked`)].map(i=>i.dataset.f);if(!fs.length){toast('Nu ai bifat nimic');return;}
+    fs.forEach(k=>{const f=LK_F.find(x=>x[0]===k)[1];S.rec[k]=lkVal(c,f);});if(fs.indexOf('Descriere')>=0&&!S.rec['Sursa descrierii'])S.rec['Sursa descrierii']='DE RESCRIS: text brut din '+c.src;
+    const ls=String(S.rec['Linkuri surse']||'');if(ls.indexOf(c.url)<0)S.rec['Linkuri surse']=(ls?ls+' | ':'')+c.src+': '+c.url;
+    b.disabled=true;call('saveRawSource',S.rec.ID,c).catch(()=>{});renderRec();toast('Preluat. Verifică și apasă Salvează.');});}
 function diffHtml(a,b){a=String(a||'');b=String(b||'');let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let s=0;while(s<a.length-p&&s<b.length-p&&a[a.length-1-s]===b[b.length-1-s])s++;
   const pre=a.slice(Math.max(0,p-40),p),post=a.slice(a.length-s,a.length-s+40),del=a.slice(p,a.length-s),ins=b.slice(p,b.length-s);
   return (p>40?'…':'')+esc(pre)+(del?`<del>${esc(del)}</del>`:'')+(ins?`<ins>${esc(ins)}</ins>`:'')+esc(post)+(a.length-s+40<a.length?'…':'')+(!a?' <span class=sub>(câmp gol înainte)</span>':'')+(!b?' <span class=sub>(golit)</span>':'');}

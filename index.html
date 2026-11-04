@@ -532,7 +532,7 @@ function prepBook(b){
      titlul se arată fără nume, numele rămâne la autori. Căutarea folosește în continuare titlul întreg. */
   b.full=b.title;
   for(const p of b.people){ const m=b.title.match(new RegExp('^'+p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:.–—-]\\s+(.+)$')); if(m&&!/^\d/.test(m[1])){ b.title=m[1].charAt(0).toUpperCase()+m[1].slice(1); break; } }
-  b._t=norm(b.full+' '+b.subtitle); b._p=norm(b.people.join(' ')+' '+(b.contrib||[]).map(c=>c.n).join(' ')); b._g=norm(b.tags.join(' ')+' '+b.category+' '+b.type+' '+(b.series||'')); b._o=norm(b.publisher); b._d=norm(b.desc);
+  b._t=norm(b.full+' '+b.subtitle); b._p=norm(b.people.join(' ')+' '+(b.contrib||[]).map(c=>c.n).join(' ')); b._g=norm(b.tags.join(' ')+' '+b.category+' '+b.type+' '+(b.series||'')); b._o=norm(b.publisher+' '+String(b.isbn||'').replace(/[-\s]/g,'')); b._d=norm(b.desc);
   const y=+b.year; b._period=y?(PERIODS.find(p=>p[2](y))||[''])[0]:'';
 }
 B.forEach(prepBook);
@@ -667,7 +667,8 @@ function issueKey(b){const m=String(b.vol||b.year||'').match(/\d+/g);if(!m)retur
 function rkey(id){let h=RSEED^2166136261;for(const c of String(id)){h=Math.imul(h^c.charCodeAt(0),16777619);}h^=h>>>13;h=Math.imul(h,0x5bd1e995);return (h^h>>>15)>>>0;}
 let lastScroll=0, toastTimer=null, heroObs=null, galIdx=0;
 
-function words(){return norm(st.q).trim().split(/\s+/).filter(Boolean).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));}
+/* un ISBN tastat cu cratime sau spații se caută ca un singur număr */
+function words(){return norm(/^[\d\s-]{10,}$/.test(st.q.trim())?st.q.replace(/[-\s]/g,''):st.q).trim().split(/\s+/).filter(Boolean).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));}
 /* relevanță: titlu > autor > teme > editură > descriere */
 function score(b,ws){
   let s=0;

@@ -139,6 +139,12 @@ function cleanSessions_() {
   Object.keys(all).forEach(k => { if (k.indexOf('S_') === 0) { try { if (JSON.parse(all[k]).exp < now) props_().deleteProperty(k); } catch (e) { props_().deleteProperty(k); } } });
 }
 
+/* Istoric: o linie, scrisă ca text (un „=” la început nu devine formulă). */
+function logRow_(vals) {
+  const lg = ss_().getSheetByName(SH_LOG);
+  lg.getRange(lg.getLastRow() + 1, 1, 1, vals.length).setNumberFormat('@').setValues([vals]);
+}
+const STATES = ['Ciornă', 'În lucru', 'Gata de publicare', 'Publicată'];
 function headers_(sh) {
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
 }
@@ -187,7 +193,7 @@ function getRecord(session, id) {
  */
 function saveRecord(session, id, changes, before) {
   const user = me_(session);
-  const lock = LockService.getDocumentLock();
+  const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     const sh = ss_().getSheetByName(SH_BOOKS);
@@ -199,22 +205,27 @@ function saveRecord(session, id, changes, before) {
     const conflicts = [];
     const log = [];
     const now = new Date();
+    /* întâi verificăm tot, abia apoi scriem: o cerere respinsă nu lasă nimic schimbat */
+    const writes = [];
     Object.keys(changes).forEach(k => {
       const i = h.indexOf(k);
       if (i < 0) return;
       if (user.role !== 'admin' && ADMIN_ONLY.indexOf(k) >= 0) return;
       let nv = String(changes[k] == null ? '' : changes[k]);
+      if (k === 'ID') throw new Error('ID-ul nu se schimbă.');
+      if (k === 'Stare' && STATES.indexOf(nv) < 0) throw new Error('Stare necunoscută: ' + nv);
       if (k === 'Stare' && nv === 'Publicată' && user.role !== 'admin') throw new Error('Doar adminul poate publica o carte. Pune „Gata de publicare”.');
       if (before && k in before && String(before[k]) !== String(cur[i])) { conflicts.push({ field: k, now: cur[i] }); return; }
       if (nv === cur[i]) return;
-      const cell = sh.getRange(row, i + 1);
-      if (/^(ISBN|ID|An|Wix ID)$/.test(k) || /^[0-9+\-=]/.test(nv)) cell.setNumberFormat('@');
-      cell.setValue(nv);
+      writes.push([i, k, nv]);
+    });
+    writes.forEach(([i, k, nv]) => {
+      sh.getRange(row, i + 1).setNumberFormat('@').setValue(nv);
       log.push([now, user.name, String(id), k, cur[i], nv]);
     });
     if (log.length) {
       const lg = ss_().getSheetByName(SH_LOG);
-      lg.getRange(lg.getLastRow() + 1, 1, log.length, 6).setValues(log);
+      lg.getRange(lg.getLastRow() + 1, 1, log.length, 6).setNumberFormat('@').setValues(log);
       CacheService.getScriptCache().remove('carti');
     }
     return { saved: log.length, conflicts: conflicts, record: getRecord(session, id) };
@@ -224,7 +235,7 @@ function saveRecord(session, id, changes, before) {
 /** Carte nouă: primește următorul ID liber, starea Ciornă. */
 function newRecord(session, title) {
   const user = me_(session);
-  const lock = LockService.getDocumentLock();
+  const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     const sh = ss_().getSheetByName(SH_BOOKS);
@@ -235,7 +246,7 @@ function newRecord(session, title) {
     const r = sh.getLastRow() + 1;
     sh.getRange(r, 1, 1, h.length).setNumberFormat('@').setValues([row]);
     const lg = ss_().getSheetByName(SH_LOG);
-    lg.appendRow([new Date(), user.name, id, 'Carte nouă', '', title || '']);
+    logRow_([new Date(), user.name, id, 'Carte nouă', '', title || '']);
     CacheService.getScriptCache().remove('carti');
     return getRecord(session, id);
   } finally { lock.releaseLock(); }
@@ -371,7 +382,8 @@ function panelsApi_() {
   let out = cache.get('panels');
   if (!out) {
     const d = today_();
-    const list = panelRows_().filter(p => p.active && (p.to ? p.to >= d : (!p.date || (p.end || p.date) >= d)))
+    if (!ss_().getSheetByName(SH_PANELS)) return ContentService.createTextOutput('{"panels":[]}').setMimeType(ContentService.MimeType.JSON);
+    const list = panelRows_().filter(p => p.active && (!p.from || p.from <= d) && (p.to ? p.to >= d : (!p.date || (p.end || p.date) >= d)))
       .map(p => ({ id: p.id, active: true, kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
         from: p.from, to: p.to, books: p.books, text: p.text }));
     out = JSON.stringify({ panels: list, at: new Date().toISOString() });
@@ -397,7 +409,7 @@ function savePanel(session, p) {
   ['date', 'end', 'from', 'to'].forEach(k => { if (!isDate(p[k] || '')) throw new Error('Dată greșită: ' + p[k]); });
   if (!String(p.kind || '').trim()) throw new Error('Alege tipul panoului.');
   if (!String(p.title || '').trim() && !String(p.guest || '').trim() && !(p.books || []).length && !String(p.text || '').trim()) throw new Error('Panoul are nevoie de titlu, invitat, o carte sau un text.');
-  const lock = LockService.getDocumentLock(); lock.waitLock(20000);
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const sh = panelsSheet_(), h = headers_(sh);
     const rows = panelRows_();
@@ -414,11 +426,11 @@ function savePanel(session, p) {
     const before = rows.find(r => r.id === id);
     const val = { id: id, active: p.active ? 'da' : 'nu', kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
       from: p.from, to: p.to, books: (p.books || []).map(String).filter(x => /^\d+$/.test(x)).join(', '), text: p.text,
-      src: p.src || (before && before.src) || 'manual', updated: Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm') + ', ' + user.name };
+      src: (user.role === 'admin' && p.src) ? p.src : ((before && before.src) || 'manual'), updated: Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm') + ', ' + user.name };
     const line = h.map(c => { const i = PANEL_COLS.indexOf(c); return i < 0 ? '' : String(val[PANEL_KEYS[i]] == null ? '' : val[PANEL_KEYS[i]]).slice(0, 2000); });
     sh.getRange(row, 1, 1, h.length).setNumberFormat('@').setValues([line]);
     const lg = ss_().getSheetByName(SH_LOG);
-    lg.appendRow([new Date(), user.name, 'panou ' + id, before ? 'Panou modificat' : 'Panou nou', before ? (before.title || before.kind) : '', (p.title || p.kind) + (p.active ? '' : ' (oprit)')]);
+    logRow_([new Date(), user.name, 'panou ' + id, before ? 'Panou modificat' : 'Panou nou', before ? (before.title || before.kind) : '', (p.title || p.kind) + (p.active ? '' : ' (oprit)')]);
     CacheService.getScriptCache().remove('panels');
     return panelRows_().find(r => r.id === id);
   } finally { lock.releaseLock(); }
@@ -427,7 +439,7 @@ function savePanel(session, p) {
 /** Șterge un panou: adminul oricare, editorii doar propunerile (respinse). De obicei e mai bine să-l oprești. */
 function deletePanel(session, id) {
   const user = me_(session);
-  const lock = LockService.getDocumentLock(); lock.waitLock(20000);
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const sh = panelsSheet_();
     const ids = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 1).getDisplayValues().map(r => r[0]);
@@ -436,7 +448,7 @@ function deletePanel(session, id) {
     const prop = cur && !cur.active && /^propunere/i.test(cur.src || '');
     if (user.role !== 'admin' && !(prop && user.role === 'editor')) throw new Error('Doar adminul poate șterge un panou. Îl poți opri.');
     sh.deleteRow(i + 2);
-    ss_().getSheetByName(SH_LOG).appendRow([new Date(), user.name, 'panou ' + id, 'Panou șters', '', '']);
+    logRow_([new Date(), user.name, 'panou ' + id, 'Panou șters', '', '']);
     CacheService.getScriptCache().remove('panels');
     return true;
   } finally { lock.releaseLock(); }

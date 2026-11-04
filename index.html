@@ -44,7 +44,7 @@ b,strong{font-weight:500}
 .proto b{color:var(--accent);font-weight:400}
 
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax)}
-.top .wrap{display:grid;grid-template-columns:1fr minmax(0,640px) 1fr;align-items:center;gap:24px;padding-block:14px}
+.top .wrap{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,640px) minmax(max-content,1fr);align-items:center;gap:24px;padding-block:14px}
 .brand{display:flex;align-items:center;gap:16px;cursor:pointer;background:none;border:0;padding:0;justify-self:start}
 .brand .logo{height:54px;width:auto}
 .brand .logo-l{display:var(--logo-l)}.brand .logo-d{display:var(--logo-d)}
@@ -79,6 +79,11 @@ section{padding-block:48px}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
 .sec-head h2{font-weight:400;font-size:clamp(30px,2.8vw,44px);line-height:1.08;letter-spacing:-.025em;margin:0}
 .sec-head .note{font-size:15px;color:var(--muted)}
+#consent{position:fixed;left:16px;bottom:16px;z-index:60;max-width:420px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:16px 18px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-size:14px;line-height:1.45}
+#consent p{margin:0 0 12px}#consent div{display:flex;gap:8px;flex-wrap:wrap}
+#consent .cbtn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+#consent .cbtn.sec{background:var(--paper);color:var(--ink);border-color:var(--rule)}
+@media (max-width:480px){#consent{left:12px;right:12px;bottom:12px;max-width:none}}
 .linkbtn{background:none;border:0;padding:0;cursor:pointer;font-size:15px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
 .linkbtn:hover{text-decoration-color:var(--ink)}
 
@@ -527,7 +532,7 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
 <footer class="wrap">
   <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b>Str. Popa Tatu nr. 68, București<br>Cărțile se consultă pe loc, în spațiul CdRF.</div>
   <div><b>Program</b>Luni: închis<br>Marți–Vineri: 09–18<br>Sâmbătă–Duminică: 10–18</div>
-  <div><b>Despre catalog</b>Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button></div>
+  <div><b>Despre catalog</b>Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button><br><button class="linkbtn" id="cset" hidden style="margin-top:8px;font-size:13px">Statistici și cookie-uri</button></div>
 </footer>
 
 <script>
@@ -1079,8 +1084,52 @@ const ddShow=dd=>{const b=dd.querySelector('[data-dd]'),m=dd.querySelector('.men
 document.addEventListener('mouseover',e=>{ if(!canHover.matches) return; const dd=e.target.closest('.filters .dd'); if(!dd) return; clearTimeout(ddTimer); ddShow(dd); });
 document.addEventListener('mouseout',e=>{ if(!canHover.matches) return; const dd=e.target.closest('.filters .dd'); if(!dd||(e.relatedTarget&&dd.contains(e.relatedTarget))) return; clearTimeout(ddTimer); ddTimer=setTimeout(()=>{ if(dd.matches(':hover')||dd.contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&false) return; const m=dd.querySelector('.menu'); if(m){m.hidden=true;m.previousElementSibling.setAttribute('aria-expanded','false');} },280); });
 function clearAll(){st.group='toate';st.q='';st.ppl.clear();st.pub.clear();st.tg.clear();FACETS.forEach(f=>st[f.key].clear());st.tag=st.person=st.sel=st.series=st.publisher=null;document.getElementById('q2').value='';if(st.sort==='relevanta')st.sort='aleator';}
+/* ---------- Statistici: Google Analytics pornește doar după acordul vizitatorului ---------- */
+const GA_ID='__GA__';
+const gaOn=()=>/^G-[A-Z0-9]+$/.test(GA_ID)&&/(github\.io|cdrf\.ro)$/.test(location.hostname);
+let gaReady=false, gaLast=null, gaQT=null, gaLastQ='';
+function gaGet(){try{return localStorage.getItem('cdrf_stat')||''}catch(e){return ''}}
+function gaSet(v){try{localStorage.setItem('cdrf_stat',v)}catch(e){}}
+function gaLoad(){
+  if(gaReady||!gaOn()) return; gaReady=true; window['ga-disable-'+GA_ID]=false;
+  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date()); gtag('config',GA_ID,{send_page_view:false});
+  const s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID; document.head.appendChild(s);
+  gaPage();
+}
+function gaPage(){
+  if(!gaReady||window['ga-disable-'+GA_ID]) return;
+  const h=location.hash.slice(1); if(h===gaLast) return; gaLast=h;
+  let title='Biblioteca CdRF', path=location.pathname.replace(/[^/]*$/,'');
+  if(h.startsWith('carte-')){const b=byId[h.slice(6)]; title=b?(b.full||b.title):'Carte'; path+='carte/'+h.slice(6);}
+  else if(h==='despre'){title='Despre bibliotecă'; path+='despre';}
+  else if(h==='lista'){title='Lista mea'; path+='lista';}
+  gtag('event','page_view',{page_title:title,page_location:location.origin+path});
+}
+function gaSearch(v){
+  clearTimeout(gaQT); if(!gaReady) return;
+  gaQT=setTimeout(()=>{const q=String(v||'').trim().slice(0,80); if(q.length<3||q===gaLastQ) return; gaLastQ=q;
+    let n=0; try{n=filtered().length}catch(e){}
+    gtag('event','search',{search_term:q,nr_rezultate:n});},1500);
+}
+function gaBanner(){
+  if(document.getElementById('consent')) return;
+  const d=document.createElement('div'); d.id='consent'; d.setAttribute('role','dialog'); d.setAttribute('aria-label','Statistici și cookie-uri');
+  d.innerHTML='<p>Vrem să știm ce cărți și ce căutări îi interesează pe vizitatori, ca să îmbunătățim catalogul. Pentru asta folosim Google Analytics, care pune cookie-uri. Îl pornim doar dacă ești de acord.</p><div><button class="cbtn" data-consent="y">Sunt de acord</button><button class="cbtn sec" data-consent="n">Nu, mulțumesc</button></div>';
+  document.body.appendChild(d);
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-consent]'); if(!b) return; const v=b.dataset.consent; gaSet(v); d.remove();
+    if(v==='y') gaLoad();
+    else { window['ga-disable-'+GA_ID]=true; document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
+      [location.hostname,'.'+location.hostname.split('.').slice(-2).join('.'),''].forEach(dm=>{document.cookie=n+'=; Max-Age=0; path=/'+(dm?'; domain='+dm:'');});}); }
+  });
+}
+function gaInit(){
+  if(!gaOn()) return;
+  const c=document.getElementById('cset'); if(c){c.hidden=false; c.onclick=gaBanner;}
+  const v=gaGet(); if(v==='y') gaLoad(); else if(v!=='n') gaBanner();
+}
 function setQuery(v){
-  st.q=v; const q2=document.getElementById('q2'); if(q2.value!==v) q2.value=v;
+  st.q=v; const q2=document.getElementById('q2'); if(q2.value!==v) q2.value=v; gaSearch(v);
   if(v.trim()&&!st.userSort) st.sort='relevanta';
   if(!v.trim()&&st.sort==='relevanta') st.sort='aleator';
   if(location.hash.startsWith('#carte-')){goHomeWith(()=>{}); window.scrollTo(0,0); return;}
@@ -1169,9 +1218,10 @@ document.addEventListener('pointerdown',e=>{const s=e.target.closest('.gthumbs,.
 document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX-drag.x; if(!drag.moved&&Math.abs(dx)>5){drag.moved=true; drag.s.classList.add('dragging');} if(drag.moved){drag.s.scrollLeft=drag.left-dx; e.preventDefault();}});
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
 document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
-window.addEventListener('hashchange',route);
+window.addEventListener('hashchange',()=>{route(); gaPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);
+setTimeout(gaInit,400);
 updNav();
 route();
 })();

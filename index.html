@@ -601,6 +601,18 @@ function panelsLive(){
 }
 /* Fișele schimbate în admin vin la zi din tabel (?api=carti): doar cărțile atinse în admin, câmpurile editate.
    Copia din build rămâne rezerva; pozele rămân cele din build. */
+/* Imaginile alese în admin: unele se pot ascunde (nu și coperta), iar imaginea de la mouse se poate fixa. */
+function applyImgs(b){
+  if(!b._imgs){ b._imgs=b.images; b._hov0=b.hov||0; }
+  const hide=b.imgHide||[];
+  let ims=b._imgs.filter((im,i)=>i===0||!hide.includes(im.src));
+  const ints=ims.filter(im=>/^Interior · \d+ din \d+$/.test(im.cap||''));
+  ims=ims.map(im=>{const k=ints.indexOf(im); return k>=0?Object.assign({},im,{cap:'Interior · '+(k+1)+' din '+ints.length}):im;});
+  b.images=ims;
+  let h=b.hovImg?ims.findIndex(im=>im.src===b.hovImg&&!im.ext):-1;
+  if(h<1){ const o=b._imgs[b._hov0]; h=o?ims.findIndex(im=>im.src===o.src):-1; }
+  b.hov=h>0?h:0;
+}
 function booksLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
   const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),8000);
@@ -608,8 +620,8 @@ function booksLive(){
     if(!j||!Array.isArray(j.books)) return;
     const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');
     const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
-    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video'];
-    const clean=(k,v)=>(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
+    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg'];
+    const clean=(k,v)=>(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='imgHide'?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
     let ch=false;
     j.books.forEach(r=>{
       const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
@@ -618,7 +630,7 @@ function booksLive(){
       if(!b&&HID[id]&&r.stare==='Publicată'){b=HID[id]; delete HID[id]; B.push(b); byId[id]=b; ch=true;}
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
-      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
+      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); if(ed.includes('imgHide')||ed.includes('hovImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
       else if(ed.includes('stare')||ed.includes('*')){
         const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
         const cv=safeSrc(S(f.cover))!==PH?S(f.cover):'';

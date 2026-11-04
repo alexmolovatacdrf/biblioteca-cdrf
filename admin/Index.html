@@ -33,7 +33,16 @@ th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:8px
 td{padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:middle}
 tr.rw{cursor:pointer}
 tr.rw:hover{background:var(--soft)}
-td.th img{width:44px;height:56px;object-fit:contain;display:block;background:#fff}
+td.th img{width:66px;height:88px;object-fit:contain;display:block;background:#fff}
+.vtog{display:inline-flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden}.vtog button{border:0;background:#fff;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--muted)}.vtog button[aria-pressed=true]{background:var(--ink);color:#fff}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px;margin-top:12px}
+.cg{cursor:pointer}.cg .im{height:190px;display:flex;align-items:flex-end;justify-content:center;background:var(--soft);border-radius:10px;padding:12px}
+.cg img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 2px 8px rgba(0,0,0,.14)}.cg .ph2{font-size:12px;color:var(--muted);align-self:center}
+.cg .t{font-size:13px;font-weight:600;margin-top:7px;line-height:1.25}.cg .sub{font-size:12px;margin-top:2px}.cg:hover .t{text-decoration:underline}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ic{border:1px solid var(--rule);border-radius:10px;padding:8px;font-size:12px}.ic img{width:100%;height:120px;object-fit:contain;background:var(--soft);display:block;margin-bottom:6px;border-radius:6px}
+.ic.off img{opacity:.25}.ic .il{font-weight:600;margin-bottom:3px}.ic label{display:block;margin-top:3px;cursor:pointer}
+.sug{background:var(--ink);color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;font-weight:400}
 .t{font-weight:500}
 .sub{color:var(--muted);font-size:13px}
 .st{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap}
@@ -165,6 +174,7 @@ function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.dat
   if(ws.length){const h=norm(r.join(' '));if(!ws.every(w=>h.includes(w)))return false;}
   return true;});}
 function renderList(){
+  if(S.grid===undefined){try{S.grid=!!localStorage.getItem('adm_grid')}catch(e){S.grid=false}}
   const d=S.data,L=d.lists,rows=filtered();
   const cnt={};d.rows.forEach(r=>cnt[r[C('Stare')]]=(cnt[r[C('Stare')]]||0)+1);
   const opt=(arr,val,lab)=>`<option value="">${lab}</option>`+arr.map(v=>`<option ${v===val?'selected':''}>${esc(v)}</option>`).join('');
@@ -174,19 +184,21 @@ function renderList(){
   <select id="fraft">${opt(L['Raft']||[],S.raft,'Toate rafturile')}</select>
   <select id="ftip">${opt(L['Tip']||[],S.tip,'Toate tipurile')}</select>
   <label class="sub"><input type="checkbox" id="fno" ${S.noshelf?'checked':''}> neverificate la raft</label>
+  <span class="vtog"><button data-v="l" aria-pressed="${!S.grid}">Listă</button><button data-v="g" aria-pressed="${!!S.grid}">Coperți</button></span>
   <button class="btn" id="add">+ Carte nouă</button><span class="count">${rows.length} din ${d.rows.length}</span></div>
-  <table><thead><tr><th></th><th>Carte</th><th class="hide-m">An</th><th class="hide-m">Raft</th><th class="hide-m">La raft</th><th>Stare</th></tr></thead>
+  ${S.grid?`<div class="cgrid">${rows.slice(0,300).map(r=>{const u=coverUrl(r[C('Copertă')]);return `<div class="cg rw" data-id="${esc(r[C('ID')])}"><div class="im">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:'<span class="ph2">fără copertă</span>'}</div><div class="t">${esc(r[C('Titlu')])||'(fără titlu)'}</div><div class="sub">${esc(r[C('Fotograf / autor')])}</div><div class="sub"><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span>${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}</div></div>`}).join('')}</div>`:`<table><thead><tr><th></th><th>Carte</th><th class="hide-m">An</th><th class="hide-m">Raft</th><th class="hide-m">La raft</th><th>Stare</th></tr></thead>
   <tbody>${rows.slice(0,300).map(r=>{const u=coverUrl(r[C('Copertă')]);return `<tr class="rw" data-id="${esc(r[C('ID')])}"><td class="th">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:''}</td>
   <td><div class="t">${esc(r[C('Titlu')])||'<span class=sub>(fără titlu)</span>'}</div><div class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}</div></td>
   <td class="hide-m">${esc(r[C('An')])}</td><td class="hide-m">${esc(r[C('Raft')])}</td><td class="hide-m">${r[C('Verificat la raft')]?'<span class=ok>✓</span>':''}</td>
-  <td><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span></td></tr>`}).join('')}</tbody></table>
+  <td><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span></td></tr>`}).join('')}</tbody></table>`}
   ${rows.length>300?'<p class="sub">Primele 300. Restrânge căutarea ca să vezi restul.</p>':''}`;
   const q=$('#q');q.addEventListener('input',()=>{S.q=q.value;const p=q.selectionStart;renderList();const n=$('#q');n.focus();n.setSelectionRange(p,p);});
   $('#fraft').onchange=e=>{S.raft=e.target.value;renderList();};
   $('#ftip').onchange=e=>{S.tip=e.target.value;renderList();};
   $('#fno').onchange=e=>{S.noshelf=e.target.checked;renderList();};
   document.querySelectorAll('[data-stare]').forEach(b=>b.onclick=()=>{S.stare=S.stare===b.dataset.stare?'':b.dataset.stare;renderList();});
-  document.querySelectorAll('tr.rw').forEach(tr=>tr.onclick=()=>openRec(tr.dataset.id));
+  document.querySelectorAll('.rw').forEach(tr=>tr.onclick=()=>openRec(tr.dataset.id));
+  document.querySelectorAll('.vtog button').forEach(b=>b.onclick=()=>{S.grid=b.dataset.v==='g';try{localStorage.setItem('adm_grid',S.grid?'1':'')}catch(e){}renderList();});
   $('#add').onclick=()=>{const t=prompt('Titlul cărții noi:');if(t==null)return;call('newRecord',t.trim()).then(rec=>{S.data.rows.push(S.data.cols.map(k=>rec[k]||''));showRec(rec);toast('Carte nouă: ID '+rec.ID);}).catch(e=>alert(e.message||e));};
 }
 
@@ -198,7 +210,7 @@ const GROUPS=[
  ['Clasificare',['Categorie','Teme','Raft']],
  ['Obiectul fizic',['Pagini','Dimensiuni (cm)','Legătură']],
  ['Text',['Descriere','Sursa descrierii','Linkuri surse','Video']],
- ['Imagini',['Copertă','Interioare','Copertă de verificat']],
+ ['Imagini',['Copertă','Copertă de verificat']],
  ['Inventar',['Intrată în bibliotecă','Verificat la raft','Note']],
  ['Sistem',['ID','Wix ID']]];
 const HINT={'Video':'link YouTube sau Vimeo despre carte (interviu, răsfoire); mai multe, separate cu „; ”','Intrată în bibliotecă':'data, ex. 2026-11-03; o pune singur la „Carte nouă”','Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
@@ -226,6 +238,7 @@ function renderRec(){
   const roles=L['Rol colaborator']||[];
   const body=GROUPS.map(([g,ks])=>{
     if(g==='Colaboratori')return `<fieldset><legend>Colaboratori</legend><div class="contrib" id="contrib">${parseContrib(r['Colaboratori (nume – rol)']).map(c=>crow(c,roles)).join('')}</div><button class="linkbtn" id="addc">+ adaugă colaborator</button></fieldset>`;
+    if(g==='Imagini')return `<fieldset><legend>Imagini</legend><div class="grid">${ks.map(k=>field(k,r[k]||'')).join('')}</div></fieldset>`+imgBox(r);
     if(g==='Limbă')return `<fieldset><legend>Limbă</legend><div class="seg" id="langs">${allL.map(l=>`<button type="button" data-l="${esc(l)}" aria-pressed="${langs.indexOf(l)>=0}">${esc(l)}</button>`).join('')}</div></fieldset>`;
     return `<fieldset><legend>${g}</legend><div class="grid">${ks.map(k=>field(k,r[k]||'')).join('')}</div></fieldset>`;}).join('');
   $('#app').innerHTML=`<p><button class="linkbtn" id="back">← Înapoi la listă</button></p>
@@ -244,6 +257,7 @@ function renderRec(){
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
   $('#save').onclick=save;
   lkBind();
+  imgFill();
   $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML='<b>Istoric</b>'+(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br><b>${esc(x[3])}</b><br>${diffHtml(x[4],x[5])}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
 }
 /* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
@@ -275,6 +289,27 @@ function lkBind(){const go=$('#lkgo');if(!go)return;
     fs.forEach(k=>{const f=LK_F.find(x=>x[0]===k)[1];S.rec[k]=lkVal(c,f);});if(fs.indexOf('Descriere')>=0&&!S.rec['Sursa descrierii'])S.rec['Sursa descrierii']='DE RESCRIS: text brut din '+c.src;
     const ls=String(S.rec['Linkuri surse']||'');if(ls.indexOf(c.url)<0)S.rec['Linkuri surse']=(ls?ls+' | ':'')+c.src+': '+c.url;
     b.disabled=true;call('saveRawSource',S.rec.ID,c).catch(()=>{});renderRec();toast('Preluat. Verifică și apasă Salvează.');});}
+/* ---------- imaginile de pe site: ce se vede și ce apare la mouse ---------- */
+let IMGS=null;
+function loadImgs(){if(IMGS)return Promise.resolve(IMGS);return fetch(S.data.site+'imagini.json?v='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():{}).then(j=>IMGS=j).catch(()=>({}));}
+function imgBox(r){return `<fieldset><legend>Imagini pe site</legend><div id="imgs"><span class="sub">Se încarcă imaginile…</span></div><input type="hidden" data-k="Imagini ascunse" value="${esc(r['Imagini ascunse']||'')}"><input type="hidden" data-k="Imagine la mouse" value="${esc(r['Imagine la mouse']||'')}"></fieldset>`;}
+function imgFill(){const box=$('#imgs');if(!box)return;const id=String(S.rec.ID);
+  loadImgs().then(J=>{const b2=$('#imgs');if(!b2||!S.rec||String(S.rec.ID)!==id)return;const d=J[id];
+    if(!d||!d.i||!d.i.length){b2.innerHTML='<span class="sub">Cartea nu are încă imagini pe site.</span>';return;}
+    const hide=String(S.rec['Imagini ascunse']||'').split(/\s*;\s*/).filter(Boolean),hov=String(S.rec['Imagine la mouse']||'');
+    const sug=d.i[d.h]&&d.h>0?d.i[d.h][0]:'',site=S.data.site;
+    b2.innerHTML=`<p class="sub" style="margin:0 0 8px">Debifează ce nu vrei să apară pe site. Alege și imaginea care apare în grilă când treci cu mouse-ul peste copertă. „Sugerat” e alegerea automată.</p>
+    <label class="sub" style="display:block;margin-bottom:8px"><input type="radio" name="hov" value="" ${hov?'':'checked'}> La mouse: automat (cea sugerată)</label><div class="igrid">`+
+    d.i.map((x,i)=>{const src=x[0],ext=!!x[1],cap=x[2]||'',isInt=i>0&&!ext,lab=i===0?'Coperta (în grilă)':ext?'Exterior':(cap||'Interior');
+      return `<div class="ic${hide.indexOf(src)>=0?' off':''}"><img loading="lazy" src="${esc(site+src)}" alt=""><div class="il">${esc(lab)}${src===sug?' <span class="sug">sugerat</span>':''}</div>`+
+      (i===0?'<div class="sub">rămâne mereu</div>':`<label><input type="checkbox" data-img="${esc(src)}" ${hide.indexOf(src)>=0?'':'checked'}> pe site</label>`)+
+      (isInt?`<label><input type="radio" name="hov" value="${esc(src)}" ${hov===src?'checked':''}> la mouse</label>`:'')+'</div>';}).join('')+'</div>';
+    const upd=()=>{const h=[...b2.querySelectorAll('[data-img]')].filter(c=>!c.checked).map(c=>c.dataset.img);
+      let hv=(b2.querySelector('input[name=hov]:checked')||{}).value||'';
+      if(hv&&h.indexOf(hv)>=0){hv='';b2.querySelector('input[name=hov][value=""]').checked=true;toast('Imaginea ascunsă nu poate apărea la mouse; am pus „automat”.');}
+      b2.querySelectorAll('[data-img]').forEach(c=>c.closest('.ic').classList.toggle('off',!c.checked));
+      $('[data-k="Imagini ascunse"]').value=h.join('; ');$('[data-k="Imagine la mouse"]').value=hv;};
+    b2.querySelectorAll('input').forEach(i=>i.onchange=upd);});}
 function diffHtml(a,b){a=String(a||'');b=String(b||'');let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let s=0;while(s<a.length-p&&s<b.length-p&&a[a.length-1-s]===b[b.length-1-s])s++;
   const pre=a.slice(Math.max(0,p-40),p),post=a.slice(a.length-s,a.length-s+40),del=a.slice(p,a.length-s),ins=b.slice(p,b.length-s);
   return (p>40?'…':'')+esc(pre)+(del?`<del>${esc(del)}</del>`:'')+(ins?`<ins>${esc(ins)}</ins>`:'')+esc(post)+(a.length-s+40<a.length?'…':'')+(!a?' <span class=sub>(câmp gol înainte)</span>':'')+(!b?' <span class=sub>(golit)</span>':'');}

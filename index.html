@@ -70,9 +70,6 @@ footer .flogo.logo-l{display:var(--logo-l)}footer .flogo.logo-d{display:var(--lo
 .hsearch svg{left:17px;width:18px;height:18px;stroke:var(--ink)}
 
 .intro{display:flex;gap:10px 22px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:4px 18px}
-.try{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--muted)}
-.try button{background:none;border:1px solid var(--faint);border-radius:999px;padding:5px 13px;cursor:pointer;font-size:14px;color:var(--ink)}
-.try button:hover{border-color:var(--ink)}
 .intro .facts{font-size:14px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
 .eyebrow{font-size:15px;color:var(--muted)}
 section{padding-block:48px}
@@ -84,19 +81,25 @@ section{padding-block:48px}
 #consent .cbtn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
 #consent .cbtn.sec{background:var(--paper);color:var(--ink);border-color:var(--rule)}
 @media (max-width:480px){#consent{left:12px;right:12px;bottom:12px;max-width:none}}
-/* ---------- Varianta B: filtre permanente în stânga, + / −, pătratul roșu la ce e ales, fără forme rotunjite ---------- */
+/* ---------- Varianta B: aceleași meniuri, fără forme rotunjite, + / −, bife pentru Lista mea, fără negru ---------- */
 body.vb *, body.vb *::before, body.vb *::after{border-radius:0!important}
-body.vb .fl label{padding:3px 0;background:none!important}
-body.vb .fl label:hover span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--faint)}
-body.vb .fl input[type=checkbox]{width:11px;height:11px;border:0;background:transparent;align-self:center}
-body.vb .fl input[type=checkbox]:hover{border:1px solid #c9c9ce}
-body.vb .fl input[type=checkbox]:checked{border:2.5px solid var(--accent)}
-body.vb .fl label:has(input:checked) span{color:var(--ink)}
-body.vb .fh{font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 body.vb .fh .pm{font-size:18px;line-height:1;font-weight:300;width:14px;text-align:center}
-body.vb .fg2:first-child{border-top:1px solid var(--rule)}
-body.vb .fclr{font-size:13px}
-@media (min-width:1101px){body.vb .filters .dd:not(.sortdd),body.vb .stog{display:none}}
+body.vb .dd>button svg{display:none}
+body.vb .dd>button::after{content:"+";font-size:17px;line-height:1;font-weight:300;margin-left:2px}
+body.vb .dd>button[aria-expanded="true"]::after{content:"−"}
+body.vb .n{background:var(--stage-h)!important;color:var(--ink)!important}
+body.vb .save{width:30px;height:30px;top:8px;right:8px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+body.vb .save svg,body.vb .savebig svg{display:none}
+body.vb .save::before,body.vb .savebig::before{content:"";width:12px;height:12px;border:1.5px solid #a9a9af;box-sizing:border-box;flex:none}
+body.vb .save:hover::before,body.vb .savebig:hover::before{border-color:#6e6e74}
+body.vb .save[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+body.vb .save[aria-pressed="true"]::before,body.vb .savebig[aria-pressed="true"]::before{border:2.5px solid var(--accent)}
+body.vb .savebig[aria-pressed="true"]{background:var(--stage-h);color:var(--ink);border-color:var(--faint)}
+body.vb .toast{background:var(--paper);color:var(--ink);border:1px solid var(--rule);box-shadow:0 10px 28px -12px rgba(0,0,0,.25)}
+body.vb .toast button{background:none;border:1px solid var(--faint);color:var(--ink)}
+body.vb .toast button:hover{border-color:var(--ink)}
+body.vb .list .acts .pbtn{background:none;color:var(--ink);border:1px solid var(--faint)}
+body.vb .list .acts .pbtn:hover{border-color:var(--ink)}
 .linkbtn{background:none;border:0;padding:0;cursor:pointer;font-size:15px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
 .linkbtn:hover{text-decoration-color:var(--ink)}
 
@@ -324,7 +327,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .savebig svg{width:16px;height:16px}
 .savebig[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 /* toate butoanele ovale: aceeași linie gri; se închide la culoare doar la trecerea mausului sau la focus */
-@media (hover:hover){.savebig:hover,.fbtn:hover,.dd>button:hover,.try button:hover,.tag:hover,.marr:hover{border-color:var(--ink)}}
+@media (hover:hover){.savebig:hover,.fbtn:hover,.dd>button:hover,.tag:hover,.marr:hover{border-color:var(--ink)}}
 .field input:focus{border-color:var(--ink)}
 .right .nav .n{display:inline-block;min-width:20px;text-align:center;font-size:12px;background:var(--ink);color:var(--paper);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
 .list{padding-block:40px}
@@ -454,9 +457,6 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
   .card .badge{display:none}
   .intro{display:none}
   .intro .facts{display:none}
-  .try{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)));padding-right:16px}
-  .try::-webkit-scrollbar{display:none}
-  .try button,.try span{flex:none}
   .ahero{padding-block:28px 26px}.acov{height:110px;gap:10px;margin-top:22px}.acov img{max-width:23%}.acov img:nth-child(n+5){display:none}
   .asec{padding-block:30px}
   .asec .txt{font-size:17px}
@@ -679,27 +679,10 @@ function toggleMine(id){ const add=!isMine(id); if(!add) mine=mine.filter(x=>x!=
 /* țara se deduce din oraș doar pentru orașe fără ambiguitate; altfel se completează în fișă */
 const CITY_COUNTRY={'București':'România','Timișoara':'România','Cluj-Napoca':'România','Iași':'România','Brașov':'România','Sibiu':'România','Chișinău':'Republica Moldova','Londra':'Regatul Unit','Paris':'Franța','Arles':'Franța','New York':'SUA','Chicago':'SUA','Los Angeles':'SUA','San Francisco':'SUA','Kempen':'Germania','Berlin':'Germania','Köln':'Germania','Göttingen':'Germania','München':'Germania','Heidelberg':'Germania','Ostfildern':'Germania','Bologna':'Italia','Milano':'Italia','Roma':'Italia','Amsterdam':'Țările de Jos','Zürich':'Elveția','Tokyo':'Japonia','Varșovia':'Polonia','Praga':'Cehia','Viena':'Austria','Madrid':'Spania','Barcelona':'Spania','Craiova':'România','Onești':'România','Petrila':'România','Seoul':'Coreea de Sud','Melbourne':'Australia','Oslo':'Norvegia'};
 const placeOf=b=>[b.place,b.country||CITY_COUNTRY[b.place]].filter(Boolean).join(', ');
-/* „Încearcă”: întâi ce e pe panouri acum (filmul, cartea săptămânii, Meet the Book), apoi cuvintele puse de editori
-   (panou de tip „Sugestii căutare”), apoi un amestec din fotografii cu mai multe cărți și din teme; nou la fiecare vizită. */
+/* panourile de tip „Sugestii căutare” nu mai apar pe site */
 const SUGK='Sugestii căutare';
-let TRY_POOL=null;
-function tryWords(){
-  if(!TRY_POOL){const pc={},last={},tc={};
-    B.forEach(b=>{if(b.type!=='Revistă') b.people.forEach(p=>{pc[p]=(pc[p]||0)+1; const l=p.split(' ').pop(); last[l]=(last[l]||new Set()).add(p);}); (b.tags||[]).forEach(g=>tc[g]=(tc[g]||0)+1);});
-    const short=p=>{const l=p.split(' ').pop(); return last[l].size===1&&l.length>3?l:p;};
-    const ppl=Object.keys(pc).filter(p=>pc[p]>=2&&!/colectiv|jurnalul|fotojurnali/i.test(p)).map(short);
-    const tg=Object.keys(tc).filter(g=>tc[g]>=5);
-    TRY_POOL=[...ppl,...tg,'București'].sort((a,b)=>rkey('t'+a)-rkey('t'+b));}
-  const vis=MEETS.filter(meetVis), out=[];
-  const add=w=>{w=String(w||'').trim(); if(w&&!out.some(x=>norm(x)===norm(w))) out.push(w);};
-  vis.filter(m=>m.kind==='Seara de film'||m.kind===WEEK||m.kind==='Meet the Book').forEach(m=>{const b=byId[(m.books||[]).find(i=>byId[i])]; if(b&&b.people[0]){const p=b.people[0], l=p.split(' ').pop(); add(B.filter(x=>x.people.some(q=>q.split(' ').pop()===l)).length&&l.length>3?l:p);}});
-  vis.filter(m=>m.kind===SUGK).forEach(m=>String(m.text||'').split(/[,;\n]/).forEach(add));
-  const lead=out.sort((a,b)=>rkey('l'+a)-rkey('l'+b)).slice(0,2); out.length=0; lead.forEach(add);
-  TRY_POOL.forEach(w=>{if(out.length<6) add(w);});
-  return out.slice(0,6).sort((a,b)=>rkey('o'+a)-rkey('o'+b));
-}
 const VARB=false;
-const st={fsq:{},side:VARB,open:VARB?{type:true,category:true,ppl:false,pub:false,tg:false,lang:false,period:false}:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
+const st={fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);
 /* listă de nume în fișă: la liste lungi arătăm primele 8, restul la cerere; toate rămân căutabile */
 function nameList(ns,more){const L=n=>`<button class="lnk" data-person="${esc(n)}">${esc(n)}</button>`;const k=8;
@@ -826,7 +809,6 @@ function renderHome(keepScroll){
   const hasQ=!!words().length, narrowed=hasQ||st.sel||st.person||st.tag||st.series||st.publisher;
   app.innerHTML=`
   <div class="intro">
-    <div class="try"><span>Încearcă:</span>${tryWords().map(t=>`<button data-try="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="facts"><span>${B.length}${B.length%100>=1&&B.length%100<=19?'':' de'} titluri</span><span>${new Set(B.flatMap(b=>b.people)).size} fotografi și autori</span><span>consultare pe loc, la CdRF</span></div>
   </div>
   ${!narrowed&&upcoming().length?meetCarousel():''}
@@ -846,7 +828,7 @@ function renderHome(keepScroll){
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div>
-    <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${(VARB?['type','category','ppl','tg','lang','period']:['ppl','tg']).map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
+    <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${['ppl','tg'].map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
     <div class="grid">${list.length?list.map(b=>card(b,hasQ)).join(''):`<div class="empty">Nicio carte nu se potrivește. <button class="linkbtn" data-rm="all">Șterge filtrele</button></div>`}</div></div>
   </section>`;
   document.title='Biblioteca CdRF';
@@ -910,7 +892,7 @@ function renderList(){
     <h1>Lista mea</h1>
     <p class="lead">Cărțile pe care vrei să le vezi la bibliotecă, ordonate după raft. Lista rămâne doar în acest browser.</p>
     ${items.length?`<div class="acts"><button class="pbtn" data-print>Tipărește sau salvează ca PDF</button><button class="linkbtn" data-clearlist>Golește lista</button></div>`:''}
-    <div class="litems">${items.length?items.map(b=>`<div class="li"><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
+    <div class="litems">${items.length?items.map(b=>`<div class="li"><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
   </div>`;
   document.title='Lista mea · Biblioteca CdRF'; watchHero();
 }
@@ -1182,7 +1164,6 @@ document.addEventListener('click',e=>{
   if(t.matches('[data-open-cur]')){lightbox(byId[location.hash.slice(7)],galIdx);return;}
   if(t.matches('[data-img]')){setImg(galIdx+(+t.dataset.img));return;}
   if(t.matches('[data-thumb]')){setImg(+t.dataset.thumb);return;}
-  if(t.matches('[data-try]')){setQuery(t.dataset.try);return;}
   if(t.matches('[data-fpanel]')){openPanel();return;}
   if(t.matches('[data-sel]')){goHomeWith(()=>{clearAll();st.sel=t.dataset.sel;});return;}
   if(t.matches('[data-person]')){goHomeWith(()=>{clearAll();st.person=t.dataset.person;});return;}
@@ -1243,7 +1224,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-gr
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);
-if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (filtre în stânga, fără ovale) · <a href="./">vezi varianta de acum</a>';}
+if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (fără forme rotunjite, + / −, bife pentru Lista mea) · <a href="./">vezi varianta de acum</a>';}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();

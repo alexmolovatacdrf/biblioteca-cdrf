@@ -37,6 +37,7 @@ function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.api === 'panouri') return panelsApi_();
   if (p.api === 'carti') return booksApi_();
+  if (p.api === 'stat') return statLog_(p);
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
     error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
   /* datele de pornire (logarea Google) intră în <head>; nu ne bazăm doar pe comentariul <!--BOOT-->, pe care Apps Script îl poate elimina */
@@ -671,4 +672,68 @@ function saveRawSource(session, id, c) {
     String(c.desc || '').slice(0, 45000), String(c.raw || '').slice(0, 45000)];
   sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setNumberFormat('@').setValues([row.map(String)]);
   return true;
+}
+
+
+/* ===================== Statistica proprie a site-ului =====================
+ * Site-ul trimite doar: ce carte s-a deschis, ce s-a căutat (și câte rezultate), ce s-a pus în „Lista mea”.
+ * Nu se salvează nimic despre vizitator (nici IP, nici cookie, nici identificator). */
+const SH_STATS = 'Statistici';
+const STAT_TYPES = { carte: 1, cautare: 1, lista: 1 };
+function statSheet_() {
+  const ss = ss_();
+  let sh = ss.getSheetByName(SH_STATS);
+  if (!sh) {
+    sh = ss.insertSheet(SH_STATS);
+    sh.getRange(1, 1, 1, 4).setValues([['Data', 'Tip', 'Ce (ID carte sau text căutat)', 'Rezultate']]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.getRange('A:C').setNumberFormat('@');
+  }
+  return sh;
+}
+function statLog_(p) {
+  try {
+    const t = String(p.t || '');
+    if (STAT_TYPES[t]) {
+      let k = t === 'cautare'
+        ? String(p.q || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 80)
+        : (/^\d{1,6}$/.test(String(p.id || '')) ? String(p.id) : '');
+      if (/^[=+\-@]/.test(k)) k = "'" + k;
+      const cache = CacheService.getScriptCache(), ck = 'stn_' + today_();
+      const used = Number(cache.get(ck) || 0);
+      if (k.length >= 2 && used < 5000) {
+        cache.put(ck, String(used + 1), 21600);
+        const n = t === 'cautare' ? Math.max(0, Math.min(9999, parseInt(p.n, 10) || 0)) : '';
+        statSheet_().appendRow([today_(), t, k, n]);
+      }
+    }
+  } catch (err) { /* statistica nu trebuie să blocheze nimic */ }
+  return ContentService.createTextOutput('ok');
+}
+/** Pentru pagina „Statistici” din admin. */
+function getStats(session, days) {
+  me_(session);
+  days = Math.max(1, Math.min(365, parseInt(days, 10) || 30));
+  const out = { days: days, total: { carte: 0, cautare: 0, lista: 0, zero: 0 }, open: [], list: [], search: [], zero: [], perDay: [] };
+  const sh = ss_().getSheetByName(SH_STATS);
+  if (!sh || sh.getLastRow() < 2) return out;
+  const from = Utilities.formatDate(new Date(Date.now() - (days - 1) * 864e5), 'Europe/Bucharest', 'yyyy-MM-dd');
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getDisplayValues();
+  const c = { carte: {}, cautare: {}, lista: {}, zero: {} }, per = {};
+  v.forEach(r => {
+    const d = String(r[0]), t = String(r[1]), k = String(r[2]).replace(/^'/, '');
+    if (d < from || !c[t] || !k) return;
+    out.total[t]++; c[t][k] = (c[t][k] || 0) + 1; per[d] = (per[d] || 0) + 1;
+    if (t === 'cautare' && String(r[3]) === '0') { out.total.zero++; c.zero[k] = (c.zero[k] || 0) + 1; }
+  });
+  const top = (o, n) => Object.keys(o).map(k => [k, o[k]]).sort((a, b) => b[1] - a[1]).slice(0, n);
+  const bs = ss_().getSheetByName(SH_BOOKS), h = headers_(bs);
+  const rows = bs.getRange(2, 1, bs.getLastRow() - 1, h.length).getDisplayValues();
+  const ti = h.indexOf('Titlu'), au = h.indexOf('Fotograf / autor'), T = {};
+  rows.forEach(r => { T[r[0]] = [r[ti], r[au]]; });
+  const withT = a => a.map(([id, n]) => [id, n, (T[id] || ['ID ' + id])[0], (T[id] || ['', ''])[1]]);
+  out.open = withT(top(c.carte, 25)); out.list = withT(top(c.lista, 15));
+  out.search = top(c.cautare, 30); out.zero = top(c.zero, 30);
+  out.perDay = Object.keys(per).sort().map(d => [d, per[d]]);
+  return out;
 }

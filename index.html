@@ -664,7 +664,7 @@ const BM='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h8v12l-4-3-4 
 const BMF='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h8v12l-4-3-4 3z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
 function toast(html){let el=document.getElementById('toast'); if(!el){el=document.createElement('div');el.id='toast';el.className='toast';el.setAttribute('role','status');document.body.appendChild(el);}
   el.innerHTML=html; el.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('on'),4200);}
-function toggleMine(id){ const add=!isMine(id); if(!add) mine=mine.filter(x=>x!==id); else mine.push(id); saveMine();
+function toggleMine(id){ const add=!isMine(id); if(!add) mine=mine.filter(x=>x!==id); else mine.push(id); saveMine(); if(add) stat('lista',{id:id});
   const n=document.querySelector('#navlist .n'); if(n){n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump');}
   if(location.hash!=='#lista') toast(add?`<span>Adăugată în Lista mea · ${mine.length} ${mine.length===1?'carte':'cărți'}</span><button data-list>Vezi lista</button>`:`<span>Scoasă din Lista mea</span>`);
   document.querySelectorAll(`[data-save="${id}"]`).forEach(b=>{const on=isMine(id); b.setAttribute('aria-pressed',on); b.setAttribute('aria-label',on?'Scoate din lista mea':'Adaugă în lista mea'); b.innerHTML=b.classList.contains('savebig')?(on?BMF+'În lista mea':BM+'Adaugă în lista mea'):(on?BMF:BM);});
@@ -1107,11 +1107,25 @@ function gaPage(){
   gtag('event','page_view',{page_title:title,page_location:location.origin+path});
 }
 function gaSearch(v){
-  clearTimeout(gaQT); if(!gaReady) return;
+  clearTimeout(gaQT);
   gaQT=setTimeout(()=>{const q=String(v||'').trim().slice(0,80); if(q.length<3||q===gaLastQ) return; gaLastQ=q;
     let n=0; try{n=filtered().length}catch(e){}
-    gtag('event','search',{search_term:q,nr_rezultate:n});},1500);
+    if(gaReady&&!window['ga-disable-'+GA_ID]) gtag('event','search',{search_term:q,nr_rezultate:n});
+    stat('cautare',{q:q,n:n});},1500);
 }
+/* Statistica proprie a bibliotecii: doar numărători (ce carte s-a deschis, ce s-a căutat), fără cookie-uri și fără date despre vizitator. */
+const pubHost=()=>/(github\.io|cdrf\.ro)$/.test(location.hostname);
+let statLastH='';
+function stat(t,o){
+  if(!pubHost()||!/^https:/.test(PANELS_API)) return;
+  try{ const u=PANELS_API+'?api=stat&t='+t+Object.keys(o).map(k=>'&'+k+'='+encodeURIComponent(o[k])).join('');
+    fetch(u,{mode:'no-cors',keepalive:true,credentials:'omit'}).catch(()=>{}); }catch(e){}
+}
+function statPage(){ const h=location.hash.slice(1); if(h===statLastH) return; statLastH=h; if(h.startsWith('carte-')&&byId[h.slice(6)]) stat('carte',{id:h.slice(6)}); }
+/* Cloudflare Web Analytics: fără cookie-uri, deci fără acord; doar pe site-ul public */
+const CF_TOKEN='__CF__';
+function cfInit(){ if(!pubHost()||!/^[0-9a-f]{32}$/.test(CF_TOKEN)) return;
+  const s=document.createElement('script'); s.defer=true; s.src='https://static.cloudflareinsights.com/beacon.min.js'; s.setAttribute('data-cf-beacon',JSON.stringify({token:CF_TOKEN,spa:true})); document.head.appendChild(s); }
 function gaBanner(){
   if(document.getElementById('consent')) return;
   const d=document.createElement('div'); d.id='consent'; d.setAttribute('role','dialog'); d.setAttribute('aria-label','Statistici și cookie-uri');
@@ -1218,10 +1232,10 @@ document.addEventListener('pointerdown',e=>{const s=e.target.closest('.gthumbs,.
 document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX-drag.x; if(!drag.moved&&Math.abs(dx)>5){drag.moved=true; drag.s.classList.add('dragging');} if(drag.moved){drag.s.scrollLeft=drag.left-dx; e.preventDefault();}});
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
 document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
-window.addEventListener('hashchange',()=>{route(); gaPage();});
+window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);
-setTimeout(gaInit,400);
+setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();
 })();

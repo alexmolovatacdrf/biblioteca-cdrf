@@ -49,6 +49,13 @@ td.th img{width:66px;height:88px;object-fit:contain;display:block;background:#ff
 .st.c{background:#eee;color:#555}.st.l{background:#fff4e0;color:var(--warn)}.st.g{background:#e7f0ff;color:#1d4fb8}.st.p{background:#e6f5ea;color:var(--ok)}
 .ok{color:var(--ok);font-size:13px}
 .flag{color:var(--red);font-size:12px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px;margin-top:18px}
+.sbox h3{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+.srow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:6px 0;border-bottom:1px solid var(--soft);font-size:14px;align-items:center}.srow.ck{cursor:pointer}.srow.ck:hover .st1{text-decoration:underline}
+.srow .n{font-variant-numeric:tabular-nums;color:var(--muted)}.srow .bar{height:4px;background:var(--ink);border-radius:2px;margin-top:4px;opacity:.75}
+.sbig{display:flex;gap:28px;flex-wrap:wrap;margin:10px 0 4px}.sbig div{font-size:13px;color:var(--muted)}.sbig b{display:block;font-size:26px;color:var(--ink);font-weight:500}
+.spark{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:10px}.spark i{flex:1;background:var(--ink);opacity:.7;min-height:1px;border-radius:1px}
+
 .lk{border:1px solid var(--rule);border-radius:12px;padding:12px;margin:10px 0;display:grid;grid-template-columns:70px 1fr;gap:12px}
 .lk img{width:70px;height:auto;border:1px solid var(--rule)}.lk .nocov{width:70px;height:90px;border:1px dashed var(--rule)}
 .lk h4{margin:0 0 2px;font-size:15px;font-weight:600}.lk table{width:100%;border-collapse:collapse;margin-top:6px}
@@ -121,7 +128,7 @@ tr.pr td{vertical-align:top}
 </head>
 <body>
 <header><div class="bar"><span class="logo"></span><b>Biblioteca CdRF</b>
-<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Editorial</button></nav>
+<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Editorial</button><button data-view="stat">Statistici</button></nav>
 <div class="who" id="who"></div></div></header>
 <main id="app"><div class="load">Se încarcă…</div></main>
 <div class="toast" id="toast"></div>
@@ -163,7 +170,7 @@ function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.use
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;route();});
 window.addEventListener('beforeunload',e=>{if(dirty()||panDirty()){e.preventDefault();e.returnValue='';}});
 
-function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='pan')return renderPan();if(S.view==='inv')return renderInv();renderList();}
+function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='pan')return renderPan();if(S.view==='inv')return renderInv();if(S.view==='stat')return renderStat();renderList();}
 
 /* ---------- listă ---------- */
 function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.data.rows.filter(r=>{
@@ -312,6 +319,22 @@ function imgFill(){const box=$('#imgs');if(!box)return;const id=String(S.rec.ID)
       b2.querySelectorAll('[data-img]').forEach(c=>c.closest('.ic').classList.toggle('off',!c.checked));
       $('[data-k="Imagini ascunse"]').value=h.join('; ');$('[data-k="Imagine la mouse"]').value=hv;};
     b2.querySelectorAll('input').forEach(i=>i.onchange=upd);});}
+/* ---------- statistici ---------- */
+function renderStat(){const d=S.sdays||30;
+  $('#app').innerHTML=`<div class="tools"><div class="seg" id="sdays">${[7,30,90].map(n=>`<button type="button" data-d="${n}" aria-pressed="${n===d}">${n} de zile</button>`).join('')}</div><span class="count">Doar numărători, fără date despre vizitatori. Țări, surse și dispozitive: în Google Analytics.</span></div><div id="sbody" class="load">Se încarcă…</div>`;
+  document.querySelectorAll('#sdays button').forEach(b=>b.onclick=()=>{S.sdays=+b.dataset.d;renderStat();});
+  call('getStats',d).then(r=>{if(S.view!=='stat'||S.rec)return;const mx=a=>Math.max(1,...a.map(x=>x[1]));
+    const books=(a,empty)=>a.length?a.map(x=>`<div class="srow ck" data-id="${esc(x[0])}"><div><div class="st1">${esc(x[2])}</div><div class="sub">${esc(x[3])}</div><div class="bar" style="width:${Math.round(x[1]/mx(a)*100)}%"></div></div><span class="n">${x[1]}</span></div>`).join(''):`<p class="sub">${empty}</p>`;
+    const terms=(a,empty)=>a.length?a.map(x=>`<div class="srow"><div>${esc(x[0])}<div class="bar" style="width:${Math.round(x[1]/mx(a)*100)}%"></div></div><span class="n">${x[1]}</span></div>`).join(''):`<p class="sub">${empty}</p>`;
+    const pd=r.perDay,pm=mx(pd);
+    $('#sbody').className='';
+    $('#sbody').innerHTML=`<div class="sbig"><div><b>${r.total.carte}</b>cărți deschise</div><div><b>${r.total.cautare}</b>căutări</div><div><b>${r.total.zero}</b>căutări fără rezultat</div><div><b>${r.total.lista}</b>puse în „Lista mea”</div></div>
+    ${pd.length?`<div class="spark" title="activitate pe zile">${pd.map(x=>`<i style="height:${Math.round(x[1]/pm*100)}%" title="${esc(x[0])}: ${x[1]}"></i>`).join('')}</div>`:''}
+    <div class="sgrid"><div class="sbox"><h3>Cele mai deschise cărți</h3>${books(r.open,'Încă nimic în perioada asta.')}</div>
+    <div class="sbox"><h3>Ce caută oamenii și nu găsesc</h3>${terms(r.zero,'Nicio căutare fără rezultat.')}<h3 style="margin-top:22px">Toate căutările</h3>${terms(r.search,'Încă nicio căutare.')}</div>
+    <div class="sbox"><h3>Puse în „Lista mea”</h3>${books(r.list,'Încă nimic.')}</div></div>`;
+    document.querySelectorAll('#sbody .srow.ck').forEach(x=>x.onclick=()=>openRec(x.dataset.id));
+  }).catch(e=>{$('#sbody').className='load msg err';$('#sbody').textContent=e.message||String(e);});}
 function diffHtml(a,b){a=String(a||'');b=String(b||'');let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let s=0;while(s<a.length-p&&s<b.length-p&&a[a.length-1-s]===b[b.length-1-s])s++;
   const pre=a.slice(Math.max(0,p-40),p),post=a.slice(a.length-s,a.length-s+40),del=a.slice(p,a.length-s),ins=b.slice(p,b.length-s);
   return (p>40?'…':'')+esc(pre)+(del?`<del>${esc(del)}</del>`:'')+(ins?`<ins>${esc(ins)}</ins>`:'')+esc(post)+(a.length-s+40<a.length?'…':'')+(!a?' <span class=sub>(câmp gol înainte)</span>':'')+(!b?' <span class=sub>(golit)</span>':'');}

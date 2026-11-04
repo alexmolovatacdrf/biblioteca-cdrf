@@ -84,6 +84,19 @@ section{padding-block:48px}
 #consent .cbtn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
 #consent .cbtn.sec{background:var(--paper);color:var(--ink);border-color:var(--rule)}
 @media (max-width:480px){#consent{left:12px;right:12px;bottom:12px;max-width:none}}
+/* ---------- Varianta B: filtre permanente în stânga, + / −, pătratul roșu la ce e ales, fără forme rotunjite ---------- */
+body.vb *, body.vb *::before, body.vb *::after{border-radius:0!important}
+body.vb .fl label{padding:3px 0;background:none!important}
+body.vb .fl label:hover span{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--faint)}
+body.vb .fl input[type=checkbox]{width:11px;height:11px;border:0;background:transparent;align-self:center}
+body.vb .fl input[type=checkbox]:hover{border:1px solid #c9c9ce}
+body.vb .fl input[type=checkbox]:checked{border:2.5px solid var(--accent)}
+body.vb .fl label:has(input:checked) span{color:var(--ink)}
+body.vb .fh{font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+body.vb .fh .pm{font-size:18px;line-height:1;font-weight:300;width:14px;text-align:center}
+body.vb .fg2:first-child{border-top:1px solid var(--rule)}
+body.vb .fclr{font-size:13px}
+@media (min-width:1101px){body.vb .filters .dd:not(.sortdd),body.vb .stog{display:none}}
 .linkbtn{background:none;border:0;padding:0;cursor:pointer;font-size:15px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
 .linkbtn:hover{text-decoration-color:var(--ink)}
 
@@ -685,7 +698,8 @@ function tryWords(){
   TRY_POOL.forEach(w=>{if(out.length<6) add(w);});
   return out.slice(0,6).sort((a,b)=>rkey('o'+a)-rkey('o'+b));
 }
-const st={fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
+const VARB=false;
+const st={fsq:{},side:VARB,open:VARB?{type:true,category:true,ppl:false,pub:false,tg:false,lang:false,period:false}:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);
 /* listă de nume în fișă: la liste lungi arătăm primele 8, restul la cerere; toate rămân căutabile */
 function nameList(ns,more){const L=n=>`<button class="lnk" data-person="${esc(n)}">${esc(n)}</button>`;const k=8;
@@ -780,7 +794,7 @@ function sideGroup(f){
   const c={}; B.forEach(b=>[].concat(f.get(b)).filter(Boolean).forEach(v=>c[v]=(c[v]||0)+1));
   const set=st[f.key]; const open=st.open[f.key]||set.size>0;
   const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
-  return `<div class="fg2"><button type="button" class="fh" data-fh="${f.key}" aria-expanded="${open}"><span>${f.label}${set.size?` <span class="n">${set.size}</span>`:''}</span><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="${open?'M1 3l4 4 4-4':'M3 1l4 4-4 4'}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
+  return `<div class="fg2"><button type="button" class="fh" data-fh="${f.key}" aria-expanded="${open}"><span>${f.label}${set.size?` <span class="n">${set.size}</span>`:''}</span>${VARB?`<span class="pm" aria-hidden="true">${open?'−':'+'}</span>`:`<svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="${open?'M1 3l4 4 4-4':'M3 1l4 4-4 4'}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>`}</button>
     ${open?`<div class="fb">${f.search?`<input class="fs-q" type="search" placeholder="Caută un nume" data-fsq="${f.key}" value="${esc(st.fsq[f.key]||'')}" aria-label="Caută în ${f.label}">`:''}<div class="fl">${keys.map(v=>`<label data-n="${esc(norm(v))}" ${f.search&&st.fsq[f.key]&&!norm(v).includes(norm(st.fsq[f.key]))&&!set.has(v)?'hidden':''}><input type="checkbox" data-f="${f.key}" value="${esc(v)}" ${set.has(v)?'checked':''}><span>${esc(f.fmt?f.fmt(v):v)}</span></label>`).join('')}</div>${set.size?`<button class="fclr" data-fclr="${f.key}">Șterge</button>`:''}</div>`:''}</div>`;
 }
 function activeChips(){
@@ -832,7 +846,7 @@ function renderHome(keepScroll){
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div>
-    <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${['ppl','tg'].map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
+    <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${(VARB?['type','category','ppl','tg','lang','period']:['ppl','tg']).map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
     <div class="grid">${list.length?list.map(b=>card(b,hasQ)).join(''):`<div class="empty">Nicio carte nu se potrivește. <button class="linkbtn" data-rm="all">Șterge filtrele</button></div>`}</div></div>
   </section>`;
   document.title='Biblioteca CdRF';
@@ -1229,6 +1243,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-gr
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);
+if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (filtre în stânga, fără ovale) · <a href="./">vezi varianta de acum</a>';}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();

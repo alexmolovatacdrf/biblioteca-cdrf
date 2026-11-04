@@ -115,7 +115,7 @@ section{padding-block:48px}
 .dd>button[aria-expanded="true"],.dd>button.on{border-color:var(--ink)}
 .dd>button .n{font-size:11.5px;background:var(--ink);color:var(--paper);border-radius:999px;padding:0 6px}
 .dd .menu{position:absolute;top:calc(100% + 6px);left:0;min-width:250px;max-height:360px;overflow:auto;background:var(--paper);border:1px solid var(--rule);box-shadow:0 14px 40px -12px rgba(0,0,0,.22);padding:8px;z-index:40;border-radius:8px}
-.dd .menu label{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:15px}
+.dd .menu label{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:999px;cursor:pointer;font-size:15px}
 .dd .menu label:hover{background:var(--stage)}
 .dd .menu .c{margin-left:auto;font-size:13px;color:var(--muted)}
 .dd .menu input{accent-color:var(--ink)}
@@ -131,7 +131,7 @@ section{padding-block:48px}
 .fpanel .body{overflow:auto;padding:6px max(18px,env(safe-area-inset-left,0px)) 12px;-webkit-overflow-scrolling:touch}
 .fpanel fieldset{border:0;padding:12px 0;margin:0;border-bottom:1px solid var(--rule)}
 .fpanel legend{font-size:17px;padding:0;margin-bottom:6px}
-.fpanel label{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:16px}
+.fpanel label{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:999px;font-size:16px}
 .fpanel label input{width:20px;height:20px;accent-color:var(--ink)}
 .fpanel label .c{margin-left:auto;color:var(--muted);font-size:14px}
 .fpanel .ft{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px max(18px,env(safe-area-inset-left,0px));border-top:1px solid var(--rule)}
@@ -476,7 +476,7 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
 .fh{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:0;font-size:16px;cursor:pointer;text-align:left}
 .fb{margin-top:10px}
 .fl{display:flex;flex-direction:column;max-height:300px;overflow:auto;scrollbar-width:thin}
-.fl label{display:flex;gap:10px;align-items:baseline;font-size:15px;padding:4px 0;cursor:pointer;line-height:1.3}
+.fl label{display:flex;gap:10px;align-items:baseline;font-size:15px;padding:4px 10px;border-radius:999px;cursor:pointer;line-height:1.3}
 .fl label[hidden]{display:none}
 .fl label .c{margin-left:auto;color:var(--muted);font-size:13px;padding-left:8px;padding-right:14px}
 .fl input{accent-color:var(--ink);width:15px;height:15px;flex:none;transform:translateY(2px)}
@@ -496,22 +496,16 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
 @media (max-width:1100px){.stog{display:none}.fbtn{display:inline-flex}.libw{grid-template-columns:minmax(0,1fr)}.fside{display:none}}
 @media (max-width:480px){.brand .logo{height:34px}.brand .lib{font-size:17px;gap:7px}.brand .lib::before{width:9px;height:9px}}
 
-/* Bifa bibliotecii: vizorul. Nebifat = colțurile gri ale cadrului; bifat = colțuri negre și pătratul roșu din siglă (gol pe dinăuntru).
-   Varianta aleasă pe 4 nov. 2026; se poate schimba. */
+/* Bifa bibliotecii: căsuță gri; bifat = pătratul roșu gol din siglă, iar rândul primește fundal gri.
+   Aleasă pe 4 nov. 2026 (înlocuiește vizorul); se poate schimba. */
 .fl input[type=checkbox],.dd .menu input[type=checkbox],.fpanel label input[type=checkbox]{
-  --vc:#b9b9bf; appearance:none;-webkit-appearance:none;margin:0;flex:none;position:relative;cursor:pointer;
-  width:18px;height:18px;border:0;border-radius:0;background-color:transparent;transform:none;
-  background-image:linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc)),
-    linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc)),linear-gradient(var(--vc),var(--vc));
-  background-repeat:no-repeat;
-  background-size:5px 1.5px,1.5px 5px,5px 1.5px,1.5px 5px,5px 1.5px,1.5px 5px,5px 1.5px,1.5px 5px;
-  background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%}
+  appearance:none;-webkit-appearance:none;margin:0;flex:none;position:relative;cursor:pointer;box-sizing:border-box;
+  width:14px;height:14px;border:1.5px solid #a9a9af;border-radius:0;background:#fff;transform:none}
 .fl input[type=checkbox]{align-self:center}
-.fpanel label input[type=checkbox]{width:20px;height:20px}
-.fl input[type=checkbox]:hover,.dd .menu input[type=checkbox]:hover,.fpanel label input[type=checkbox]:hover{--vc:#6e6e74}
-.fl input[type=checkbox]:checked,.dd .menu input[type=checkbox]:checked,.fpanel label input[type=checkbox]:checked{--vc:var(--ink);background-color:#ececef}
-.fl input[type=checkbox]:checked::after,.dd .menu input[type=checkbox]:checked::after,.fpanel label input[type=checkbox]:checked::after{
-  content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;border:2px solid var(--accent);background:#fff;box-sizing:border-box;transform:translate(-50%,-50%)}
+.fpanel label input[type=checkbox]{width:16px;height:16px}
+.fl input[type=checkbox]:hover,.dd .menu input[type=checkbox]:hover,.fpanel label input[type=checkbox]:hover{border-color:#6e6e74}
+.fl input[type=checkbox]:checked,.dd .menu input[type=checkbox]:checked,.fpanel label input[type=checkbox]:checked{border:2.5px solid var(--accent)}
+.fl label:has(input:checked),.dd .menu label:has(input:checked),.fpanel label:has(input:checked){background:var(--stage-h)}
 .fl input[type=checkbox]:focus-visible,.dd .menu input[type=checkbox]:focus-visible,.fpanel label input[type=checkbox]:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 </style>
 

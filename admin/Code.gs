@@ -39,6 +39,7 @@ function uiHtml_() {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.api === 'panouri') return panelsApi_();
+  if (p.api === 'carti') return booksApi_();
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
     error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
   const html = uiHtml_().replace('<!--BOOT-->', '<script>window.BOOT=' + JSON.stringify(boot).replace(/</g, '\\u003c') + ';</script>');
@@ -214,6 +215,7 @@ function saveRecord(session, id, changes, before) {
     if (log.length) {
       const lg = ss_().getSheetByName(SH_LOG);
       lg.getRange(lg.getLastRow() + 1, 1, log.length, 6).setValues(log);
+      CacheService.getScriptCache().remove('carti');
     }
     return { saved: log.length, conflicts: conflicts, record: getRecord(session, id) };
   } finally { lock.releaseLock(); }
@@ -234,6 +236,7 @@ function newRecord(session, title) {
     sh.getRange(r, 1, 1, h.length).setNumberFormat('@').setValues([row]);
     const lg = ss_().getSheetByName(SH_LOG);
     lg.appendRow([new Date(), user.name, id, 'Carte nouă', '', title || '']);
+    CacheService.getScriptCache().remove('carti');
     return getRecord(session, id);
   } finally { lock.releaseLock(); }
 }
@@ -254,6 +257,74 @@ function getHistory(session, id) {
   if (lg.getLastRow() < 2) return [];
   return lg.getRange(2, 1, lg.getLastRow() - 1, 6).getDisplayValues()
     .filter(r => String(r[2]) === String(id)).reverse().slice(0, 50);
+}
+
+
+/* ---------------- Fișele editate în admin, pentru site ----------------
+ * Site-ul public are o copie a catalogului, făcută la build. Ca editările din admin să apară
+ * imediat, site-ul cere ?api=carti și primește doar cărțile atinse în admin (după tabul Istoric):
+ * starea de acum, câmpurile schimbate și fișa completă (pentru cărțile publicate).
+ * Nu ies niciodată: sursele descrierii, linkurile surselor, notele, Wix ID, verificarea la raft.
+ */
+const API_FIELDS = {
+  'Titlu': 'title', 'Subtitlu': 'subtitle', 'Fotograf / autor': 'people', 'Colaboratori (nume – rol)': 'contrib',
+  'Editură': 'publisher', 'Loc': 'place', 'An': 'year', 'Ediție': 'edition', 'Serie': 'series', 'Volum': 'vol',
+  'ISBN': 'isbn', 'Limbă': 'lang', 'Tip': 'type', 'Categorie': 'category', 'Teme': 'tags', 'Raft': 'shelf',
+  'Pagini': 'pages', 'Dimensiuni (cm)': 'dim', 'Legătură': 'binding', 'Descriere': 'desc',
+  'Copertă de verificat': 'coverCheck', 'Video': 'video', 'Copertă': 'cover'
+};
+function apiVal_(k, v) {
+  v = String(v == null ? '' : v).trim();
+  const list = s => s ? s.split(/\s*;\s*/).map(x => x.trim()).filter(Boolean) : [];
+  if (k === 'people' || k === 'lang' || k === 'tags') return list(v);
+  if (k === 'contrib') {
+    const out = [];
+    list(v).forEach(part => {
+      const m = part.match(/^(.*?)\s+[–-]\s+(.+)$/);
+      if (!m) { out.push({ n: part, r: '' }); return; }
+      m[1].split(/\s*,\s*/).filter(Boolean).forEach(n => out.push({ n: n, r: m[2].trim() }));
+    });
+    return out;
+  }
+  if (k === 'coverCheck') return /^da$/i.test(v);
+  if (k === 'video') return list(v).map(u => { const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? { yt: m[1] } : null; }).filter(Boolean);
+  if (k === 'cover') return /^covers\/[\w.-]+\.(webp|jpe?g|png)$/i.test(v) ? v : '';
+  return v;
+}
+function booksApi_() {
+  const cache = CacheService.getScriptCache();
+  let out = cache.get('carti');
+  if (!out) {
+    const lg = ss_().getSheetByName(SH_LOG);
+    const touched = {};
+    if (lg.getLastRow() > 1) {
+      lg.getRange(2, 3, lg.getLastRow() - 1, 2).getDisplayValues().forEach(r => {
+        const id = String(r[0]).trim(), f = String(r[1]).trim();
+        if (!/^\d+$/.test(id)) return;                 // rândurile de panouri au „panou P…”
+        const k = f === 'Carte nouă' ? '*' : f === 'Stare' ? 'stare' : API_FIELDS[f];
+        if (!k) return;
+        (touched[id] = touched[id] || {})[k] = 1;
+      });
+    }
+    const sh = ss_().getSheetByName(SH_BOOKS);
+    const h = headers_(sh);
+    const vals = sh.getRange(2, 1, sh.getLastRow() - 1, h.length).getDisplayValues();
+    const books = [];
+    vals.forEach(r => {
+      const id = String(r[0]).trim();
+      if (!touched[id]) return;
+      const rec = { id: id, stare: String(r[h.indexOf('Stare')] || '').trim(), edited: Object.keys(touched[id]) };
+      if (rec.stare === 'Publicată') {
+        const f = {};
+        Object.keys(API_FIELDS).forEach(col => { const i = h.indexOf(col); if (i >= 0) f[API_FIELDS[col]] = apiVal_(API_FIELDS[col], r[i]); });
+        rec.fields = f;
+      }
+      books.push(rec);
+    });
+    out = JSON.stringify({ books: books, at: new Date().toISOString() });
+    try { cache.put('carti', out, 60); } catch (err) { /* peste 100 KB nu intră în cache; se recalculează */ }
+  }
+  return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
 }
 
 /* ---------------- Panouri pe prima pagină ----------------

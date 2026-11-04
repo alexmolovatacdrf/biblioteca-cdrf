@@ -536,6 +536,9 @@ function prepBook(b){
   const y=+b.year; b._period=y?(PERIODS.find(p=>p[2](y))||[''])[0]:'';
 }
 B.forEach(prepBook);
+/* Cărțile cu coperta de verificat nu apar public; le vedeți în admin, marcate cu roșu, până le confirmați. */
+function hideChk(){let n=0; for(let i=B.length-1;i>=0;i--) if(B[i].coverCheck){delete byId[B[i].id]; B.splice(i,1); n++;} return n;}
+hideChk();
 const SELECTIONS=[
   {id:'femei-fotografe',title:'Femei în fotografie',sub:'De la Julia Margaret Cameron la Nan Goldin',ids:['235','95','193','175','278','395','296','510','63']},
   {id:'bucuresti',title:'București, fotografiat',sub:'Orașul văzut de patru fotografi',ids:['223','78','179','283']},
@@ -546,6 +549,7 @@ const SELECTIONS=[
   {id:'strada',title:'Pe stradă',sub:'Street photography',ids:["193", "300", "76", "113", "27"]},
   {id:'invata',title:'Învață fotografia',sub:'Manuale și ghiduri practice',ids:["101", "418", "421", "107", "403", "2", "345", "336", "428"]},
 ];
+const selClean=()=>SELECTIONS.forEach(s=>{s.ids=s.ids.filter(i=>byId[i]);}); selClean();
 /* Meet the Book: cartea prezentată săptămâna aceasta. when/guest rămân goale până le completezi. */
 /* Meet the Book: prezentările viitoare, în ordinea datei. Cele trecute dispar singure din banda de sus. */
 const EVENT_KINDS=['Meet the Book','Seară de film','Curs','Workshop','Club de carte','Expoziție','Târg','Prezentare','Artist talk'];
@@ -574,6 +578,37 @@ function panelsLive(){
       date:dt(p.date),end:dt(p.end),from:dt(p.from),to:dt(p.to),books:(Array.isArray(p.books)?p.books:[]).map(String).filter(x=>/^\d+$/.test(x))}));
     if(JSON.stringify(next)===JSON.stringify(MEETS)) return;
     MEETS=next; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)){meetIdx=0; renderHome(window.scrollY);}
+  }).catch(()=>clearTimeout(tm));
+}
+/* Fișele schimbate în admin vin la zi din tabel (?api=carti): doar cărțile atinse în admin, câmpurile editate.
+   Copia din build rămâne rezerva; pozele rămân cele din build. */
+function booksLive(){
+  if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
+  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),8000);
+  fetch(PANELS_API+'?api=carti',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
+    if(!j||!Array.isArray(j.books)) return;
+    const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');
+    const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
+    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video'];
+    const clean=(k,v)=>(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
+    let ch=false;
+    j.books.forEach(r=>{
+      const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
+      const ed=Array.isArray(r.edited)?r.edited:[]; const b=byId[id];
+      if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
+      const f=r.fields||{};
+      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
+      else if(ed.includes('stare')||ed.includes('*')){
+        const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
+        const cv=safeSrc(S(f.cover))!==PH?S(f.cover):'';
+        nb.cover=cv||PH; nb.cw=300; nb.ch=400; nb.images=[{src:nb.cover,w:300,h:400,cap:'Coperta'}];
+        if(!nb.title) return; prepBook(nb); B.push(nb); byId[id]=nb; ch=true;
+      }
+    });
+    if(hideChk()) ch=true;
+    if(!ch) return; selClean();
+    const h=location.hash.slice(1);
+    if(h.startsWith('carte-')) renderBook(h.slice(6)); else if(!/^(despre|lista)/.test(h)) renderHome(window.scrollY);
   }).catch(()=>clearTimeout(tm));
 }
 let meetIdx=0, meetTimer=null;
@@ -1098,6 +1133,7 @@ document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=n
 document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
 window.addEventListener('hashchange',route);
 setTimeout(panelsLive,50);
+setTimeout(booksLive,60);
 updNav();
 route();
 })();

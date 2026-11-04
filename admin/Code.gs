@@ -39,7 +39,11 @@ function doGet(e) {
   if (p.api === 'carti') return booksApi_();
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
     error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
-  const html = uiHtml_().replace('<!--BOOT-->', '<script>window.BOOT=' + JSON.stringify(boot).replace(/</g, '\\u003c') + ';</script>');
+  /* datele de pornire (logarea Google) intră în <head>; nu ne bazăm doar pe comentariul <!--BOOT-->, pe care Apps Script îl poate elimina */
+  const tag = '<script>window.BOOT=' + JSON.stringify(boot).replace(/</g, '\\u003c') + ';</script>';
+  let html = uiHtml_();
+  html = html.indexOf('<!--BOOT-->') >= 0 ? html.replace('<!--BOOT-->', tag)
+       : /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + tag) : tag + html;
   return HtmlService.createHtmlOutput(html)
     .setTitle('Biblioteca CdRF – admin')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')

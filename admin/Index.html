@@ -151,7 +151,7 @@ details.sec .grid{padding-bottom:12px}details.sec fieldset{border:0;padding:0 0 
 </head>
 <body>
 <header><div class="bar"><span class="logo"></span><b>Biblioteca CdRF</b>
-<nav class="tabs"><button data-view="home" aria-current="true">De făcut<span class="n" id="todo"></span></button><button data-view="list">Cărți</button><button data-view="sel">Selecții</button><button data-view="pan">Editorial</button><button data-view="inv">Inventar</button><button data-view="stat">Statistici</button></nav>
+<nav class="tabs"><button data-view="home" aria-current="true">De făcut<span class="n" id="todo"></span></button><button data-view="list">Cărți</button><button data-view="sel">Selecții</button><button data-view="pan">Editorial</button><button data-view="inv">Inventar</button><button data-view="stat">Statistici</button><button data-view="users">Utilizatori</button></nav>
 <div class="who" id="who"></div></div></header>
 <main id="app"><div class="load">Se încarcă…</div></main>
 <div class="toast" id="toast"></div>
@@ -182,7 +182,7 @@ function logout(){raw('logout',getSess()).finally(()=>{setSess('');showLogin();}
 function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.site+v;if(v.startsWith('wix:'))return 'https://static.wixstatic.com/media/'+v.slice(4)+'/v1/fit/w_300,h_300/c.jpg';if(/^https?:/.test(v))return v;return '';}
 const C=k=>S.data.cols.indexOf(k);
 
-function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;if(d.user.role!=='admin'){const t=document.querySelector('[data-view=stat]');if(t)t.remove();}route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
+function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;if(d.user.role!=='admin'){document.querySelectorAll('[data-view=stat],[data-view=users]').forEach(t=>t.remove());}route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
 (function boot(){const B=window.BOOT||{};
   if(B.error)return showLogin(B.error);
   if(B.code&&B.state&&getSess())return start();
@@ -193,7 +193,7 @@ function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.use
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;S.se=null;if(S.view==='home'&&S.data)loadHome();route();});
 window.addEventListener('beforeunload',e=>{if(dirty()||panDirty()||selDirty()){e.preventDefault();e.returnValue='';}});
 
-function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='home')return renderHome();if(S.view==='pan')return renderPan();if(S.view==='sel')return renderSel();if(S.view==='inv')return renderInv();if(S.view==='stat'&&S.data.user.role==='admin')return renderStat();renderList();}
+function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='home')return renderHome();if(S.view==='pan')return renderPan();if(S.view==='sel')return renderSel();if(S.view==='inv')return renderInv();if(S.view==='stat'&&S.data.user.role==='admin')return renderStat();if(S.view==='users'&&S.data.user.role==='admin')return renderUsers();renderList();}
 
 /* ---------- listă ---------- */
 function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.data.rows.filter(r=>{
@@ -221,7 +221,7 @@ function renderList(){
   $('#app').innerHTML=`<div class="lay">${side}<div>
   <div class="tools"><input type="search" id="q" placeholder="Caută: titlu, autor, ISBN, ID…" value="${esc(S.q)}">
   <span class="vt"><button data-v="l" aria-pressed="${!S.grid}">Listă</button><button data-v="g" aria-pressed="${!!S.grid}">Coperți</button></span>
-  <button class="btn" id="add">+ Carte nouă</button></div>${bulk}
+  ${canW()?'<button class="btn" id="add">+ Carte nouă</button>':'<span class="sub">Cont de vizitator: doar citire</span>'}</div>${canW()?bulk:''}
   ${S.grid?`<div class="cgrid">${rows.slice(0,300).map(r=>{const u=coverUrl(r[C('Copertă')]);return `<div class="cg rw" data-id="${esc(r[C('ID')])}"><div class="im">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:'<span class="ph2">fără copertă</span>'}</div><div class="t">${esc(r[C('Titlu')])||'(fără titlu)'}</div><div class="sub">${esc(r[C('Fotograf / autor')])}</div><div class="sub"><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span>${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}</div></div>`}).join('')}</div>`:
   `<table><thead><tr><th></th><th></th><th>Carte</th><th class="hide-m">An</th><th class="hide-m">Raft</th><th class="hide-m" title="verificată la raft">Raft ✓</th><th>Stare</th><th class="hide-m">Modificată</th></tr></thead>
   <tbody>${rows.slice(0,300).map(r=>{const id=r[C('ID')],u=coverUrl(r[C('Copertă')]);return `<tr class="rw" data-id="${esc(id)}"><td class="ck"><input type="checkbox" data-sel="${esc(id)}" ${sel.indexOf(id)>=0?'checked':''}></td><td class="th">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:''}</td>
@@ -244,7 +244,7 @@ function renderList(){
   const ba=$('#bulkall');if(ba)ba.onchange=()=>{S.sel=[];renderList();};
   document.querySelectorAll('[data-bulk]').forEach(b=>b.onclick=()=>bulkAct(b.dataset.bulk));
   document.querySelectorAll('.vtog button,.vt button').forEach(b=>b.onclick=()=>{S.grid=b.dataset.v==='g';try{localStorage.setItem('adm_grid',S.grid?'1':'')}catch(e){}renderList();});
-  $('#add').onclick=()=>{const t=prompt('Titlul cărții noi:');if(t==null)return;call('newRecord',t.trim()).then(rec=>{S.data.rows.push(S.data.cols.map(k=>rec[k]||''));showRec(rec);toast('Carte nouă: ID '+rec.ID);}).catch(e=>alert(e.message||e));};
+  if($('#add'))$('#add').onclick=()=>{const t=prompt('Titlul cărții noi:');if(t==null)return;call('newRecord',t.trim()).then(rec=>{S.data.rows.push(S.data.cols.map(k=>rec[k]||''));showRec(rec);toast('Carte nouă: ID '+rec.ID);}).catch(e=>alert(e.message||e));};
 }
 function bulkAct(k){const ids=S.sel.slice();if(!ids.length)return;
   const run=(ch,msg)=>{toast('Se salvează…');call('bulkUpdate',ids,ch).then(r=>{return call('getInit').then(d=>{S.data=d;S.sel=[];renderList();toast(msg+': '+r.saved+(r.errors.length?' · erori: '+r.errors.length:''));if(r.errors.length)alert(r.errors.join('\n'));});}).catch(e=>alert(e.message||e));};
@@ -331,10 +331,10 @@ function renderRec(){
   $('#app').innerHTML=`<p><button class="linkbtn" id="back">← Înapoi la Cărți</button></p>
   <div class="fh">${u?`<img src="${esc(u)}" alt="Coperta">`:'<div class="ph"></div>'}<div><h2>${esc(r['Titlu'])||'(fără titlu)'}</h2><div class="sub" style="margin-top:4px">${esc(r['Fotograf / autor'])}${r['An']?' · '+esc(r['An']):''} · ID ${esc(r.ID)}${r['Stare']==='Publicată'?` · <a href="${S.data.site}#carte-${esc(r.ID)}" target="_blank" rel="noopener">vezi pe site</a>`:''}${mod?' · modificată '+esc(mod):''}</div>
    <div class="seg" id="stare" style="margin-top:10px">${STARI.map(st=>`<button type="button" data-s="${st}" aria-pressed="${r['Stare']===st}" ${(st==='Publicată'&&!adm)||locked?'disabled title="Doar adminul schimbă starea unei cărți publicate"':''}>${st}</button>`).join('')}</div>${locked?'<div class="sub" style="margin-top:8px;color:var(--warn)">Cartea e pe site. Ce modifici aici nu intră direct pe site: ajunge la admin, care aprobă sau respinge.</div>':''}</div>
-   <div class="acts"><button class="btn sec" id="lkgo">Caută cartea</button><button class="btn" id="save">${locked?'Trimite spre aprobare':'Salvează'}</button></div></div>
+   <div class="acts" ${canW()?'':'hidden'}><button class="btn sec" id="lkgo">Caută cartea</button><button class="btn" id="save">${locked?'Trimite spre aprobare':'Salvează'}</button></div></div>
   <div class="flay"><div>${body}
   <details class="sec" id="lksec" ${S.look&&S.look.id===r.ID?'open':''}><summary>Informații din alte surse<span class="sub">Open Library, Google Books, LoC, DNB, BnF</span></summary><div style="padding-bottom:12px">${lkBox()}</div></details>
-  <div class="savebar"><button class="btn" id="save2">${locked?'Trimite spre aprobare':'Salvează'}</button><button class="btn sec" id="cancel">Renunță</button><span class="msg" id="msg"></span></div></div>
+  <div class="savebar" ${canW()?'':'hidden'}><button class="btn" id="save2">${locked?'Trimite spre aprobare':'Salvează'}</button><button class="btn sec" id="cancel">Renunță</button><span class="msg" id="msg"></span></div></div>
   <aside class="rail">${r['Copertă de verificat']?'<div class="box"><h3 class="sec">De verificat</h3>Coperta e marcată „de verificat”, cartea nu apare pe site. Vezi secțiunea Imagini și scoate marcajul când e bună.</div>':''}
    <div class="box"><h3 class="sec">Apare în</h3>${inSel.length||inPan.length?inSel.map(x=>`<div>Selecția „${esc(x.title)}”</div>`).join('')+inPan.map(p=>`<div>Panoul „${esc(p.title||p.kind)}”${p.active?'':' (oprit)'}</div>`).join(''):'<span class="sub">Nicio selecție sau panou.</span>'}${S.sels?'':'<div class="sub">Se încarcă selecțiile…</div>'}</div>
    <div class="box" id="propbox"><h3 class="sec">${adm?'Modificări propuse':'Propuse de mine'}</h3><span class="sub">Se încarcă…</span></div>
@@ -484,6 +484,7 @@ function pStat(p){const d=today();if(isProp(p))return['pr','Propunere'];if(!p.ac
   if(p.to?p.to<d:(p.date&&(p.end||p.date)<d))return['ex','Expirat'];return['on','Pe site acum'];}
 function pWin(p){const a=p.from?fmtD(p.from):'acum',b=p.to?fmtD(p.to):(p.end||p.date?fmtD(p.end||p.date)+' (sfârșitul evenimentului)':'fără termen');return 'pe site: '+a+' – '+b;}
 const canPan=()=>['admin','editor'].indexOf(S.data.user.role)>=0;
+const canW=()=>S.data.user.role!=='vizitator';
 const bookRow=id=>S.data.rows.find(r=>r[C('ID')]===String(id));
 function panDirty(){if(!S.pe||!$('#psave'))return false;readPan();return JSON.stringify(S.pe)!==S.peOrig;}
 function renderPan(){
@@ -653,6 +654,30 @@ function renderSelEdit(){
     .catch(e=>{$('#ssave').disabled=false;$('#smsg').className='msg err';$('#smsg').textContent=e.message||String(e);});};
   const del=$('#sdel');if(del)del.onclick=()=>{if(!confirm('Ștergi definitiv selecția? Dacă vrei doar să nu mai apară, pune „Ascunsă”.'))return;
     call('deleteSelection',S.se.id).then(()=>{S.sels=S.sels.filter(x=>x.id!==S.se.id);S.se=null;renderSel();toast('Selecție ștearsă');}).catch(e=>alert(e.message||e));};
+}
+
+/* ---------- utilizatori ---------- */
+const ROLE_LAB={admin:'Admin · vede tot, publică, aprobă modificările, administrează utilizatorii',editor:'Editor · adaugă și editează cărți nepublicate, propune modificări la cele publicate, lucrează la panouri și selecții',vizitator:'Vizitator · doar vede catalogul în admin, nu poate schimba nimic'};
+function renderUsers(){
+  if(!S.users){$('#app').innerHTML='<div class="load">Se încarcă utilizatorii…</div>';call('getUsers').then(u=>{S.users=u;renderUsers();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});return;}
+  const U=S.users,ed=S.ue;
+  $('#app').innerHTML=`<div class="tools"><h2 class="pg" style="margin:0">Utilizatori</h2><span class="sub">Cine intră în admin, cu contul Google, și ce poate face.</span><button class="btn" id="uadd" style="margin-left:auto">+ Utilizator nou</button></div>
+  <div class="two"><div><table><thead><tr><th>Nume</th><th>E-mail (cont Google)</th><th>Rol</th><th></th></tr></thead><tbody>${U.map(u=>`<tr><td><div class="t">${esc(u.name)}${u.me?' <span class="sub">(tu)</span>':''}</div></td><td class="sub">${esc(u.email)}</td><td><span class="pst ${u.role==='admin'?'on':u.role==='editor'?'pl':'off'}">${esc(u.role)}</span></td><td style="text-align:right;white-space:nowrap"><button class="linkbtn" data-ue="${esc(u.email)}">Editează</button>${u.me?'':` · <button class="linkbtn" data-ud="${esc(u.email)}">Șterge</button>`}</td></tr>`).join('')}</tbody></table></div>
+  <div>${ed?`<div class="rail"><div class="box"><h3 class="sec">${ed.isNew?'Utilizator nou':'Editează'}</h3><div class="grid" style="grid-template-columns:1fr">
+   <label class="f">Nume<input id="uname" value="${esc(ed.name||'')}"></label>
+   <label class="f">E-mail · exact contul Google cu care intră<input id="uemail" value="${esc(ed.email||'')}" ${ed.isNew?'':'readonly'}></label>
+   <div class="f">Rol<div class="seg" id="urole" style="margin-top:4px">${Object.keys(ROLE_LAB).map(r=>`<button type="button" data-r="${r}" aria-pressed="${(ed.role||'editor')===r}">${r}</button>`).join('')}</div></div>
+   <div class="sub" id="uhint">${ROLE_LAB[ed.role||'editor']}</div></div>
+   <div class="savebar" style="position:static;border:0;padding:8px 0 0"><button class="btn" id="usave">Salvează</button><button class="btn sec" id="ucancel">Renunță</button><span class="msg" id="umsg"></span></div></div></div>`:`<div class="rail"><div class="box"><h3 class="sec">Roluri</h3>${Object.keys(ROLE_LAB).map(r=>`<div style="padding:4px 0">${esc(ROLE_LAB[r])}</div>`).join('')}<div class="sub" style="margin-top:8px">Un utilizator nou intră cu „Intră cu Google”, cu adresa de aici. Dacă nu are cont Google pe acea adresă, nu poate intra.</div></div></div>`}</div></div>`;
+  $('#uadd').onclick=()=>{S.ue={isNew:true,role:'editor'};renderUsers();};
+  document.querySelectorAll('[data-ue]').forEach(b=>b.onclick=()=>{S.ue=Object.assign({},U.find(u=>u.email===b.dataset.ue));renderUsers();});
+  document.querySelectorAll('[data-ud]').forEach(b=>b.onclick=()=>{if(!confirm('Scoți accesul pentru '+b.dataset.ud+'?'))return;call('deleteUser',b.dataset.ud).then(u=>{S.users=u;S.ue=null;renderUsers();toast('Acces scos');}).catch(e=>alert(e.message||e));});
+  if(!ed)return;
+  document.querySelectorAll('#urole button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#urole button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#uhint').textContent=ROLE_LAB[b.dataset.r];});
+  $('#ucancel').onclick=()=>{S.ue=null;renderUsers();};
+  $('#usave').onclick=()=>{const u={name:$('#uname').value.trim(),email:$('#uemail').value.trim(),role:document.querySelector('#urole button[aria-pressed=true]').dataset.r};
+    $('#usave').disabled=true;$('#umsg').className='msg';$('#umsg').textContent='Se salvează…';
+    call('saveUser',u).then(list=>{S.users=list;S.ue=null;renderUsers();toast('Salvat');}).catch(e=>{$('#usave').disabled=false;$('#umsg').className='msg err';$('#umsg').textContent=e.message||String(e);});};
 }
 </script>
 </body>

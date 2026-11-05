@@ -196,8 +196,10 @@ function getRecord(session, id) {
  * changes: {câmp: valoare nouă}; before: {câmp: valoarea văzută când s-a deschis fișa}
  * Dacă între timp altcineva a schimbat același câmp, nu suprascrie și întoarce conflictul.
  */
+const ROLES = ['admin', 'editor', 'vizitator'];
+function canWrite_(user) { if (user.role === 'vizitator') throw new Error('Contul tău poate doar să vadă catalogul, nu să-l schimbe.'); }
 function saveRecord(session, id, changes, before) {
-  const user = me_(session);
+  const user = me_(session); canWrite_(user);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -251,7 +253,7 @@ function saveRecord(session, id, changes, before) {
 
 /** Carte nouă: primește următorul ID liber, starea Ciornă. */
 function newRecord(session, title) {
-  const user = me_(session);
+  const user = me_(session); canWrite_(user);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -419,6 +421,7 @@ function getPanels(session) {
 }
 
 function canPanels_(user) {
+  canWrite_(user);
   if (user.role !== 'admin' && user.role !== 'editor') throw new Error('Doar adminii și editorii pot schimba panourile.');
 }
 
@@ -594,6 +597,58 @@ function deleteSelection(session, id) {
     logRow_([new Date(), user.name, 'selecție ' + id, 'Selecție ștearsă', '', '']);
     CacheService.getScriptCache().remove('sel');
     return true;
+  } finally { lock.releaseLock(); }
+}
+
+/* ===================== Utilizatori (cine intră în admin și cu ce rol) ===================== */
+function userRows_() {
+  const sh = ss_().getSheetByName(SH_USERS);
+  const v = sh.getDataRange().getDisplayValues().slice(1);
+  return v.map((r, i) => ({ email: String(r[0] || '').trim().toLowerCase(), name: String(r[1] || '').trim(), role: String(r[2] || 'editor').trim().toLowerCase(), row: i + 2 })).filter(u => u.email);
+}
+function getUsers(session) {
+  const me = me_(session);
+  if (me.role !== 'admin') throw new Error('Doar adminul vede utilizatorii.');
+  return userRows_().map(u => ({ email: u.email, name: u.name, role: u.role, me: u.email === me.email }));
+}
+/** Adaugă sau schimbă un utilizator. Rolurile: admin, editor, vizitator. */
+function saveUser(session, u) {
+  const me = me_(session);
+  if (me.role !== 'admin') throw new Error('Doar adminul schimbă utilizatorii.');
+  const email = String(u.email || '').trim().toLowerCase(), name = String(u.name || '').trim(), role = String(u.role || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('Adresa de e-mail nu arată bine: ' + email);
+  if (ROLES.indexOf(role) < 0) throw new Error('Rol necunoscut: ' + role);
+  if (!name) throw new Error('Pune și un nume.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = ss_().getSheetByName(SH_USERS);
+    const rows = userRows_();
+    const cur = rows.find(x => x.email === email);
+    if (cur && cur.email === me.email && role !== 'admin') throw new Error('Nu-ți poți lua singur rolul de admin.');
+    if (cur && cur.role === 'admin' && role !== 'admin' && rows.filter(x => x.role === 'admin').length <= 1) throw new Error('Trebuie să rămână cel puțin un admin.');
+    const line = [email, name, role];
+    if (cur) sh.getRange(cur.row, 1, 1, 3).setNumberFormat('@').setValues([line]);
+    else sh.getRange(sh.getLastRow() + 1, 1, 1, 3).setNumberFormat('@').setValues([line]);
+    logRow_([new Date(), me.name, 'utilizator ' + email, cur ? 'Utilizator modificat' : 'Utilizator nou', cur ? cur.name + ' · ' + cur.role : '', name + ' · ' + role]);
+    return getUsers(session);
+  } finally { lock.releaseLock(); }
+}
+function deleteUser(session, email) {
+  const me = me_(session);
+  if (me.role !== 'admin') throw new Error('Doar adminul șterge utilizatori.');
+  email = String(email || '').trim().toLowerCase();
+  if (email === me.email) throw new Error('Nu te poți șterge pe tine.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const rows = userRows_(), cur = rows.find(x => x.email === email);
+    if (!cur) throw new Error('Nu găsesc utilizatorul ' + email);
+    if (cur.role === 'admin' && rows.filter(x => x.role === 'admin').length <= 1) throw new Error('Trebuie să rămână cel puțin un admin.');
+    ss_().getSheetByName(SH_USERS).deleteRow(cur.row);
+    /* îi închidem și sesiunile deschise */
+    const P = props_().getProperties();
+    Object.keys(P).forEach(k => { if (k.indexOf('S_') === 0) { try { if (JSON.parse(P[k]).email === email) props_().deleteProperty(k); } catch (e) {} } });
+    logRow_([new Date(), me.name, 'utilizator ' + email, 'Utilizator șters', cur.name + ' · ' + cur.role, '']);
+    return getUsers(session);
   } finally { lock.releaseLock(); }
 }
 

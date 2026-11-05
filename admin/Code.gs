@@ -585,6 +585,44 @@ function deleteSelection(session, id) {
   } finally { lock.releaseLock(); }
 }
 
+/* ===================== Pagina „De făcut” și acțiuni pe mai multe cărți ===================== */
+/** Ultimele modificări, data ultimei modificări pe carte și cifrele pe 7 zile. */
+function getHome(session) {
+  const user = me_(session);
+  const lg = ss_().getSheetByName(SH_LOG);
+  const n = lg.getLastRow();
+  const rows = n > 1 ? lg.getRange(2, 1, n - 1, 6).getDisplayValues() : [];
+  const mod = {};
+  rows.forEach(r => { const id = String(r[2]); if (/^\d+$/.test(id)) mod[id] = String(r[0]).slice(0, 16); });
+  const uv = ss_().getSheetByName(SH_USERS).getDataRange().getValues().slice(1);
+  const editors = uv.filter(r => String(r[2] || 'editor').trim().toLowerCase() !== 'admin').map(r => String(r[1] || r[0]));
+  const proposed = rows.filter(r => r[3] === 'Carte nouă' && editors.indexOf(String(r[1])) >= 0).map(r => String(r[2]));
+  let stat = null;
+  try { stat = getStats(session, 7); } catch (e) {}
+  return { log: rows.slice(-40).reverse(), mod: mod, proposed: proposed, stat: stat && stat.total ? stat.total : null };
+}
+
+/** Aceleași modificări pe mai multe cărți (publicare, raft etc.). Întoarce câte s-au salvat și erorile. */
+function bulkUpdate(session, ids, changes) {
+  const user = me_(session);
+  const out = { saved: 0, errors: [] };
+  (ids || []).slice(0, 200).forEach(id => {
+    try { const r = saveRecord(session, String(id), changes, null); if (r.saved) out.saved++; }
+    catch (e) { out.errors.push(id + ': ' + (e.message || e)); }
+  });
+  return out;
+}
+
+/** Adaugă mai multe cărți într-o selecție existentă. */
+function addToSelection(session, selId, ids) {
+  const user = me_(session); canPanels_(user);
+  const s = selRows_().find(x => x.id === String(selId));
+  if (!s) throw new Error('Nu găsesc selecția ' + selId);
+  const books = s.books.slice();
+  (ids || []).map(String).forEach(i => { if (/^\d+$/.test(i) && books.indexOf(i) < 0) books.push(i); });
+  return saveSelection(session, { id: s.id, show: s.show, title: s.title, sub: s.sub, books: books, order: s.order });
+}
+
 /* ===================== Caută informații despre carte (fără AI) =====================
  * Surse gratuite: Open Library (fără cheie) și Google Books (doar dacă există cheia
  * GOOGLE_BOOKS_KEY în Script Properties; fără cheie, Google refuză cererile din Apps Script).

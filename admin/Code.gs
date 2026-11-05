@@ -13,7 +13,7 @@ const SH_PANELS = 'Panouri';
 const SITE = 'https://alexmolovatacdrf.github.io/biblioteca-cdrf/';
 
 // Coloane afișate în listă (restul se încarcă la deschiderea fișei)
-const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat'];
+const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat', 'Limbă'];
 // Câmpuri pe care editorii nu le pot schimba
 const ADMIN_ONLY = ['ID', 'Wix ID'];
 

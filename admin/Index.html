@@ -324,19 +324,24 @@ function field(k,v){
   if(k==='Video'||k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
   return `<label class="f">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
 }
+const LANGS_ALL=['engleză','română','franceză','germană','italiană','spaniolă','neerlandeză','portugheză','polonă','maghiară','cehă','slovacă','slovenă','croată','sârbă','bulgară','ucraineană','rusă','greacă','turcă','suedeză','daneză','norvegiană','finlandeză','japoneză','chineză','coreeană','ebraică','arabă','catalană','latină','estonă','letonă','lituaniană'];
 const SEC_SUB={'Carte':'titlu, autor, editură, an, ISBN','Colaboratori':'nume și rol','Limbă':'','Clasificare':'categorie, teme, raft','Obiectul fizic':'pagini, dimensiuni, legătură','Text':'descriere, surse, video','Imagini':'coperta și imaginile de pe site','Inventar':'intrată, verificat la raft, note','Sistem':'ID, Wix ID'};
 function secOpen(g){const r=S.rec;if(g==='Carte'||g==='Clasificare')return true;if(g==='Text')return !!r['Descriere'];if(g==='Imagini')return !!r['Copertă de verificat'];return false;}
 function renderRec(){
   const r=S.rec,L=S.data.lists,adm=S.data.user.role==='admin',u=coverUrl(r['Copertă']),mod=(S.home&&S.home.mod&&S.home.mod[String(r.ID)])||'';
   const langs=String(r['Limbă']||'').split(/;\s*/).filter(Boolean);
-  const allL=(L['Limbă']||[]).concat(langs.filter(x=>(L['Limbă']||[]).indexOf(x)<0));
+  const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);const lc={};if(C('Limbă')>=0)S.data.rows.forEach(x=>String(x[C('Limbă')]||'').split(/;\s*/).filter(Boolean).forEach(l=>{l=cap(l.trim());lc[l]=(lc[l]||0)+1;}));
+  const seen=new Set(Object.keys(lc).map(x=>x.toLowerCase()));const add=x=>{x=cap(x.trim());if(x&&!seen.has(x.toLowerCase())){seen.add(x.toLowerCase());lc[x]=lc[x]||0;}};(L['Limbă']||[]).forEach(add);langs.forEach(add);
+  const allL=Object.keys(lc).sort((a,b)=>(lc[b]||0)-(lc[a]||0)||a.localeCompare(b,'ro'));
+  const moreL=LANGS_ALL.map(cap).filter(x=>!seen.has(x.toLowerCase()));
   const roles=L['Rol colaborator']||[];
   const sum=(g,extra)=>{const x=extra||SEC_SUB[g]||'';return `<summary>${g}<span class="sub">${esc(x)}</span></summary>`;};
   const body=GROUPS.map(([g,ks])=>{
     let inner;
     if(g==='Colaboratori')inner=`<div class="contrib" id="contrib">${parseContrib(r['Colaboratori (nume – rol)']).map(c=>crow(c,roles)).join('')}</div><button class="linkbtn" id="addc">+ adaugă colaborator</button>`;
     else if(g==='Imagini')inner=`<div class="grid">${ks.map(k=>field(k,r[k]||'')).join('')}</div>`+imgBox(r);
-    else if(g==='Limbă')inner=`<div class="seg" id="langs">${allL.map(l=>`<button type="button" data-l="${esc(l)}" aria-pressed="${langs.indexOf(l)>=0}">${esc(l)}</button>`).join('')}</div>`;
+    else if(g==='Limbă')inner=`<div class="seg" id="langs">${allL.map(l=>`<button type="button" data-l="${esc(l)}" aria-pressed="${langs.some(x=>x.toLowerCase()===l.toLowerCase())}">${esc(l)}${lc[l]?` <span class="sub" style="color:inherit;opacity:.65;font-size:12px">${lc[l]}</span>`:''}</button>`).join('')}</div>
+      <div class="sub" style="margin-top:8px">Limbile de mai sus sunt cele din catalog, cele mai folosite întâi. Altă limbă: <select id="langmore" style="padding:5px 8px"><option value="">alege…</option>${moreL.map(l=>`<option>${esc(l)}</option>`).join('')}</select></div>`;
     else inner=`<div class="grid">${ks.map(k=>field(k,r[k]||'')).join('')}</div>`;
     const extra=g==='Limbă'?langs.join(', '):g==='Colaboratori'?(parseContrib(r['Colaboratori (nume – rol)']).length||'')+'':g==='Text'?(r['Descriere']?'descriere de '+String(r['Descriere']).length+' caractere':'fără descriere'):'';
     return `<details class="sec" ${secOpen(g)||(g==='Limbă')?'open':''}>${sum(g,extra||undefined)}<div style="padding-bottom:12px">${inner}</div></details>`;}).join('');
@@ -357,6 +362,7 @@ function renderRec(){
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
   document.querySelectorAll('#stare button').forEach(b=>b.onclick=()=>{readForm();S.rec['Stare']=b.dataset.s;renderRec();});
   document.querySelectorAll('#langs button,#teme button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
+  const lm=$('#langmore');if(lm)lm.onchange=()=>{const v=lm.value;if(!v)return;$('#langs').insertAdjacentHTML('beforeend',`<button type="button" data-l="${esc(v)}" aria-pressed="true">${esc(v)}</button>`);const nb=$('#langs button:last-child');nb.onclick=()=>nb.setAttribute('aria-pressed',nb.getAttribute('aria-pressed')!=='true');lm.querySelector(`option[value="${v}"], option:checked`).remove();lm.value='';};
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
   $('#save').onclick=save;$('#save2').onclick=save;

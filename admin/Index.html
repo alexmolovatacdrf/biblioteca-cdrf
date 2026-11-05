@@ -160,7 +160,7 @@ details.sec .grid{padding-bottom:12px}details.sec fieldset{border:0;padding:0 0 
 <main id="app"><div class="load">Se încarcă…</div></main>
 <div class="toast" id="toast"></div>
 <script>
-const S={invSel:[],invMove:false,view:'home',q:'',stare:'',raft:'',tip:'',noshelf:false,chk:false,prop:false,sel:[],rec:null,orig:null,data:null,home:null,invRaft:''};
+const S={invSel:[],invMove:false,psel:[],view:'home',q:'',stare:'',raft:'',tip:'',noshelf:false,chk:false,prop:false,sel:[],rec:null,orig:null,data:null,home:null,invRaft:''};
 const STARI=['Ciornă','În lucru','Gata de publicare','Publicată'];
 const stCls=s=>({'Ciornă':'c','În lucru':'l','Gata de publicare':'g','Publicată':'p'}[s]||'c');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -538,15 +538,30 @@ function renderPan(){
   const f=S.pf||'act',d=today();
   const groups={act:p=>['on','pl','pr'].indexOf(pStat(p)[0])>=0,pr:isProp,on:p=>pStat(p)[0]==='on',pl:p=>pStat(p)[0]==='pl',off:p=>!p.active&&!isProp(p),ex:p=>pStat(p)[0]==='ex',all:()=>true};
   const lab={act:'Pe site, programate și propuneri',pr:'Propuneri',on:'Pe site acum',pl:'Programate',off:'Oprite',ex:'Expirate',all:'Toate'};
-  const L=S.panels.filter(groups[f]).sort((a,b)=>(a.from||a.date||'9').localeCompare(b.from||b.date||'9'));
+  const kinds=[...new Set(S.panels.map(p=>p.kind).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ro'));
+  const q=norm(S.pq||''),ws=q.split(/\s+/).filter(Boolean);
+  const srt=S.ps||'date';const key=p=>p.date||p.from||'';const upd=p=>{const m=String(p.updated||'').match(/(\d{2})\.(\d{2})\.(\d{4})(?: (\d{2}):(\d{2}))?/);return m?m[3]+m[2]+m[1]+(m[4]||'00')+(m[5]||'00'):'';};
+  const sorters={date:(a,b)=>(key(a)||'9').localeCompare(key(b)||'9'),date_desc:(a,b)=>(key(b)||'0').localeCompare(key(a)||'0'),upd:(a,b)=>upd(b).localeCompare(upd(a)),kind:(a,b)=>(a.kind||'').localeCompare(b.kind||'','ro')||(key(a)||'9').localeCompare(key(b)||'9'),title:(a,b)=>(a.title||a.guest||'').localeCompare(b.title||b.guest||'','ro')};
+  const L=S.panels.filter(groups[f]).filter(p=>!S.pk||p.kind===S.pk).filter(p=>!ws.length||ws.every(w=>norm([p.kind,p.title,p.guest,p.when,p.text,p.id].join(' ')).includes(w))).sort(sorters[srt]||sorters.date);
+  const sel=(S.psel||[]).filter(id=>L.some(p=>p.id===id));S.psel=sel;
   $('#app').innerHTML=`<div class="stats">${Object.keys(lab).map(k=>`<span data-pf="${k}" class="${f===k?'on':''}">${lab[k]} · ${S.panels.filter(groups[k]).length}</span>`).join('')}</div>
   <div class="tools"><h2 class="pg" style="margin:0">Editorial</h2><span class="sub">Panourile de pe prima pagină: evenimente, cartea săptămânii, cărți noi. Pe site în câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
-  <table><thead><tr><th>Stare</th><th>Panou</th><th class="hide-m">Când</th><th class="hide-m">Cărți</th><th></th></tr></thead><tbody>
-  ${L.map(p=>{const [c,t]=pStat(p);return `<tr class="pr"><td><span class="pst ${c}">${t}</span></td>
+  <div class="tools"><input type="search" id="pq" placeholder="Caută în panouri: titlu, invitat, tip…" value="${esc(S.pq||'')}" style="flex:1 1 220px"><select id="pk"><option value="">Toate tipurile</option>${kinds.map(k=>`<option ${S.pk===k?'selected':''}>${esc(k)}</option>`).join('')}</select><select id="ps"><option value="date" ${srt==='date'?'selected':''}>După dată, cele apropiate întâi</option><option value="date_desc" ${srt==='date_desc'?'selected':''}>După dată, cele îndepărtate întâi</option><option value="upd" ${srt==='upd'?'selected':''}>Modificate recent întâi</option><option value="kind" ${srt==='kind'?'selected':''}>După tip</option><option value="title" ${srt==='title'?'selected':''}>După titlu</option></select><span class="sub">${L.length} panouri</span></div>
+  ${sel.length&&canPan()?`<div class="bulk"><label><input type="checkbox" id="pall" checked> ${sel.length} selectate</label> · <button class="linkbtn" data-pb="on">Pornește</button> <button class="linkbtn" data-pb="off">Oprește</button>${S.data.user.role==='admin'?' <button class="linkbtn" data-pb="del">Șterge</button>':''} <button class="linkbtn" data-pb="none" style="margin-left:auto">Deselectează</button></div>`:''}
+  <table><thead><tr>${canPan()?'<th></th>':''}<th>Stare</th><th>Panou</th><th class="hide-m">Când</th><th class="hide-m">Cărți</th><th class="hide-m">Modificat</th><th></th></tr></thead><tbody>
+  ${L.map(p=>{const [c,t]=pStat(p);return `<tr class="pr">${canPan()?`<td class="ck"><input type="checkbox" data-psel="${esc(p.id)}" ${sel.indexOf(p.id)>=0?'checked':''}></td>`:''}<td><span class="pst ${c}">${t}</span></td>
    <td><div class="pk">${esc(p.kind)} · ${esc(p.id)}</div><div class="t">${esc(p.title||p.guest||'(fără titlu)')}</div>${p.title&&p.guest?`<div class="sub">cu ${esc(p.guest)}</div>`:''}<div class="sub">${esc(pWin(p))}</div></td>
-   <td class="hide-m sub">${esc(p.when)}</td><td class="hide-m sub">${p.books.length}</td>
-   <td style="white-space:nowrap;text-align:right">${canPan()&&isProp(p)?`<button class="linkbtn" data-pok="${esc(p.id)}">Aprobă</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pno="${esc(p.id)}">Respinge</button>`:canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="5" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`;
+   <td class="hide-m sub">${esc(p.when)}</td><td class="hide-m sub">${p.books.length}</td><td class="hide-m sub">${esc(String(p.updated||'').replace(/, .*$/,''))}</td>
+   <td style="white-space:nowrap;text-align:right">${canPan()&&isProp(p)?`<button class="linkbtn" data-pok="${esc(p.id)}">Aprobă</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pno="${esc(p.id)}">Respinge</button>`:canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="7" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`;
   document.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{S.pf=b.dataset.pf;renderPan();});
+  const pq=$('#pq');pq.addEventListener('input',()=>{S.pq=pq.value;const c=pq.selectionStart;renderPan();const n=$('#pq');n.focus();n.setSelectionRange(c,c);});
+  $('#pk').onchange=e=>{S.pk=e.target.value;renderPan();};$('#ps').onchange=e=>{S.ps=e.target.value;renderPan();};
+  document.querySelectorAll('[data-psel]').forEach(c=>c.onchange=()=>{const id=c.dataset.psel;S.psel=c.checked?S.psel.concat([id]):S.psel.filter(x=>x!==id);renderPan();});
+  const pa=$('#pall');if(pa)pa.onchange=()=>{S.psel=[];renderPan();};
+  document.querySelectorAll('[data-pb]').forEach(b=>b.onclick=()=>{const k=b.dataset.pb,ids=S.psel.slice();if(k==='none'){S.psel=[];renderPan();return;}
+    if(k==='del'){if(!confirm('Ștergi definitiv '+ids.length+' panouri?'))return;Promise.all(ids.map(id=>call('deletePanel',id))).then(()=>{S.panels=S.panels.filter(p=>ids.indexOf(p.id)<0);S.psel=[];renderPan();toast('Șterse: '+ids.length);}).catch(e=>{alert(e.message||e);S.panels=null;renderPan();});return;}
+    const on=k==='on';const todo=ids.map(id=>JSON.parse(JSON.stringify(S.panels.find(p=>p.id===id)))).filter(p=>p.active!==on);
+    Promise.all(todo.map(p=>{p.active=on;if(on)p.src=String(p.src||'').replace(/^propunere\s*·?\s*/i,'')||'manual';return call('savePanel',p);})).then(rs=>{rs.forEach(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);});S.psel=[];renderPan();toast((on?'Pornite: ':'Oprite: ')+rs.length);}).catch(e=>{alert(e.message||e);S.panels=null;renderPan();});});
   const P=id=>S.panels.find(p=>p.id===id);
   document.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>openPan(JSON.parse(JSON.stringify(P(b.dataset.pe)))));
   document.querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const c=JSON.parse(JSON.stringify(P(b.dataset.pd)));c.id='';c.active=false;c.src='manual';openPan(c);toast('Copie: completează și salvează');});

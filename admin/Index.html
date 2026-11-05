@@ -256,6 +256,14 @@ function bulkAct(k){const ids=S.sel.slice();if(!ids.length)return;
       call('addToSelection',x.id,ids).then(r=>{S.sels=S.sels.map(y=>y.id===r.id?r:y);S.sel=[];renderList();toast('Adăugate în „'+r.title+'”');}).catch(e=>alert(e.message||e));};
     if(S.sels)go();else call('getSelections').then(p=>{S.sels=p;go();}).catch(e=>alert(e.message||e));}
 }
+
+/* ---------- ce poate face fiecare rol ---------- */
+const ROLE_CAN={
+ admin:['Vezi tot, inclusiv Statistici și Utilizatori.','Adaugi, editezi și publici cărți; doar tu pui „Publicată”.','Aprobi sau respingi modificările propuse de editori la cărțile publicate.','Ascunzi sau retragi cărți de pe site.','Faci și ordonezi selecțiile și panourile; aprobi propunerile de panouri.','Dai și iei accesul colegilor (admin, editor, vizitator).'],
+ editor:['Vezi catalogul, selecțiile, panourile și inventarul. Nu vezi Statistici și Utilizatori.','Adaugi cărți noi (intră ca „Ciornă”) și editezi orice carte nepublicată.','Când o carte e gata, pui „Gata de publicare”; adminul o citește și o publică.','La o carte publicată nu schimbi nimic direct: ce modifici ajunge la admin ca propunere, iar pe site intră doar după ce o aprobă.','Lucrezi la selecții și panouri (se văd pe site în câteva minute).','Bifezi cărțile la inventar.'],
+ vizitator:['Vezi catalogul în admin, cu toate câmpurile, și inventarul.','Nu poți schimba nimic: fără salvare, fără cărți noi, fără selecții sau panouri.']};
+function roleBox(){const r=S.data.user.role,L=ROLE_CAN[r]||ROLE_CAN.vizitator;let open=false;try{open=!localStorage.getItem('adm_rolebox')}catch(e){}
+  return `<details class="sec" id="rolebox" ${open?'open':''} style="border:1px solid var(--rule);padding:0 14px;margin-bottom:18px"><summary>Contul tău: ${esc(r)}<span class="sub">ce poți face aici</span></summary><ul style="margin:0 0 12px;padding-left:18px;font-size:14px">${L.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ul></details>`;}
 /* ---------- pagina de start: de făcut ---------- */
 function loadHome(){call('getHome').then(h=>{S.home=h;todoBadge();if(S.view==='home'&&!S.rec)renderHome();if(S.view==='list'&&!S.rec)renderList();}).catch(()=>{S.home={log:[],mod:{},proposed:[],stat:null};});
   if(!S.panels)call('getPanels').then(p=>{S.panels=p;todoBadge();if(S.view==='home'&&!S.rec)renderHome();}).catch(()=>{});}
@@ -269,7 +277,7 @@ function renderHome(){
   const when=s=>String(s||'').slice(0,16);
   const logRow=r=>{const id=String(r[2]),bk=/^\d+$/.test(id)?bookRow(id):null,what=r[3]==='Carte nouă'?'carte nouă':r[3]==='Modificare propusă'?'modificare propusă: '+r[5]:/^Panou|^Selecție/.test(r[3])?r[3].toLowerCase():'câmpul „'+r[3]+'”';
     const name=bk?esc(bk[C('Titlu')]):/^panou|^selecție/.test(id)?esc(id):esc(r[5]||id);return `<div class="row${bk?' ck':''}" ${bk?`data-id="${esc(id)}"`:''}><span><span class="t">${name}</span> · ${esc(what)}</span><span class="sub">${esc(when(r[0]))} · ${esc(r[1])}</span></div>`;};
-  $('#app').innerHTML=`<h2 class="pg">De făcut</h2><p class="sub" style="margin:-6px 0 14px">Tot ce așteaptă o decizie. Apasă pe o cutie și ajungi la lista deja filtrată.</p>
+  $('#app').innerHTML=`<h2 class="pg">De făcut</h2><p class="sub" style="margin:-6px 0 14px">Tot ce așteaptă o decizie. Apasă pe o cutie și ajungi la lista deja filtrată.</p>${roleBox()}
   <div class="todo">${H&&(nPend||adm)?card(nPend,adm?'modificări propuse de colegi':'modificările mele în așteptare',adm?'la cărți publicate, de aprobat în fișă':'le aprobă adminul; până atunci site-ul rămâne cum e','pend',adm):''}${card(nChk,'cărți cu coperta de verificat','ascunse de pe site până le verifici','chk',true)}${card(nGata,'cărți „Gata de publicare”',adm?'de citit o dată și publicat':'le publică adminul','gata')}${H&&H.proposed.length?card(nProp,'cărți propuse de colegi','adăugate de editori, nepublicate încă','prop'):''}${card(nPan,'propuneri de panouri','evenimente de aprobat în Editorial','pan',true)}${card(nUnp,'cărți nepublicate','ciorne, în lucru și gata de publicare','unp')}${card(nShelf,'neverificate la raft',nShelf?'de bifat în Inventar':'inventarul e la zi','inv')}</div>
   <div class="two"><div><h3 class="sec">Ultimele modificări</h3>${H?(H.log.length?H.log.slice(0,14).map(logRow).join(''):'<p class="sub">Nimic încă.</p>'):'<p class="sub">Se încarcă…</p>'}</div>
   <div><h3 class="sec">Pe site acum</h3><div class="row"><span>${nPub} titluri publicate</span><span class="sub">din ${d.rows.length}</span></div><div class="row"><span>${(S.sels||[]).filter(x=>x.show).length||'–'} selecții · ${P.filter(p=>pStat(p)[0]==='on').length} panouri active</span><span class="sub"></span></div>
@@ -278,6 +286,7 @@ function renderHome(){
     if(g==='pan'){S.view='pan';S.pf='pr';route();return;}if(g==='inv'){S.view='inv';route();return;}
     if(g==='pend')S.pend=true;if(g==='chk')S.chk=true;if(g==='gata')S.stare='Gata de publicare';if(g==='prop')S.prop=true;if(g==='unp')S.stare='';S.view='list';if(g==='unp')S.unp=true;route();});
   document.querySelectorAll('.row.ck').forEach(x=>x.onclick=()=>openRec(x.dataset.id));
+  const rb=$('#rolebox');if(rb)rb.addEventListener('toggle',()=>{try{localStorage.setItem('adm_rolebox',rb.open?'':'1')}catch(e){}});
   if(!S.sels)call('getSelections').then(p=>{S.sels=p;if(S.view==='home'&&!S.rec)renderHome();}).catch(()=>{});
 }
 
@@ -668,7 +677,7 @@ function renderUsers(){
    <label class="f">E-mail · exact contul Google cu care intră<input id="uemail" value="${esc(ed.email||'')}" ${ed.isNew?'':'readonly'}></label>
    <div class="f">Rol<div class="seg" id="urole" style="margin-top:4px">${Object.keys(ROLE_LAB).map(r=>`<button type="button" data-r="${r}" aria-pressed="${(ed.role||'editor')===r}">${r}</button>`).join('')}</div></div>
    <div class="sub" id="uhint">${ROLE_LAB[ed.role||'editor']}</div></div>
-   <div class="savebar" style="position:static;border:0;padding:8px 0 0"><button class="btn" id="usave">Salvează</button><button class="btn sec" id="ucancel">Renunță</button><span class="msg" id="umsg"></span></div></div></div>`:`<div class="rail"><div class="box"><h3 class="sec">Roluri</h3>${Object.keys(ROLE_LAB).map(r=>`<div style="padding:4px 0">${esc(ROLE_LAB[r])}</div>`).join('')}<div class="sub" style="margin-top:8px">Un utilizator nou intră cu „Intră cu Google”, cu adresa de aici. Dacă nu are cont Google pe acea adresă, nu poate intra.</div></div></div>`}</div></div>`;
+   <div class="savebar" style="position:static;border:0;padding:8px 0 0"><button class="btn" id="usave">Salvează</button><button class="btn sec" id="ucancel">Renunță</button><span class="msg" id="umsg"></span></div></div></div>`:`<div class="rail"><div class="box"><h3 class="sec">Roluri</h3>${Object.keys(ROLE_CAN).map(r=>`<div style="padding:6px 0"><b>${r}</b><ul style="margin:4px 0 0;padding-left:18px;font-size:13px">${ROLE_CAN[r].map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}<div class="sub" style="margin-top:8px">Un utilizator nou intră cu „Intră cu Google”, cu adresa de aici. Dacă nu are cont Google pe acea adresă, nu poate intra.</div></div></div>`}</div></div>`;
   $('#uadd').onclick=()=>{S.ue={isNew:true,role:'editor'};renderUsers();};
   document.querySelectorAll('[data-ue]').forEach(b=>b.onclick=()=>{S.ue=Object.assign({},U.find(u=>u.email===b.dataset.ue));renderUsers();});
   document.querySelectorAll('[data-ud]').forEach(b=>b.onclick=()=>{if(!confirm('Scoți accesul pentru '+b.dataset.ud+'?'))return;call('deleteUser',b.dataset.ud).then(u=>{S.users=u;S.ue=null;renderUsers();toast('Acces scos');}).catch(e=>alert(e.message||e));});

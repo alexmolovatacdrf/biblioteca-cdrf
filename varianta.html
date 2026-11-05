@@ -82,11 +82,12 @@ section{padding-block:48px}
 #consent .cbtn.sec{background:var(--paper);color:var(--ink);border-color:var(--rule)}
 @media (max-width:480px){#consent{left:12px;right:12px;bottom:12px;max-width:none}}
 /* ---------- Varianta B: aceleași meniuri, fără forme rotunjite, + / −, bife pentru Lista mea, fără negru ---------- */
-body.vb *, body.vb *::before, body.vb *::after{border-radius:0!important}
-body.vb .dd>button,body.vb .fbtn{border:0!important;background:none;padding:7px 0;margin-right:14px}
+body.vb .mdot,body.vb .save,body.vb .save::before,body.vb .savebig::before,body.vb .right .nav[aria-current="page"]::before{border-radius:0!important}
+body.vb .dd>button,body.vb .fbtn{padding:5px 12px;font-size:14px;gap:6px}
+body.vb .groups button{padding:5px 13px;font-size:14px}
 body.vb .dd>button svg{transform:rotate(-90deg);transition:transform .15s}
 body.vb .dd>button[aria-expanded="true"] svg{transform:none}
-body.vb .dd>button:hover>span:not(.n),body.vb .dd>button:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
+body.vb .dd>button:hover,body.vb .fbtn:hover{border-color:var(--muted)}
 body.vb .right .nav[aria-current="page"]{text-decoration:none}
 body.vb .right .nav[aria-current="page"]::before{content:"";display:inline-block;width:9px;height:9px;border:2px solid var(--accent);box-sizing:border-box;margin-right:7px;vertical-align:1px}
 body.vb .mdot{width:8px;height:8px}
@@ -113,7 +114,6 @@ body.vb .dd .menu label:hover{background:#f5f5f7}
 body.vb .sel-covers{background:#f5f5f7}
 body.vb .sel:hover .sel-covers{background:var(--stage-h)}
 body.vb .savebig{border:0;padding-left:0}
-body.vb .brand .lib::before{width:.45em;height:.45em;border-width:.09em;box-sizing:border-box}
 body.vb .ahero h1::before{border-width:.084em}
 body.vb span.n{background:var(--stage-h)!important;color:var(--ink)!important}
 body.vb .right .nav span.n{background:var(--accent)!important;color:#fff!important;font-weight:500}
@@ -1271,7 +1271,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50); setTimeout(selectionsLive,80);
 setTimeout(booksLive,60);
-if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (fără chenare și ovale, bife pentru Lista mea, roșu în loc de negru) · <a href="./">vezi varianta de acum</a>';}
+if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (ovale mici, bife pentru Lista mea, roșu în loc de negru) · <a href="./">vezi varianta de acum</a>';}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();

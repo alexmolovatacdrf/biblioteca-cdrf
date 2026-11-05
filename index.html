@@ -85,6 +85,11 @@ section{padding-block:48px}
 body.vb .mdot,body.vb .save,body.vb .save::before,body.vb .savebig::before,body.vb .right .nav[aria-current="page"]::before{border-radius:0!important}
 body.vb .dd>button,body.vb .fbtn{padding:5px 12px;font-size:14px;gap:6px}
 body.vb .groups button{padding:5px 13px;font-size:14px}
+body.vb .stog{border:1px solid var(--faint);border-radius:999px;padding:5px 12px;gap:6px;font-size:14px;margin-right:0;background:var(--paper)}
+body.vb .stog:hover{text-decoration:none;border-color:var(--muted)}
+body.vb .stog[aria-expanded="true"]{border-color:var(--ink)}
+body.vb .stog svg{transform:rotate(-90deg);transition:transform .15s}
+body.vb .stog[aria-expanded="true"] svg{transform:none}
 body.vb .dd>button svg{transform:rotate(-90deg);transition:transform .15s}
 body.vb .dd>button[aria-expanded="true"] svg{transform:none}
 body.vb .dd>button:hover,body.vb .fbtn:hover{border-color:var(--muted)}
@@ -855,7 +860,7 @@ function renderHome(keepScroll){
   const hasQ=!!words().length, narrowed=hasQ||st.sel||st.person||st.tag||st.series||st.publisher;
   app.innerHTML=`
   <div class="intro">
-    <div class="facts"><span>${B.length}${B.length%100>=1&&B.length%100<=19?'':' de'} titluri</span><span>${new Set(B.flatMap(b=>b.people)).size} fotografi și autori</span><span>consultare pe loc, la CdRF</span></div>
+    <div class="facts"><span>consultare pe loc, la CdRF</span></div>
   </div>
   ${!narrowed&&upcoming().length?meetCarousel():''}
   ${!narrowed?`<section aria-labelledby="h-sel">
@@ -865,11 +870,11 @@ function renderHome(keepScroll){
   <section id="toate" aria-labelledby="h-all" style="padding-bottom:0">
     <div class="sec-head"><h2 id="h-all">${listHeading()}</h2>${narrowed?`<button class="linkbtn" data-rm="all">Înapoi la toate cărțile</button>`:''}</div>
     <div class="fstick"><div class="filters">
-      <button class="stog" data-side aria-expanded="${st.side}">${FICON}${st.side?'Ascunde coloana':'Autori și teme'}${!st.side&&(st.ppl.size+st.pub.size+st.tg.size)?` <span class="n">${st.ppl.size+st.pub.size+st.tg.size}</span>`:''}</button>
+      <button class="stog" data-side aria-expanded="${st.side}">${VARB?'':FICON}${st.side?'Ascunde coloana':'Autori și teme'}${!st.side&&(st.ppl.size+st.pub.size+st.tg.size)?` <span class="n">${st.ppl.size+st.pub.size+st.tg.size}</span>`:''}${VARB?'<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>':''}</button>
       <button class="fbtn" data-fpanel>${FICON}Filtre${nAct()?` <span class="n">${nAct()}</span>`:''}</button>
       ${['type','category','lang','period'].map(k=>dd(FACETS.find(f=>f.key===k))).join('')}
       <span class="spacer"></span>
-      <span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>
+      ${(narrowed||nAct()||st.ppl.size+st.pub.size+st.tg.size)?`<span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>`:''}
       ${(()=>{const S=[['aleator','Recomandate'],...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Cele mai noi'],['an-vechi','Cele mai vechi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>

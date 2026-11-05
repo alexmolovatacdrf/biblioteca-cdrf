@@ -15,7 +15,7 @@ const SITE = 'https://alexmolovatacdrf.github.io/biblioteca-cdrf/';
 // Coloane afișate în listă (restul se încarcă la deschiderea fișei)
 const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat', 'Limbă', 'Legătură', 'Situație', 'La cine / unde'];
 // Câmpuri de inventar: editorii le schimbă direct și la cărțile publicate (nu trec prin aprobare)
-const INV_FIELDS = ['Verificat la raft', 'Situație', 'La cine / unde', 'Note'];
+const INV_FIELDS = ['Verificat la raft', 'Situație', 'La cine / unde', 'Note', 'Raft'];
 // Câmpuri pe care editorii nu le pot schimba
 const ADMIN_ONLY = ['ID', 'Wix ID'];
 
@@ -73,6 +73,7 @@ function userByEmail_(email) {
   const rows = ss_().getSheetByName(SH_USERS).getDataRange().getValues().slice(1);
   const r = rows.find(x => String(x[0]).trim().toLowerCase() === email);
   if (!email || !r) return null;
+  if (/^(nu|0|false|inactiv)$/i.test(String(r[3] || '').trim())) return null;
   return { email: email, name: String(r[1] || email), role: String(r[2] || 'editor').trim().toLowerCase() };
 }
 
@@ -132,6 +133,7 @@ function finishLogin(code, state) {
   if (!u) throw new Error('Contul ' + c.email + ' nu are acces la bibliotecă. Cere-i lui Alex să te adauge.');
   const session = random_();
   P.setProperty('S_' + hash_(session), JSON.stringify({ email: u.email, exp: Date.now() + (keep ? SESSION_DAYS * 864e5 : SESSION_HOURS_SHORT * 36e5) }));
+  try { const ur = userRows_().find(x => x.email === u.email); if (ur) ss_().getSheetByName(SH_USERS).getRange(ur.row, 5).setNumberFormat('@').setValue(Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm')); } catch (e) {}
   cleanSessions_();
   return { session: session, user: u, keep: keep };
 }
@@ -617,12 +619,15 @@ function deleteSelection(session, id) {
 function userRows_() {
   const sh = ss_().getSheetByName(SH_USERS);
   const v = sh.getDataRange().getDisplayValues().slice(1);
-  return v.map((r, i) => ({ email: String(r[0] || '').trim().toLowerCase(), name: String(r[1] || '').trim(), role: String(r[2] || 'editor').trim().toLowerCase(), row: i + 2 })).filter(u => u.email);
+  return v.map((r, i) => ({ email: String(r[0] || '').trim().toLowerCase(), name: String(r[1] || '').trim(), role: String(r[2] || 'editor').trim().toLowerCase(),
+    active: !/^(nu|0|false|inactiv)$/i.test(String(r[3] || '').trim()), last: String(r[4] || '').trim(), row: i + 2 })).filter(u => u.email);
 }
 function getUsers(session) {
   const me = me_(session);
   if (me.role !== 'admin') throw new Error('Doar adminul vede utilizatorii.');
-  return userRows_().map(u => ({ email: u.email, name: u.name, role: u.role, me: u.email === me.email }));
+  const P = props_().getProperties(); const open = {};
+  Object.keys(P).forEach(k => { if (k.indexOf('S_') === 0) { try { const o = JSON.parse(P[k]); if (o.exp > Date.now()) open[o.email] = true; } catch (e) {} } });
+  return userRows_().map(u => ({ email: u.email, name: u.name, role: u.role, active: u.active, last: u.last, online: !!open[u.email], me: u.email === me.email }));
 }
 /** Adaugă sau schimbă un utilizator. Rolurile: admin, editor, vizitator. */
 function saveUser(session, u) {
@@ -641,10 +646,24 @@ function saveUser(session, u) {
     if (cur && cur.role === 'admin' && role !== 'admin' && rows.filter(x => x.role === 'admin').length <= 1) throw new Error('Trebuie să rămână cel puțin un admin.');
     const line = [email, name, role];
     if (cur) sh.getRange(cur.row, 1, 1, 3).setNumberFormat('@').setValues([line]);
-    else sh.getRange(sh.getLastRow() + 1, 1, 1, 3).setNumberFormat('@').setValues([line]);
+    else sh.getRange(sh.getLastRow() + 1, 1, 1, 5).setNumberFormat('@').setValues([[email, name, role, 'da', '']]);
     logRow_([new Date(), me.name, 'utilizator ' + email, cur ? 'Utilizator modificat' : 'Utilizator nou', cur ? cur.name + ' · ' + cur.role : '', name + ' · ' + role]);
     return getUsers(session);
   } finally { lock.releaseLock(); }
+}
+/** Dezactivează sau reactivează un cont (rămâne în listă, dar nu mai poate intra). */
+function setUserActive(session, email, active) {
+  const me = me_(session);
+  if (me.role !== 'admin') throw new Error('Doar adminul schimbă utilizatorii.');
+  email = String(email || '').trim().toLowerCase();
+  if (email === me.email) throw new Error('Nu te poți dezactiva pe tine.');
+  const rows = userRows_(), cur = rows.find(x => x.email === email);
+  if (!cur) throw new Error('Nu găsesc utilizatorul ' + email);
+  if (!active && cur.role === 'admin' && rows.filter(x => x.role === 'admin' && x.active).length <= 1) throw new Error('Trebuie să rămână cel puțin un admin activ.');
+  ss_().getSheetByName(SH_USERS).getRange(cur.row, 4).setNumberFormat('@').setValue(active ? 'da' : 'nu');
+  if (!active) { const P = props_().getProperties(); Object.keys(P).forEach(k => { if (k.indexOf('S_') === 0) { try { if (JSON.parse(P[k]).email === email) props_().deleteProperty(k); } catch (e) {} } }); }
+  logRow_([new Date(), me.name, 'utilizator ' + email, active ? 'Utilizator reactivat' : 'Utilizator dezactivat', '', cur.name]);
+  return getUsers(session);
 }
 function deleteUser(session, email) {
   const me = me_(session);

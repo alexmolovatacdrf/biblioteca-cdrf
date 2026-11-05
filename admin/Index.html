@@ -209,6 +209,7 @@ function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.dat
   if(S.chk&&!r[C('Copertă de verificat')])return false;
   if(S.unp&&r[C('Stare')]==='Publicată')return false;
   if(S.pend&&!(S.home&&S.home.pending.indexOf(r[C('ID')])>=0))return false;
+  if(S.miss&&!(C('Situație')>=0&&r[C('Situație')]))return false;
   if(S.prop&&!(S.home&&S.home.proposed.indexOf(r[C('ID')])>=0))return false;
   if(ws.length){const h=norm(r.join(' '));if(!ws.every(w=>h.includes(w)))return false;}
   return true;});}
@@ -218,7 +219,7 @@ function renderList(){
   const d=S.data,L=d.lists,rows=filtered(),adm=d.user.role==='admin',mod=(S.home&&S.home.mod)||{};
   const fb=(on,lab,n,attr)=>`<button type="button" class="${on?'on':''}" ${attr}>${esc(lab)}<span>${n}</span></button>`;
   const stB=STARI.map(st=>fb(S.stare===st&&!S.chk&&!S.prop,st,cnt(r=>r[C('Stare')]===st),`data-stare="${esc(st)}"`)).join('');
-  const side=`<aside class="side"><div class="grp"><h3 class="sec">Stare</h3>${fb(!S.stare&&!S.chk&&!S.prop&&!S.noshelf&&!S.unp&&!S.pend,'Toate',d.rows.length,'data-stare=""')}${S.home&&S.home.pending.length?fb(S.pend,adm?'Modificări propuse':'Propuse de mine',cnt(r=>S.home.pending.indexOf(r[C('ID')])>=0),'data-pend="1"'):''}${fb(S.unp,'Nepublicate',cnt(r=>r[C('Stare')]!=='Publicată'),'data-unp="1"')}${fb(S.chk,'Copertă de verificat',cnt(r=>r[C('Copertă de verificat')]),'data-chk="1"')}${stB}${S.home&&S.home.proposed.length?fb(S.prop,'Propuse de colegi',cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0),'data-prop="1"'):''}${fb(S.noshelf,'Neverificate la raft',cnt(r=>!r[C('Verificat la raft')]),'data-noshelf="1"')}</div>
+  const side=`<aside class="side"><div class="grp"><h3 class="sec">Stare</h3>${fb(!S.stare&&!S.chk&&!S.prop&&!S.noshelf&&!S.unp&&!S.pend&&!S.miss,'Toate',d.rows.length,'data-stare=""')}${S.home&&S.home.pending.length?fb(S.pend,adm?'Modificări propuse':'Propuse de mine',cnt(r=>S.home.pending.indexOf(r[C('ID')])>=0),'data-pend="1"'):''}${fb(S.unp,'Nepublicate',cnt(r=>r[C('Stare')]!=='Publicată'),'data-unp="1"')}${fb(S.chk,'Copertă de verificat',cnt(r=>r[C('Copertă de verificat')]),'data-chk="1"')}${stB}${S.home&&S.home.proposed.length?fb(S.prop,'Propuse de colegi',cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0),'data-prop="1"'):''}${fb(S.noshelf,'Neverificate la raft',cnt(r=>!r[C('Verificat la raft')]),'data-noshelf="1"')}${fb(S.miss,'Lipsă / împrumutate',cnt(r=>C('Situație')>=0&&r[C('Situație')]),'data-miss="1"')}</div>
    <div class="grp"><h3 class="sec">Tip</h3>${fb(!S.tip,'Toate',d.rows.length,'data-tip=""')}${(L['Tip']||[]).map(t=>fb(S.tip===t,t,cnt(r=>r[C('Tip')]===t),`data-tip="${esc(t)}"`)).join('')}</div>
    <div class="grp"><h3 class="sec">Raft</h3>${fb(!S.raft,'Toate',d.rows.length,'data-raft=""')}${(L['Raft']||[]).map(t=>fb(S.raft===t,t,cnt(r=>r[C('Raft')]===t),`data-raft="${esc(t)}"`)).join('')}</div></aside>`;
   const sel=S.sel.filter(id=>rows.some(r=>r[C('ID')]===id));S.sel=sel;
@@ -230,14 +231,15 @@ function renderList(){
   ${S.grid?`<div class="cgrid">${rows.slice(0,300).map(r=>{const u=coverUrl(r[C('Copertă')]);return `<div class="cg rw" data-id="${esc(r[C('ID')])}"><div class="im">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:'<span class="ph2">fără copertă</span>'}</div><div class="t">${esc(r[C('Titlu')])||'(fără titlu)'}</div><div class="sub">${esc(r[C('Fotograf / autor')])}</div><div class="sub"><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span>${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}</div></div>`}).join('')}</div>`:
   `<table><thead><tr><th></th><th></th><th>Carte</th><th class="hide-m">An</th><th class="hide-m">Raft</th><th class="hide-m" title="verificată la raft">Raft ✓</th><th>Stare</th><th class="hide-m">Modificată</th></tr></thead>
   <tbody>${rows.slice(0,300).map(r=>{const id=r[C('ID')],u=coverUrl(r[C('Copertă')]);return `<tr class="rw" data-id="${esc(id)}"><td class="ck"><input type="checkbox" data-sel="${esc(id)}" ${sel.indexOf(id)>=0?'checked':''}></td><td class="th">${u?`<img loading="lazy" src="${esc(u)}" alt="">`:''}</td>
-  <td><div class="t">${esc(r[C('Titlu')])||'<span class=sub>(fără titlu)</span>'}</div><div class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(id)}${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}</div></td>
+  <td><div class="t">${esc(r[C('Titlu')])||'<span class=sub>(fără titlu)</span>'}</div><div class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(id)}${r[C('Copertă de verificat')]?' <span class=flag>copertă de verificat</span>':''}${C('Situație')>=0&&r[C('Situație')]?' <span class=flag>'+esc(r[C('Situație')].replace(/\s*\(.*\)$/,''))+(r[C('La cine / unde')]?' · '+esc(r[C('La cine / unde')]):'')+'</span>':''}</div></td>
   <td class="hide-m sub">${esc(r[C('An')])}</td><td class="hide-m sub">${esc(r[C('Raft')])}</td><td class="hide-m">${r[C('Verificat la raft')]?'<span class=ok>✓</span>':''}</td>
   <td><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span></td><td class="hide-m sub">${esc((mod[id]||'').slice(0,10))}</td></tr>`}).join('')}</tbody></table>`}
   <p class="sub">${rows.length>300?'Primele 300 din '+rows.length+'. Restrânge căutarea ca să vezi restul.':rows.length+' din '+d.rows.length}</p></div></div>`;
   const q=$('#q');q.addEventListener('input',()=>{S.q=q.value;const p=q.selectionStart;renderList();const n=$('#q');n.focus();n.setSelectionRange(p,p);});
-  const reset=()=>{S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;S.pend=false;};
+  const reset=()=>{S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;S.pend=false;S.miss=false;};
   document.querySelectorAll('[data-stare]').forEach(b=>b.onclick=()=>{const v=b.dataset.stare;reset();S.stare=v;renderList();});
   document.querySelectorAll('[data-pend]').forEach(b=>b.onclick=()=>{const v=!S.pend;reset();S.pend=v;renderList();});
+  document.querySelectorAll('[data-miss]').forEach(b=>b.onclick=()=>{const v=!S.miss;reset();S.miss=v;renderList();});
   document.querySelectorAll('[data-unp]').forEach(b=>b.onclick=()=>{const v=!S.unp;reset();S.unp=v;renderList();});
   document.querySelectorAll('[data-chk]').forEach(b=>b.onclick=()=>{const v=!S.chk;reset();S.chk=v;renderList();});
   document.querySelectorAll('[data-prop]').forEach(b=>b.onclick=()=>{const v=!S.prop;reset();S.prop=v;renderList();});
@@ -305,7 +307,7 @@ const GROUPS=[
  ['Obiectul fizic',['Pagini','Dimensiuni (cm)','Legătură']],
  ['Text',['Descriere','Sursa descrierii','Linkuri surse','Video']],
  ['Imagini',['Copertă','Copertă de verificat']],
- ['Inventar',['Intrată în bibliotecă','Verificat la raft','Note']],
+ ['Inventar',['Intrată în bibliotecă','Verificat la raft','Situație','La cine / unde','Note']],
  ['Sistem',['ID','Wix ID']]];
 const HINT={'Video':'link YouTube sau Vimeo despre carte (interviu, răsfoire); mai multe, separate cu „; ”','Intrată în bibliotecă':'data, ex. 2026-11-03; o pune singur la „Carte nouă”','Fotograf / autor':'Doar fotograful sau autorul principal. Mai mulți: separați cu „; ”','Copertă':'calea fișierului (o completează sistemul)','Dimensiuni (cm)':'lățime x înălțime, ex. 24 x 30'};
 function openRec(id){$('#app').innerHTML='<div class="load">Se deschide fișa…</div>';call('getRecord',id).then(showRec).catch(e=>alert(e.message||e));}
@@ -317,6 +319,8 @@ function field(k,v){
   const L=S.data.lists,adm=S.data.user.role==='admin',ro=(k==='ID'||((k==='Wix ID'||k==='Copertă')&&!adm));
   const ch=String(v)!==String(S.orig[k])?' chg':'';
   if(k==='Intrată în bibliotecă'){const iso=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:(m=>m?m[3]+'-'+m[2]+'-'+m[1]:'')(String(v).match(/^(\d{2})[.\/](\d{2})[.\/](\d{4})$/));return `<label class="f">${k}<input data-k="${k}" type="date" class="${ch}" value="${esc(iso)}"></label>`;}
+  if(k==='Situație'){const cur=String(v||'').replace(/\s*\(.*\)$/,'');const opts=['La raft','Lipsă','Împrumutată','Altundeva'];return `<div class="f" style="font-size:12px;color:var(--muted)">Situație${v?' · '+esc(v):''}<div class="seg" id="sit" style="margin-top:4px">${opts.map(o=>`<button type="button" data-sit="${o==='La raft'?'':o}" aria-pressed="${(o==='La raft'?'':o)===cur}">${o}</button>`).join('')}</div><input type="hidden" data-k="Situație" value="${esc(v)}"></div>`;}
+  if(k==='La cine / unde')return `<label class="f">La cine / unde · dacă nu e la raft<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
   if(k==='Legătură')return `<div class="f w" style="font-size:12px;color:var(--muted)">Legătură<div class="seg" id="bind" style="margin-top:4px">${bindOpts(v).map(([b,n])=>`<button type="button" data-b="${esc(b)}" aria-pressed="${b===v}">${esc(b)}${n?` <span class="sub" style="color:inherit;opacity:.65;font-size:12px">${n}</span>`:''}</button>`).join('')}</div><div class="sub" style="margin-top:6px">Alta: <select id="bindmore" style="padding:5px 8px"><option value="">alege…</option>${BINDS_ALL.filter(x=>!bindOpts(v).some(o=>o[0].toLowerCase()===x.toLowerCase())).map(x=>`<option>${esc(x)}</option>`).join('')}</select></div></div>`;
   if(k==='Tip'||k==='Categorie'||k==='Raft'){const arr=L[k]||[];const extra=v&&arr.indexOf(v)<0?[v]:[];
     return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option>${arr.concat(extra).map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;}
@@ -332,7 +336,7 @@ const BINDS_ALL=['Broșată','Cartonată','Cartonată, cu supracopertă','Broșa
 function bindOpts(cur){const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);const c={};if(C('Legătură')>=0)S.data.rows.forEach(x=>{const b=cap(String(x[C('Legătură')]||'').trim());if(b)c[b]=(c[b]||0)+1;});
   const seen=new Set(Object.keys(c).map(x=>x.toLowerCase()));((S.data.lists['Legătură'])||[]).concat(cur?[cur]:[]).forEach(x=>{x=cap(String(x).trim());if(x&&!seen.has(x.toLowerCase())){seen.add(x.toLowerCase());c[x]=0;}});
   return Object.keys(c).sort((a,b)=>c[b]-c[a]||a.localeCompare(b,'ro')).map(k=>[k,c[k]]);}
-const SEC_SUB={'Carte':'titlu, autor, editură, an, ISBN','Colaboratori':'nume și rol','Limbă':'','Clasificare':'categorie, teme, raft','Obiectul fizic':'pagini, dimensiuni, legătură','Text':'descriere, surse, video','Imagini':'coperta și imaginile de pe site','Inventar':'intrată, verificat la raft, note','Sistem':'ID, Wix ID'};
+const SEC_SUB={'Carte':'titlu, autor, editură, an, ISBN','Colaboratori':'nume și rol','Limbă':'','Clasificare':'categorie, teme, raft','Obiectul fizic':'pagini, dimensiuni, legătură','Text':'descriere, surse, video','Imagini':'coperta și imaginile de pe site','Inventar':'intrată, verificat la raft, situație, note','Sistem':'ID, Wix ID'};
 function secOpen(g){const r=S.rec;if(g==='Carte'||g==='Clasificare')return true;if(g==='Text')return !!r['Descriere'];if(g==='Imagini')return !!r['Copertă de verificat'];return false;}
 function renderRec(){
   const r=S.rec,L=S.data.lists,adm=S.data.user.role==='admin',u=coverUrl(r['Copertă']),mod=(S.home&&S.home.mod&&S.home.mod[String(r.ID)])||'';
@@ -369,6 +373,7 @@ function renderRec(){
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
   document.querySelectorAll('#stare button').forEach(b=>b.onclick=()=>{readForm();S.rec['Stare']=b.dataset.s;renderRec();});
   document.querySelectorAll('#langs button,#teme button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
+  document.querySelectorAll('#sit button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sit button').forEach(x=>x.setAttribute('aria-pressed',x===b));const h=$('[data-k="Situație"]');const cur=String(S.orig['Situație']||'').replace(/\s*\(.*\)$/,'');h.value=b.dataset.sit===cur?String(S.orig['Situație']||''):(b.dataset.sit?b.dataset.sit+' ('+today().split('-').reverse().join('.')+', '+S.data.user.name+')':'');});
   const bindOne=b=>{document.querySelectorAll('#bind button').forEach(x=>x.setAttribute('aria-pressed',x===b&&x.getAttribute('aria-pressed')!=='true'));};
   document.querySelectorAll('#bind button').forEach(b=>b.onclick=()=>bindOne(b));
   const bm=$('#bindmore');if(bm)bm.onchange=()=>{const v=bm.value;if(!v)return;$('#bind').insertAdjacentHTML('beforeend',`<button type="button" data-b="${esc(v)}" aria-pressed="false">${esc(v)}</button>`);const nb=$('#bind button:last-child');nb.onclick=()=>bindOne(nb);bindOne(nb);bm.querySelector('option:checked').remove();bm.value='';};
@@ -491,17 +496,21 @@ function renderInv(){
   const L=S.data.lists,rf=S.invRaft;
   const rows=rf?S.data.rows.filter(r=>r[C('Raft')]===rf).sort((a,b)=>a[C('Titlu')].localeCompare(b[C('Titlu')],'ro')):[];
   const done=rows.filter(r=>r[C('Verificat la raft')]).length;
-  const all=S.data.rows,nv=all.filter(r=>r[C('Verificat la raft')]).length,nr=all.filter(r=>!r[C('Raft')]).length;
+  const all=S.data.rows,nv=all.filter(r=>r[C('Verificat la raft')]).length,nr=all.filter(r=>!r[C('Raft')]).length,nm=all.filter(r=>C('Situație')>=0&&r[C('Situație')]).length;
+  const sit=r=>C('Situație')>=0?String(r[C('Situație')]||''):'';
   $('#app').innerHTML=`<div class="tools"><h2 class="pg" style="margin:0">Inventar</h2><span class="sub">Verificarea la raft: bifezi ce găsești pe raft.</span></div>
-  <div class="todo" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"><div class="card" style="cursor:default"><b>${all.length}</b><span>cărți în catalog</span></div><div class="card" style="cursor:default"><b>${nv}</b><span>verificate la raft</span></div><div class="card${all.length-nv?' alert':''}" style="cursor:default"><b class="${all.length-nv?'':'z'}">${all.length-nv}</b><span>neverificate</span></div><div class="card${nr?' alert':''}" style="cursor:default"><b class="${nr?'':'z'}">${nr}</b><span>fără raft</span></div></div>
+  <div class="todo" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"><div class="card" style="cursor:default"><b>${all.length}</b><span>cărți în catalog</span></div><div class="card" style="cursor:default"><b>${nv}</b><span>verificate la raft</span></div><div class="card${all.length-nv?' alert':''}" style="cursor:default"><b class="${all.length-nv?'':'z'}">${all.length-nv}</b><span>neverificate</span></div><div class="card${nm?' alert':''}" data-go="miss"><b class="${nm?'':'z'}">${nm}</b><span>lipsă sau împrumutate</span><div class="sub">${nm?'vezi lista':'toate sunt la locul lor'}</div></div><div class="card${nr?' alert':''}" style="cursor:default"><b class="${nr?'':'z'}">${nr}</b><span>fără raft</span></div></div>
   <div class="tools"><div class="seg" id="iraft">${(L['Raft']||[]).map(v=>{const n=all.filter(r=>r[C('Raft')]===v).length,k=all.filter(r=>r[C('Raft')]===v&&r[C('Verificat la raft')]).length;return `<button type="button" data-r="${esc(v)}" aria-pressed="${v===rf}">${esc(v)} <span class="sub" style="color:inherit;opacity:.7">${k}/${n}</span></button>`;}).join('')}</div>
   ${rf?`<span class="count">${done} din ${rows.length} găsite</span>`:''}</div>
-  ${rf?`<p class="sub">Bifează fiecare carte pe care o găsești pe raft. Dacă găsești o carte care nu e în listă, caut-o în tabul „Cărți” și corectează-i raftul; dacă nu există deloc, adaug-o ca „Carte nouă”.</p>
-  <div class="inv"><ul>${rows.map(r=>{const u=coverUrl(r[C('Copertă')]),ok=!!r[C('Verificat la raft')];return `<li class="${ok?'done':''}"><input type="checkbox" data-id="${esc(r[C('ID')])}" ${ok?'checked':''}>${u?`<img loading="lazy" src="${esc(u)}" alt="">`:'<span style="width:64px"></span>'}<div><div class="t">${esc(r[C('Titlu')])}</div><div class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${ok?' · '+esc(r[C('Verificat la raft')]):''}</div></div><button class="linkbtn" style="margin-left:auto" data-open="${esc(r[C('ID')])}">fișa</button></li>`}).join('')}</ul></div>`:'<p class="sub">Alege un raft ca să vezi ce cărți ar trebui să fie pe el.</p>'}`;
+  ${rf?`<p class="sub">Bifează fiecare carte pe care o găsești pe raft. Dacă nu e acolo, apasă „Lipsește” sau „Împrumutată” și scrie la cine sau unde e. Dacă găsești o carte care nu e în listă, caut-o în „Cărți” și corectează-i raftul; dacă nu există deloc, adaug-o ca „Carte nouă”.</p>
+  <div class="inv"><ul>${rows.map(r=>{const u=coverUrl(r[C('Copertă')]),ok=!!r[C('Verificat la raft')];return `<li class="${ok?'done':''}"><input type="checkbox" data-id="${esc(r[C('ID')])}" ${ok?'checked':''}>${u?`<img loading="lazy" src="${esc(u)}" alt="">`:'<span style="width:64px"></span>'}<div><div class="t">${esc(r[C('Titlu')])}</div><div class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${ok?' · '+esc(r[C('Verificat la raft')]):''}${sit(r)?' · <span class="flag">'+esc(sit(r))+(r[C('La cine / unde')]?' · '+esc(r[C('La cine / unde')]):'')+'</span>':''}</div></div><span style="margin-left:auto;white-space:nowrap;font-size:13px">${canW()?`<button class="linkbtn" data-miss="Lipsă" data-id="${esc(r[C('ID')])}">Lipsește</button> · <button class="linkbtn" data-miss="Împrumutată" data-id="${esc(r[C('ID')])}">Împrumutată</button> · `:''}<button class="linkbtn" data-open="${esc(r[C('ID')])}">fișa</button></span></li>`}).join('')}</ul></div>`:'<p class="sub">Alege un raft ca să vezi ce cărți ar trebui să fie pe el.</p>'}`;
   document.querySelectorAll('#iraft button').forEach(b=>b.onclick=()=>{S.invRaft=S.invRaft===b.dataset.r?'':b.dataset.r;renderInv();});
   document.querySelectorAll('.inv input[type=checkbox]').forEach(cb=>cb.onchange=()=>{cb.disabled=true;
     call('markShelf',cb.dataset.id,cb.checked,null).then(res=>{updRow(res.record);renderInv();}).catch(e=>{alert(e.message||e);renderInv();});});
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openRec(b.dataset.open));
+  document.querySelectorAll('[data-miss][data-id]').forEach(b=>b.onclick=()=>{const who=prompt(b.dataset.miss==='Lipsă'?'Cartea lipsește. Știi ceva despre ea (unde ar putea fi)? Poți lăsa gol.':'La cine e împrumutată?');if(who==null)return;b.disabled=true;
+    call('markMissing',b.dataset.id,b.dataset.miss,who).then(res=>{updRow(res.record);renderInv();toast(b.dataset.miss==='Lipsă'?'Marcată lipsă':'Marcată împrumutată');}).catch(e=>{alert(e.message||e);renderInv();});});
+  const mg=document.querySelector('[data-go=miss]');if(mg)mg.onclick=()=>{S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;S.pend=false;S.tip='';S.raft='';S.q='';S.miss=true;S.view='list';route();};
 }
 
 /* ---------- panouri pe prima pagină ---------- */

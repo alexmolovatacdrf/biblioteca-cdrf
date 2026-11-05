@@ -13,7 +13,9 @@ const SH_PANELS = 'Panouri';
 const SITE = 'https://alexmolovatacdrf.github.io/biblioteca-cdrf/';
 
 // Coloane afișate în listă (restul se încarcă la deschiderea fișei)
-const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat', 'Limbă', 'Legătură'];
+const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat', 'Limbă', 'Legătură', 'Situație', 'La cine / unde'];
+// Câmpuri de inventar: editorii le schimbă direct și la cărțile publicate (nu trec prin aprobare)
+const INV_FIELDS = ['Verificat la raft', 'Situație', 'La cine / unde', 'Note'];
 // Câmpuri pe care editorii nu le pot schimba
 const ADMIN_ONLY = ['ID', 'Wix ID'];
 
@@ -230,7 +232,8 @@ function saveRecord(session, id, changes, before) {
       if (nv === cur[i]) return;
       writes.push([i, k, nv]);
     });
-    if (locked && writes.length) {
+    const invOnly = writes.every(w => INV_FIELDS.indexOf(w[1]) >= 0);
+    if (locked && writes.length && !invOnly) {
       /* cartea e pe site: modificările editorului merg la admin, spre aprobare */
       const props = propSheet_();
       const n = Utilities.formatDate(now, 'Europe/Bucharest', 'dd.MM.yyyy HH:mm');
@@ -277,8 +280,17 @@ function markShelf(session, id, found, note) {
   const user = me_(session);
   const stamp = found ? Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy') + ', ' + user.name : '';
   const ch = { 'Verificat la raft': stamp };
+  if (found) { ch['Situație'] = ''; ch['La cine / unde'] = ''; }
   if (note != null) ch['Note'] = note;
   return saveRecord(session, id, ch, null);
+}
+/** Inventar: cartea nu e la raft. sit: Lipsă / Împrumutată / Altundeva; who: la cine sau unde. */
+function markMissing(session, id, sit, who) {
+  const user = me_(session);
+  sit = String(sit || '').trim(); who = String(who || '').trim().slice(0, 300);
+  if (['Lipsă', 'Împrumutată', 'Altundeva'].indexOf(sit) < 0) throw new Error('Situație necunoscută: ' + sit);
+  const stamp = Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy') + ', ' + user.name;
+  return saveRecord(session, id, { 'Situație': sit + ' (' + stamp + ')', 'La cine / unde': who, 'Verificat la raft': '' }, null);
 }
 
 /** Istoricul unei cărți, cele mai noi întâi. */

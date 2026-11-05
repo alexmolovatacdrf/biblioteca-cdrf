@@ -79,7 +79,7 @@ fieldset{border:0;border-top:1px solid var(--rule);margin:0 0 6px;padding:14px 0
 legend{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-right:8px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 14px}
 label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
-label.f.w{grid-column:1/-1}
+label.f.w,div.f.w{grid-column:1/-1}
 label.f input,label.f select,label.f textarea{font-size:15px;color:var(--ink);padding:8px 10px;border:1px solid var(--rule);background:#fff;width:100%}
 label.f textarea{min-height:150px;resize:vertical;line-height:1.5}
 .fh .seg button{padding:5px 11px;font-size:13px}
@@ -313,8 +313,10 @@ function dirty(){if(!S.rec)return false;readForm();return Object.keys(S.rec).som
 function leaveOk(){return !(dirty()||panDirty()||selDirty())||confirm('Ai modificări nesalvate. Le pierzi?');}
 function parseContrib(s){return String(s||'').split(/;\s*/).filter(Boolean).map(x=>{const i=x.lastIndexOf(' – ');return i>0?{n:x.slice(0,i).trim(),r:x.slice(i+3).trim()}:{n:x.trim(),r:''};});}
 function field(k,v){
-  const L=S.data.lists,ro=(k==='ID'||k==='Wix ID'||(k==='Copertă'&&S.data.user.role!=='admin'));
+  const L=S.data.lists,adm=S.data.user.role==='admin',ro=(k==='ID'||((k==='Wix ID'||k==='Copertă')&&!adm));
   const ch=String(v)!==String(S.orig[k])?' chg':'';
+  if(k==='Intrată în bibliotecă'){const iso=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:(m=>m?m[3]+'-'+m[2]+'-'+m[1]:'')(String(v).match(/^(\d{2})[.\/](\d{2})[.\/](\d{4})$/));return `<label class="f">${k}<input data-k="${k}" type="date" class="${ch}" value="${esc(iso)}"></label>`;}
+  if(k==='Legătură')return `<div class="f w" style="font-size:12px;color:var(--muted)">Legătură<div class="seg" id="bind" style="margin-top:4px">${bindOpts(v).map(([b,n])=>`<button type="button" data-b="${esc(b)}" aria-pressed="${b===v}">${esc(b)}${n?` <span class="sub" style="color:inherit;opacity:.65;font-size:12px">${n}</span>`:''}</button>`).join('')}</div><div class="sub" style="margin-top:6px">Alta: <select id="bindmore" style="padding:5px 8px"><option value="">alege…</option>${BINDS_ALL.filter(x=>!bindOpts(v).some(o=>o[0].toLowerCase()===x.toLowerCase())).map(x=>`<option>${esc(x)}</option>`).join('')}</select></div></div>`;
   if(k==='Tip'||k==='Categorie'||k==='Raft'){const arr=L[k]||[];const extra=v&&arr.indexOf(v)<0?[v]:[];
     return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option>${arr.concat(extra).map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;}
   if(k==='Copertă de verificat')return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option><option ${v==='da'?'selected':''}>da</option></select></label>`;
@@ -325,6 +327,10 @@ function field(k,v){
   return `<label class="f">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
 }
 const LANGS_ALL=['engleză','română','franceză','germană','italiană','spaniolă','neerlandeză','portugheză','polonă','maghiară','cehă','slovacă','slovenă','croată','sârbă','bulgară','ucraineană','rusă','greacă','turcă','suedeză','daneză','norvegiană','finlandeză','japoneză','chineză','coreeană','ebraică','arabă','catalană','latină','estonă','letonă','lituaniană'];
+const BINDS_ALL=['Broșată','Cartonată','Cartonată, cu supracopertă','Broșată, cu clapete','Spiralată','Capsată','Cusută','Leporello','Cutie','Mapă','Foi volante','Ziar'];
+function bindOpts(cur){const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);const c={};if(C('Legătură')>=0)S.data.rows.forEach(x=>{const b=cap(String(x[C('Legătură')]||'').trim());if(b)c[b]=(c[b]||0)+1;});
+  const seen=new Set(Object.keys(c).map(x=>x.toLowerCase()));((S.data.lists['Legătură'])||[]).concat(cur?[cur]:[]).forEach(x=>{x=cap(String(x).trim());if(x&&!seen.has(x.toLowerCase())){seen.add(x.toLowerCase());c[x]=0;}});
+  return Object.keys(c).sort((a,b)=>c[b]-c[a]||a.localeCompare(b,'ro')).map(k=>[k,c[k]]);}
 const SEC_SUB={'Carte':'titlu, autor, editură, an, ISBN','Colaboratori':'nume și rol','Limbă':'','Clasificare':'categorie, teme, raft','Obiectul fizic':'pagini, dimensiuni, legătură','Text':'descriere, surse, video','Imagini':'coperta și imaginile de pe site','Inventar':'intrată, verificat la raft, note','Sistem':'ID, Wix ID'};
 function secOpen(g){const r=S.rec;if(g==='Carte'||g==='Clasificare')return true;if(g==='Text')return !!r['Descriere'];if(g==='Imagini')return !!r['Copertă de verificat'];return false;}
 function renderRec(){
@@ -362,6 +368,9 @@ function renderRec(){
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
   document.querySelectorAll('#stare button').forEach(b=>b.onclick=()=>{readForm();S.rec['Stare']=b.dataset.s;renderRec();});
   document.querySelectorAll('#langs button,#teme button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
+  const bindOne=b=>{document.querySelectorAll('#bind button').forEach(x=>x.setAttribute('aria-pressed',x===b&&x.getAttribute('aria-pressed')!=='true'));};
+  document.querySelectorAll('#bind button').forEach(b=>b.onclick=()=>bindOne(b));
+  const bm=$('#bindmore');if(bm)bm.onchange=()=>{const v=bm.value;if(!v)return;$('#bind').insertAdjacentHTML('beforeend',`<button type="button" data-b="${esc(v)}" aria-pressed="false">${esc(v)}</button>`);const nb=$('#bind button:last-child');nb.onclick=()=>bindOne(nb);bindOne(nb);bm.querySelector('option:checked').remove();bm.value='';};
   const lm=$('#langmore');if(lm)lm.onchange=()=>{const v=lm.value;if(!v)return;$('#langs').insertAdjacentHTML('beforeend',`<button type="button" data-l="${esc(v)}" aria-pressed="true">${esc(v)}</button>`);const nb=$('#langs button:last-child');nb.onclick=()=>nb.setAttribute('aria-pressed',nb.getAttribute('aria-pressed')!=='true');lm.querySelector(`option[value="${v}"], option:checked`).remove();lm.value='';};
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
   document.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('input',()=>i.classList.toggle('chg',i.value!==String(S.orig[i.dataset.k]||''))));
@@ -460,6 +469,7 @@ function readForm(){if(!S.rec||!$('#save'))return;
   document.querySelectorAll('[data-k]').forEach(i=>S.rec[i.dataset.k]=i.value.trim());
   S.rec['Limbă']=[...document.querySelectorAll('#langs button[aria-pressed=true]')].map(b=>b.dataset.l).join('; ');
   if($('#teme'))S.rec['Teme']=[...document.querySelectorAll('#teme button[aria-pressed=true]')].map(b=>b.dataset.t).join('; ');
+  if($('#bind')){const b=document.querySelector('#bind button[aria-pressed=true]');S.rec['Legătură']=b?b.dataset.b:'';}
   S.rec['Colaboratori (nume – rol)']=[...document.querySelectorAll('#contrib .r')].map(r=>{const n=r.querySelector('input').value.trim(),ro=r.querySelector('select').value;return n?(ro?n+' – '+ro:n):'';}).filter(Boolean).join('; ');}
 function save(){
   readForm();const ch={},bf={};Object.keys(S.rec).forEach(k=>{if(String(S.rec[k])!==String(S.orig[k])){ch[k]=S.rec[k];bf[k]=S.orig[k];}});

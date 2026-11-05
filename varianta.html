@@ -1279,7 +1279,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50); setTimeout(selectionsLive,80);
 setTimeout(booksLive,60);
-if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (ovale mici, bife pentru Lista mea, roșu în loc de negru) · <a href="./">vezi varianta de acum</a>';}
+if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto');if(pr)pr.remove();}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
 route();

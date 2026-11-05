@@ -317,7 +317,7 @@ const API_FIELDS = {
   'ISBN': 'isbn', 'Limbă': 'lang', 'Tip': 'type', 'Categorie': 'category', 'Teme': 'tags', 'Raft': 'shelf',
   'Pagini': 'pages', 'Dimensiuni (cm)': 'dim', 'Legătură': 'binding', 'Descriere': 'desc',
   'Copertă de verificat': 'coverCheck', 'Video': 'video', 'Copertă': 'cover',
-  'Imagini ascunse': 'imgHide', 'Imagine la mouse': 'hovImg'
+  'Imagini ascunse': 'imgHide', 'Imagine la mouse': 'hovImg', 'Imagine în grilă': 'gridImg'
 };
 function apiVal_(k, v) {
   v = String(v == null ? '' : v).trim();
@@ -334,6 +334,7 @@ function apiVal_(k, v) {
   }
   if (k === 'imgHide') return list(v).filter(x => /^(covers|pages)\/[\w.-]+$/.test(x));
   if (k === 'hovImg') return /^pages\/[\w.-]+$/.test(v) ? v : '';
+  if (k === 'gridImg') return /^(covers|pages)\/[\w.-]+$/.test(v) ? v : '';
   if (k === 'coverCheck') return /^da$/i.test(v);
   if (k === 'video') return list(v).map(u => { const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? { yt: m[1] } : null; }).filter(Boolean);
   if (k === 'cover') return /^covers\/[\w.-]+\.(webp|jpe?g|png)$/i.test(v) ? v : '';

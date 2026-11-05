@@ -664,7 +664,11 @@ function applyImgs(b){
   let h=b.hovImg?ims.findIndex(im=>im.src===b.hovImg&&!im.ext):-1;
   if(h<1){ const o=b._imgs[b._hov0]; h=o?ims.findIndex(im=>im.src===o.src):-1; }
   b.hov=h>0?h:0;
+  /* imaginea din grilă aleasă în admin (implicit coperta); pe fișa cărții prima rămâne coperta */
+  const g=b.gridImg?ims.findIndex(im=>im.src===b.gridImg):-1;
+  b.g=g>0?ims[g]:null;
 }
+const gImg=b=>b.g?{src:b.g.src,w:b.g.w,h:b.g.h,cut:false}:{src:b.cover,w:b.cw,h:b.ch,cut:b.cut};
 /* Selecțiile vin din foaia „Selecții” (?api=selectii), în ordinea de acolo; copia din build rămâne rezerva. */
 function selectionsLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
@@ -686,8 +690,8 @@ function booksLive(){
     if(!j||!Array.isArray(j.books)) return;
     const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');
     const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
-    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg'];
-    const clean=(k,v)=>(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='imgHide'?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
+    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg','gridImg'];
+    const clean=(k,v)=>(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='imgHide'?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='gridImg'?(/^(covers|pages)\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
     let ch=false;
     j.books.forEach(r=>{
       const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
@@ -696,7 +700,7 @@ function booksLive(){
       if(!b&&HID[id]&&r.stare==='Publicată'){b=HID[id]; delete HID[id]; B.push(b); byId[id]=b; ch=true;}
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
-      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); if(ed.includes('imgHide')||ed.includes('hovImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
+      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); }); if(ed.includes('imgHide')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
       else if(ed.includes('stare')||ed.includes('*')){
         const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
         const cv=safeSrc(S(f.cover))!==PH?S(f.cover):'';
@@ -805,8 +809,11 @@ function card(b,highlight){
   const m=[b.type,b.year].filter(Boolean).map(esc).join(' · ');
   /* la trecerea mausului arătăm primul interior, nu alte fotografii ale exteriorului (coperta plată, spatele) */
   /* „hov” = interiorul ales pentru trecerea mausului (cel mai plin vizual); altfel primul interior */
-  const i2=(b.hov&&b.images[b.hov]&&!b.images[b.hov].ext)?b.images[b.hov]:b.images.slice(1).find(im=>!im.ext);
-  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="#carte-${b.id}" data-id="${b.id}"><div class="shelf"><img class="c1${b.cut?' cutc':''}" src="${safeSrc(b.cover)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${b.cw}" height="${b.ch}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${i2?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}</div>`:''}</div></a>`;
+  let i2=(b.hov&&b.images[b.hov]&&!b.images[b.hov].ext)?b.images[b.hov]:b.images.slice(1).find(im=>!im.ext);
+  const g=gImg(b);
+  /* dacă în grilă e altă imagine decât coperta, la hover arătăm coperta (sau imaginea fixată în admin) */
+  if(b.g&&(!b.hovImg||!i2||i2.src===g.src)) i2=b.images[0];
+  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="#carte-${b.id}" data-id="${b.id}"><div class="shelf"><img class="c1${g.cut?' cutc':''}" src="${safeSrc(g.src)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${g.w}" height="${g.h}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${b.images.slice(1).some(im=>!im.ext)?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}</div>`:''}</div></a>`;
 }
 const TIPS=['Album foto','Carte','Catalog expoziție','Revistă','Alte tipuri'];
 const tipF=t=>!t?'':TIPS.includes(t)?t:'Alte tipuri';
@@ -868,7 +875,7 @@ function renderHome(keepScroll){
   ${!narrowed&&upcoming().length?meetCarousel():''}
   ${!narrowed?`<section aria-labelledby="h-sel">
     <div class="sec-head"><h2 id="h-sel">Selecții</h2><span class="note">Cărți grupate de echipa bibliotecii</span></div>
-    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>(x.order||y.order)?(x.order||999)-(y.order||999):rkey('sel'+x.id)-rkey('sel'+y.id)).reduce((acc,s)=>{acc.push({s,cov:selCovers(s,acc.length?acc[acc.length-1].cov:[])});return acc;},[]).map(({s,cov})=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${cov.map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
+    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>(x.order||y.order)?(x.order||999)-(y.order||999):rkey('sel'+x.id)-rkey('sel'+y.id)).reduce((acc,s)=>{acc.push({s,cov:selCovers(s,acc.length?acc[acc.length-1].cov:[])});return acc;},[]).map(({s,cov})=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${cov.map(i=>{const g=gImg(byId[i]);return `<img src="${safeSrc(g.src)}"${g.cut?' class="cutc"':''} alt="" loading="lazy">`;}).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
   </section>`:''}
   <section id="toate" aria-labelledby="h-all" style="padding-bottom:0">
     <div class="sec-head"><h2 id="h-all">${listHeading()}</h2>${narrowed?`<button class="linkbtn" data-rm="all">Înapoi la toate cărțile</button>`:''}</div>

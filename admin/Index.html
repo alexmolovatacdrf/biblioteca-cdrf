@@ -431,23 +431,27 @@ function lkBind(){const go=$('#lkgo');if(!go)return;
 /* ---------- imaginile de pe site: ce se vede și ce apare la mouse ---------- */
 let IMGS=null;
 function loadImgs(){if(IMGS)return Promise.resolve(IMGS);return fetch(S.data.site+'imagini.json?v='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():{}).then(j=>IMGS=j).catch(()=>({}));}
-function imgBox(r){return `<fieldset><legend>Imagini pe site</legend><div id="imgs"><span class="sub">Se încarcă imaginile…</span></div><input type="hidden" data-k="Imagini ascunse" value="${esc(r['Imagini ascunse']||'')}"><input type="hidden" data-k="Imagine la mouse" value="${esc(r['Imagine la mouse']||'')}"></fieldset>`;}
+function imgBox(r){return `<fieldset><legend>Imagini pe site</legend><div id="imgs"><span class="sub">Se încarcă imaginile…</span></div><input type="hidden" data-k="Imagini ascunse" value="${esc(r['Imagini ascunse']||'')}"><input type="hidden" data-k="Imagine la mouse" value="${esc(r['Imagine la mouse']||'')}"><input type="hidden" data-k="Imagine în grilă" value="${esc(r['Imagine în grilă']||'')}"></fieldset>`;}
 function imgFill(){const box=$('#imgs');if(!box)return;const id=String(S.rec.ID);
   loadImgs().then(J=>{const b2=$('#imgs');if(!b2||!S.rec||String(S.rec.ID)!==id)return;const d=J[id];
     if(!d||!d.i||!d.i.length){b2.innerHTML='<span class="sub">Cartea nu are încă imagini pe site.</span>';return;}
-    const hide=String(S.rec['Imagini ascunse']||'').split(/\s*;\s*/).filter(Boolean),hov=String(S.rec['Imagine la mouse']||'');
+    const hide=String(S.rec['Imagini ascunse']||'').split(/\s*;\s*/).filter(Boolean),hov=String(S.rec['Imagine la mouse']||''),grd=String(S.rec['Imagine în grilă']||'');
     const sug=d.i[d.h]&&d.h>0?d.i[d.h][0]:'',site=S.data.site;
-    b2.innerHTML=`<p class="sub" style="margin:0 0 8px">Debifează ce nu vrei să apară pe site. Alege și imaginea care apare în grilă când treci cu mouse-ul peste copertă. „Sugerat” e alegerea automată.</p>
-    <label class="sub" style="display:block;margin-bottom:8px"><input type="radio" name="hov" value="" ${hov?'':'checked'}> La mouse: automat (cea sugerată)</label><div class="igrid">`+
-    d.i.map((x,i)=>{const src=x[0],ext=!!x[1],cap=x[2]||'',isInt=i>0&&!ext,lab=i===0?'Coperta (în grilă)':ext?'Exterior':(cap||'Interior');
+    b2.innerHTML=`<p class="sub" style="margin:0 0 8px">Debifează ce nu vrei să apară pe site. Alege imaginea din grilă (implicit coperta) și pe cea de la hover. „Sugerat” e alegerea automată pentru hover. Pe fișa cărții, prima imagine rămâne coperta.</p>
+    <label class="sub" style="display:block;margin-bottom:8px"><input type="radio" name="hov" value="" ${hov?'':'checked'}> Hover: automat (cea sugerată)</label><div class="igrid">`+
+    d.i.map((x,i)=>{const src=x[0],ext=!!x[1],cap=x[2]||'',isInt=i>0&&!ext,lab=i===0?'Coperta':ext?'Exterior':(cap||'Interior');
       return `<div class="ic${hide.indexOf(src)>=0?' off':''}"><img loading="lazy" src="${esc(site+src)}" alt=""><div class="il">${esc(lab)}${src===sug?' <span class="sug">sugerat</span>':''}</div>`+
       (i===0?'<div class="sub">rămâne mereu</div>':`<label><input type="checkbox" data-img="${esc(src)}" ${hide.indexOf(src)>=0?'':'checked'}> pe site</label>`)+
-      (isInt?`<label><input type="radio" name="hov" value="${esc(src)}" ${hov===src?'checked':''}> la mouse</label>`:'')+'</div>';}).join('')+'</div>';
+      `<label><input type="radio" name="grd" value="${i===0?'':esc(src)}" ${(i===0?!grd||!d.i.some(y=>y[0]===grd):grd===src)?'checked':''}> în grilă</label>`+
+      (isInt?`<label><input type="radio" name="hov" value="${esc(src)}" ${hov===src?'checked':''}> la hover</label>`:'')+'</div>';}).join('')+'</div>';
     const upd=()=>{const h=[...b2.querySelectorAll('[data-img]')].filter(c=>!c.checked).map(c=>c.dataset.img);
       let hv=(b2.querySelector('input[name=hov]:checked')||{}).value||'';
-      if(hv&&h.indexOf(hv)>=0){hv='';b2.querySelector('input[name=hov][value=""]').checked=true;toast('Imaginea ascunsă nu poate apărea la mouse; am pus „automat”.');}
+      if(hv&&h.indexOf(hv)>=0){hv='';b2.querySelector('input[name=hov][value=""]').checked=true;toast('Imaginea ascunsă nu poate apărea la hover; am pus „automat”.');}
+      let gv=(b2.querySelector('input[name=grd]:checked')||{}).value||'';
+      if(gv&&h.indexOf(gv)>=0){gv='';b2.querySelector('input[name=grd][value=""]').checked=true;toast('Imaginea ascunsă nu poate apărea în grilă; am pus coperta.');}
+      if(gv&&hv===gv){hv='';b2.querySelector('input[name=hov][value=""]').checked=true;toast('Aceeași imagine nu poate fi și în grilă, și la hover; la hover am pus „automat”.');}
       b2.querySelectorAll('[data-img]').forEach(c=>c.closest('.ic').classList.toggle('off',!c.checked));
-      $('[data-k="Imagini ascunse"]').value=h.join('; ');$('[data-k="Imagine la mouse"]').value=hv;};
+      $('[data-k="Imagini ascunse"]').value=h.join('; ');$('[data-k="Imagine la mouse"]').value=hv;$('[data-k="Imagine în grilă"]').value=gv;};
     b2.querySelectorAll('input').forEach(i=>i.onchange=upd);});}
 /* ---------- statistici ---------- */
 function renderStat(){const d=S.sdays||30;

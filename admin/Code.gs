@@ -170,7 +170,8 @@ function getInit(session) {
   const data = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), h.length).getDisplayValues();
   const idx = LIST_COLS.map(c => h.indexOf(c));
   const rows = data.filter(r => r[0]).map(r => idx.map(i => (i < 0 ? '' : r[i])));
-  return { user: user, cols: LIST_COLS, rows: rows, headers: h, lists: lists_(), site: SITE };
+  let app = ''; try { app = ScriptApp.getService().getUrl() || ''; } catch (e) {}
+  return { user: user, cols: LIST_COLS, rows: rows, headers: h, lists: lists_(), site: SITE, app: app };
 }
 
 function findRow_(sh, id) {

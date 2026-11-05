@@ -665,13 +665,37 @@ function renderSelEdit(){
     call('deleteSelection',S.se.id).then(()=>{S.sels=S.sels.filter(x=>x.id!==S.se.id);S.se=null;renderSel();toast('Selecție ștearsă');}).catch(e=>alert(e.message||e));};
 }
 
+
+function inviteMail(u){const me=S.data.user,app=S.data.app||location.href.split('?')[0],first=(u.name||'').split(' ')[0];
+  const can=(ROLE_CAN[u.role]||[]).map(x=>'- '+x).join('\n');
+  const body=`Bună, ${first},
+
+Ți-am făcut cont în adminul bibliotecii CdRF, cu rol de ${u.role}.
+
+Intri de aici, cu contul Google ${u.email}:
+${app}
+
+Apeși „Intră cu Google” și alegi contul de mai sus. Prima dată Google îți cere să confirmi accesul aplicației „Biblioteca CdRF”.
+
+Ce poți face cu contul tău:
+${can}
+
+Site-ul public, unde ajung cărțile: ${S.data.site}
+
+Dacă nu merge ceva, scrie-mi.
+
+${me.name}`;
+  const subj='Acces la adminul bibliotecii CdRF';
+  const url='https:'+DS+'mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(u.email)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  const w=window.open(url,'_blank');if(!w){prompt('Browserul a blocat fereastra. Copiază adresa și deschide-o tu:',url);}
+}
 /* ---------- utilizatori ---------- */
 const ROLE_LAB={admin:'Admin · vede tot, publică, aprobă modificările, administrează utilizatorii',editor:'Editor · adaugă și editează cărți nepublicate, propune modificări la cele publicate, lucrează la panouri și selecții',vizitator:'Vizitator · doar vede catalogul în admin, nu poate schimba nimic'};
 function renderUsers(){
   if(!S.users){$('#app').innerHTML='<div class="load">Se încarcă utilizatorii…</div>';call('getUsers').then(u=>{S.users=u;renderUsers();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});return;}
   const U=S.users,ed=S.ue;
   $('#app').innerHTML=`<div class="tools"><h2 class="pg" style="margin:0">Utilizatori</h2><span class="sub">Cine intră în admin, cu contul Google, și ce poate face.</span><button class="btn" id="uadd" style="margin-left:auto">+ Utilizator nou</button></div>
-  <div class="two"><div><table><thead><tr><th>Nume</th><th>E-mail (cont Google)</th><th>Rol</th><th></th></tr></thead><tbody>${U.map(u=>`<tr><td><div class="t">${esc(u.name)}${u.me?' <span class="sub">(tu)</span>':''}</div></td><td class="sub">${esc(u.email)}</td><td><span class="pst ${u.role==='admin'?'on':u.role==='editor'?'pl':'off'}">${esc(u.role)}</span></td><td style="text-align:right;white-space:nowrap"><button class="linkbtn" data-ue="${esc(u.email)}">Editează</button>${u.me?'':` · <button class="linkbtn" data-ud="${esc(u.email)}">Șterge</button>`}</td></tr>`).join('')}</tbody></table></div>
+  <div class="two"><div><table><thead><tr><th>Nume</th><th>E-mail (cont Google)</th><th>Rol</th><th></th></tr></thead><tbody>${U.map(u=>`<tr><td><div class="t">${esc(u.name)}${u.me?' <span class="sub">(tu)</span>':''}</div></td><td class="sub">${esc(u.email)}</td><td><span class="pst ${u.role==='admin'?'on':u.role==='editor'?'pl':'off'}">${esc(u.role)}</span></td><td style="text-align:right;white-space:nowrap">${u.me?'':`<button class="linkbtn" data-ui="${esc(u.email)}">Trimite invitația</button> · `}<button class="linkbtn" data-ue="${esc(u.email)}">Editează</button>${u.me?'':` · <button class="linkbtn" data-ud="${esc(u.email)}">Șterge</button>`}</td></tr>`).join('')}</tbody></table></div>
   <div>${ed?`<div class="rail"><div class="box"><h3 class="sec">${ed.isNew?'Utilizator nou':'Editează'}</h3><div class="grid" style="grid-template-columns:1fr">
    <label class="f">Nume<input id="uname" value="${esc(ed.name||'')}"></label>
    <label class="f">E-mail · exact contul Google cu care intră<input id="uemail" value="${esc(ed.email||'')}" ${ed.isNew?'':'readonly'}></label>
@@ -680,13 +704,14 @@ function renderUsers(){
    <div class="savebar" style="position:static;border:0;padding:8px 0 0"><button class="btn" id="usave">Salvează</button><button class="btn sec" id="ucancel">Renunță</button><span class="msg" id="umsg"></span></div></div></div>`:`<div class="rail"><div class="box"><h3 class="sec">Roluri</h3>${Object.keys(ROLE_CAN).map(r=>`<div style="padding:6px 0"><b>${r}</b><ul style="margin:4px 0 0;padding-left:18px;font-size:13px">${ROLE_CAN[r].map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}<div class="sub" style="margin-top:8px">Un utilizator nou intră cu „Intră cu Google”, cu adresa de aici. Dacă nu are cont Google pe acea adresă, nu poate intra.</div></div></div>`}</div></div>`;
   $('#uadd').onclick=()=>{S.ue={isNew:true,role:'editor'};renderUsers();};
   document.querySelectorAll('[data-ue]').forEach(b=>b.onclick=()=>{S.ue=Object.assign({},U.find(u=>u.email===b.dataset.ue));renderUsers();});
+  document.querySelectorAll('[data-ui]').forEach(b=>b.onclick=()=>inviteMail(U.find(u=>u.email===b.dataset.ui)));
   document.querySelectorAll('[data-ud]').forEach(b=>b.onclick=()=>{if(!confirm('Scoți accesul pentru '+b.dataset.ud+'?'))return;call('deleteUser',b.dataset.ud).then(u=>{S.users=u;S.ue=null;renderUsers();toast('Acces scos');}).catch(e=>alert(e.message||e));});
   if(!ed)return;
   document.querySelectorAll('#urole button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#urole button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#uhint').textContent=ROLE_LAB[b.dataset.r];});
   $('#ucancel').onclick=()=>{S.ue=null;renderUsers();};
   $('#usave').onclick=()=>{const u={name:$('#uname').value.trim(),email:$('#uemail').value.trim(),role:document.querySelector('#urole button[aria-pressed=true]').dataset.r};
     $('#usave').disabled=true;$('#umsg').className='msg';$('#umsg').textContent='Se salvează…';
-    call('saveUser',u).then(list=>{S.users=list;S.ue=null;renderUsers();toast('Salvat');}).catch(e=>{$('#usave').disabled=false;$('#umsg').className='msg err';$('#umsg').textContent=e.message||String(e);});};
+    call('saveUser',u).then(list=>{const isNew=!!S.ue.isNew;S.users=list;S.ue=null;renderUsers();toast('Salvat');if(isNew&&confirm('Cont făcut. Îi trimiți acum invitația prin Gmail?'))inviteMail(list.find(x=>x.email===u.email)||u);}).catch(e=>{$('#usave').disabled=false;$('#umsg').className='msg err';$('#umsg').textContent=e.message||String(e);});};
 }
 </script>
 </body>

@@ -103,11 +103,18 @@ body.vb .lb .close:hover{color:var(--accent);opacity:1}
 body.vb .lb .thumbs button[aria-current="true"]{border-color:var(--accent)}
 @media (max-width:760px){body.vb .bnav{display:none}}
 body.vb .groups button[aria-pressed="true"]{background:var(--stage-h);color:var(--ink);border-color:var(--faint)}
-body.vb{--band:#fff;--stage:#fff}
-body.vb .band:not(.hgrad){border-block:1px solid var(--rule)}
+body.vb{--stage:#fff}
+body.vb .meet.band{background:none;box-shadow:none;clip-path:none;isolation:isolate}
+body.vb .meet.band::before{content:'';position:absolute;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;z-index:-1;background:linear-gradient(90deg,var(--band) 0,var(--band) 28%,#fff 52%)}
+@media (max-width:1100px){body.vb .meet.band::before{background:linear-gradient(180deg,var(--band) 0,var(--band) 60px,#fff 320px)}}
 body.vb .hero.hgrad::before{background:#fff}
+body.vb .mnav{justify-content:center}
 body.vb .dd .menu label:hover{background:#f5f5f7}
-body.vb .sel:hover .sel-covers{background:#fff}
+body.vb .sel-covers{background:#f5f5f7}
+body.vb .sel:hover .sel-covers{background:var(--stage-h)}
+body.vb .savebig{border:0;padding-left:0}
+body.vb .brand .lib::before{width:.45em;height:.45em;border-width:.09em;box-sizing:border-box}
+body.vb .ahero h1::before{border-width:.084em}
 body.vb span.n{background:var(--stage-h)!important;color:var(--ink)!important}
 body.vb .right .nav span.n{background:var(--accent)!important;color:#fff!important;font-weight:500}
 body.vb .save{width:30px;height:30px;top:8px;right:8px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
@@ -604,6 +611,7 @@ const SELECTIONS=[
   {id:'strada',title:'Pe stradă',sub:'Street photography',ids:["193", "300", "76", "113", "27"]},
   {id:'invata',title:'Învață fotografia',sub:'Manuale și ghiduri practice',ids:["101", "418", "421", "107", "403", "2", "345", "336", "428"]},
 ];
+const selCovers=(s,avoid)=>{const c=s.ids.filter(i=>!avoid.includes(i)).slice(0,3); for(const i of s.ids){if(c.length>=3)break; if(!c.includes(i))c.push(i);} return c;};
 const selClean=()=>SELECTIONS.forEach(s=>{s.ids=s.ids.filter(i=>byId[i]);}); selClean();
 /* Meet the Book: cartea prezentată săptămâna aceasta. when/guest rămân goale până le completezi. */
 /* Meet the Book: prezentările viitoare, în ordinea datei. Cele trecute dispar singure din banda de sus. */
@@ -838,7 +846,7 @@ function renderHome(keepScroll){
   ${!narrowed&&upcoming().length?meetCarousel():''}
   ${!narrowed?`<section aria-labelledby="h-sel">
     <div class="sec-head"><h2 id="h-sel">Selecții</h2><span class="note">Cărți grupate de echipa bibliotecii</span></div>
-    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>rkey('sel'+x.id)-rkey('sel'+y.id)).map(s=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${s.ids.slice(0,3).map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
+    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>rkey('sel'+x.id)-rkey('sel'+y.id)).reduce((acc,s)=>{acc.push({s,cov:selCovers(s,acc.length?acc[acc.length-1].cov:[])});return acc;},[]).map(({s,cov})=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${cov.map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
   </section>`:''}
   <section id="toate" aria-labelledby="h-all" style="padding-bottom:0">
     <div class="sec-head"><h2 id="h-all">${listHeading()}</h2>${narrowed?`<button class="linkbtn" data-rm="all">Înapoi la toate cărțile</button>`:''}</div>
@@ -1245,7 +1253,7 @@ let drag=null;
 document.addEventListener('pointerdown',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||e.pointerType!=='mouse'||e.button!==0) return; drag={s,x:e.clientX,left:s.scrollLeft,moved:false,id:e.pointerId};});
 document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX-drag.x; if(!drag.moved&&Math.abs(dx)>5){drag.moved=true; drag.s.classList.add('dragging');} if(drag.moved){drag.s.scrollLeft=drag.left-dx; e.preventDefault();}});
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
-document.addEventListener('wheel',e=>{const s=e.target.closest('.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
+document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50);
 setTimeout(booksLive,60);

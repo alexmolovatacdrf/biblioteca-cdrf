@@ -264,9 +264,9 @@ function bulkAct(k){const ids=S.sel.slice();if(!ids.length)return;
 
 /* ---------- ce poate face fiecare rol ---------- */
 const ROLE_CAN={
- admin:['Vezi tot, inclusiv Statistici și Utilizatori.','Adaugi, editezi și publici cărți; doar tu pui „Publicată”.','Aprobi sau respingi modificările propuse de editori la cărțile publicate.','Ascunzi sau retragi cărți de pe site.','Faci și ordonezi selecțiile și panourile; aprobi propunerile de panouri.','Dai și iei accesul colegilor (admin, editor, vizitator).'],
- editor:['Vezi catalogul, selecțiile, panourile și inventarul. Nu vezi Statistici și Utilizatori.','Adaugi cărți noi (intră ca „Ciornă”) și editezi orice carte nepublicată.','Când o carte e gata, pui „Gata de publicare”; adminul o citește și o publică.','La o carte publicată nu schimbi nimic direct: ce modifici ajunge la admin ca propunere, iar pe site intră doar după ce o aprobă.','Lucrezi la selecții și panouri (se văd pe site în câteva minute).','Bifezi cărțile la inventar.'],
- vizitator:['Vezi catalogul în admin, cu toate câmpurile, și inventarul.','Nu poți schimba nimic: fără salvare, fără cărți noi, fără selecții sau panouri.']};
+ admin:['Vezi tot, inclusiv Statistici și Utilizatori.','Adaugi, editezi și publici cărți; doar tu pui „Publicată”.','Aprobi sau respingi modificările propuse de editori la cărțile publicate (le vezi pe „De făcut” și în fișa cărții, în dreapta).','Ascunzi sau retragi cărți de pe site.','Faci și ordonezi selecțiile și panourile; aprobi propunerile de panouri.','Dai și iei accesul colegilor (admin, editor, vizitator).'],
+ editor:['Vezi catalogul complet, cu toate câmpurile fiecărei cărți, selecțiile, panourile de pe prima pagină și inventarul.','Adaugi cărți noi din „Cărți” → „+ Carte nouă”; cartea intră ca „Ciornă” și o completezi în liniște.','În fișa cărții, butonul „Caută cartea” aduce automat date din Open Library, Google Books și bibliotecile naționale (LoC, DNB, BnF): bifezi ce preiei, apoi salvezi.','Completezi câmpurile pe secțiuni: Carte, Colaboratori, Limbă, Clasificare, Obiectul fizic, Text, Imagini, Inventar. La Imagini alegi ce poze de interior apar pe site și care apare la mouse.','Când cartea e gata, pui „Gata de publicare”; adminul o citește și o publică.','La o carte deja publicată, ce modifici ajunge la admin ca propunere și intră pe site după ce o aprobă; până atunci site-ul rămâne cum e.','Faci și ordonezi selecțiile (grupurile de cărți de pe prima pagină) și panourile (evenimente, seri de film, cărți noi); apar pe site în câteva minute.','La Inventar bifezi cărțile pe care le găsești pe raft.'],
+ vizitator:['Vezi catalogul complet, cu toate câmpurile fiecărei cărți, selecțiile, panourile și inventarul.','Poți căuta după titlu, autor, ISBN sau ID și poți filtra după stare, tip și raft.']};
 function roleBox(){const r=S.data.user.role,L=ROLE_CAN[r]||ROLE_CAN.vizitator;let open=false;try{open=!localStorage.getItem('adm_rolebox')}catch(e){}
   return `<details class="sec" id="rolebox" ${open?'open':''} style="border:1px solid var(--rule);padding:0 14px;margin-bottom:18px"><summary>Contul tău: ${esc(r)}<span class="sub">ce poți face aici</span></summary><ul style="margin:0 0 12px;padding-left:18px;font-size:14px">${L.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ul></details>`;}
 /* ---------- pagina de start: de făcut ---------- */
@@ -699,8 +699,6 @@ Apeși „Intră cu Google” și alegi contul de mai sus. Prima dată Google î
 
 Ce poți face cu contul tău:
 ${can}
-
-Site-ul public, unde ajung cărțile: ${S.data.site}
 
 Dacă nu merge ceva, scrie-mi.
 

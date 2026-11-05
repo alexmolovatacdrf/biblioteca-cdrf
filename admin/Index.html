@@ -182,7 +182,7 @@ function logout(){raw('logout',getSess()).finally(()=>{setSess('');showLogin();}
 function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.site+v;if(v.startsWith('wix:'))return 'https://static.wixstatic.com/media/'+v.slice(4)+'/v1/fit/w_300,h_300/c.jpg';if(/^https?:/.test(v))return v;return '';}
 const C=k=>S.data.cols.indexOf(k);
 
-function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
+function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;if(d.user.role!=='admin'){const t=document.querySelector('[data-view=stat]');if(t)t.remove();}route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
 (function boot(){const B=window.BOOT||{};
   if(B.error)return showLogin(B.error);
   if(B.code&&B.state&&getSess())return start();
@@ -193,7 +193,7 @@ function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.use
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;S.se=null;if(S.view==='home'&&S.data)loadHome();route();});
 window.addEventListener('beforeunload',e=>{if(dirty()||panDirty()||selDirty()){e.preventDefault();e.returnValue='';}});
 
-function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='home')return renderHome();if(S.view==='pan')return renderPan();if(S.view==='sel')return renderSel();if(S.view==='inv')return renderInv();if(S.view==='stat')return renderStat();renderList();}
+function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='home')return renderHome();if(S.view==='pan')return renderPan();if(S.view==='sel')return renderSel();if(S.view==='inv')return renderInv();if(S.view==='stat'&&S.data.user.role==='admin')return renderStat();renderList();}
 
 /* ---------- listă ---------- */
 function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.data.rows.filter(r=>{
@@ -203,6 +203,7 @@ function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.dat
   if(S.noshelf&&r[C('Verificat la raft')])return false;
   if(S.chk&&!r[C('Copertă de verificat')])return false;
   if(S.unp&&r[C('Stare')]==='Publicată')return false;
+  if(S.pend&&!(S.home&&S.home.pending.indexOf(r[C('ID')])>=0))return false;
   if(S.prop&&!(S.home&&S.home.proposed.indexOf(r[C('ID')])>=0))return false;
   if(ws.length){const h=norm(r.join(' '));if(!ws.every(w=>h.includes(w)))return false;}
   return true;});}
@@ -212,7 +213,7 @@ function renderList(){
   const d=S.data,L=d.lists,rows=filtered(),adm=d.user.role==='admin',mod=(S.home&&S.home.mod)||{};
   const fb=(on,lab,n,attr)=>`<button type="button" class="${on?'on':''}" ${attr}>${esc(lab)}<span>${n}</span></button>`;
   const stB=STARI.map(st=>fb(S.stare===st&&!S.chk&&!S.prop,st,cnt(r=>r[C('Stare')]===st),`data-stare="${esc(st)}"`)).join('');
-  const side=`<aside class="side"><div class="grp"><h3 class="sec">Stare</h3>${fb(!S.stare&&!S.chk&&!S.prop&&!S.noshelf&&!S.unp,'Toate',d.rows.length,'data-stare=""')}${fb(S.unp,'Nepublicate',cnt(r=>r[C('Stare')]!=='Publicată'),'data-unp="1"')}${fb(S.chk,'Copertă de verificat',cnt(r=>r[C('Copertă de verificat')]),'data-chk="1"')}${stB}${S.home&&S.home.proposed.length?fb(S.prop,'Propuse de colegi',cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0),'data-prop="1"'):''}${fb(S.noshelf,'Neverificate la raft',cnt(r=>!r[C('Verificat la raft')]),'data-noshelf="1"')}</div>
+  const side=`<aside class="side"><div class="grp"><h3 class="sec">Stare</h3>${fb(!S.stare&&!S.chk&&!S.prop&&!S.noshelf&&!S.unp&&!S.pend,'Toate',d.rows.length,'data-stare=""')}${S.home&&S.home.pending.length?fb(S.pend,adm?'Modificări propuse':'Propuse de mine',cnt(r=>S.home.pending.indexOf(r[C('ID')])>=0),'data-pend="1"'):''}${fb(S.unp,'Nepublicate',cnt(r=>r[C('Stare')]!=='Publicată'),'data-unp="1"')}${fb(S.chk,'Copertă de verificat',cnt(r=>r[C('Copertă de verificat')]),'data-chk="1"')}${stB}${S.home&&S.home.proposed.length?fb(S.prop,'Propuse de colegi',cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0),'data-prop="1"'):''}${fb(S.noshelf,'Neverificate la raft',cnt(r=>!r[C('Verificat la raft')]),'data-noshelf="1"')}</div>
    <div class="grp"><h3 class="sec">Tip</h3>${fb(!S.tip,'Toate',d.rows.length,'data-tip=""')}${(L['Tip']||[]).map(t=>fb(S.tip===t,t,cnt(r=>r[C('Tip')]===t),`data-tip="${esc(t)}"`)).join('')}</div>
    <div class="grp"><h3 class="sec">Raft</h3>${fb(!S.raft,'Toate',d.rows.length,'data-raft=""')}${(L['Raft']||[]).map(t=>fb(S.raft===t,t,cnt(r=>r[C('Raft')]===t),`data-raft="${esc(t)}"`)).join('')}</div></aside>`;
   const sel=S.sel.filter(id=>rows.some(r=>r[C('ID')]===id));S.sel=sel;
@@ -229,8 +230,9 @@ function renderList(){
   <td><span class="st ${stCls(r[C('Stare')])}">${esc(r[C('Stare')])}</span></td><td class="hide-m sub">${esc((mod[id]||'').slice(0,10))}</td></tr>`}).join('')}</tbody></table>`}
   <p class="sub">${rows.length>300?'Primele 300 din '+rows.length+'. Restrânge căutarea ca să vezi restul.':rows.length+' din '+d.rows.length}</p></div></div>`;
   const q=$('#q');q.addEventListener('input',()=>{S.q=q.value;const p=q.selectionStart;renderList();const n=$('#q');n.focus();n.setSelectionRange(p,p);});
-  const reset=()=>{S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;};
+  const reset=()=>{S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;S.pend=false;};
   document.querySelectorAll('[data-stare]').forEach(b=>b.onclick=()=>{const v=b.dataset.stare;reset();S.stare=v;renderList();});
+  document.querySelectorAll('[data-pend]').forEach(b=>b.onclick=()=>{const v=!S.pend;reset();S.pend=v;renderList();});
   document.querySelectorAll('[data-unp]').forEach(b=>b.onclick=()=>{const v=!S.unp;reset();S.unp=v;renderList();});
   document.querySelectorAll('[data-chk]').forEach(b=>b.onclick=()=>{const v=!S.chk;reset();S.chk=v;renderList();});
   document.querySelectorAll('[data-prop]').forEach(b=>b.onclick=()=>{const v=!S.prop;reset();S.prop=v;renderList();});
@@ -257,23 +259,24 @@ function bulkAct(k){const ids=S.sel.slice();if(!ids.length)return;
 /* ---------- pagina de start: de făcut ---------- */
 function loadHome(){call('getHome').then(h=>{S.home=h;todoBadge();if(S.view==='home'&&!S.rec)renderHome();if(S.view==='list'&&!S.rec)renderList();}).catch(()=>{S.home={log:[],mod:{},proposed:[],stat:null};});
   if(!S.panels)call('getPanels').then(p=>{S.panels=p;todoBadge();if(S.view==='home'&&!S.rec)renderHome();}).catch(()=>{});}
-function todoN(){const c=cnt(r=>r[C('Copertă de verificat')])+((S.panels||[]).filter(isProp).length)+(S.home?cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0);return c;}
+function todoN(){const c=(S.home?new Set(S.home.pending).size:0)+cnt(r=>r[C('Copertă de verificat')])+((S.panels||[]).filter(isProp).length)+(S.home?cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0);return c;}
 function todoBadge(){const b=$('#todo');if(b)b.textContent=S.data?(todoN()||''):'';}
 function renderHome(){
   const d=S.data,H=S.home,P=S.panels||[],adm=d.user.role==='admin';
   const card=(n,lab,sub,go,alert)=>`<button class="card${alert&&n?' alert':''}" data-go="${go}"><b class="${n?'':'z'}">${n}</b><span>${lab}</span><div class="sub">${sub}</div></button>`;
+  const nPend=H?new Set(H.pending).size:0;
   const nChk=cnt(r=>r[C('Copertă de verificat')]),nGata=cnt(r=>r[C('Stare')]==='Gata de publicare'),nProp=H?cnt(r=>H.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0,nPan=P.filter(isProp).length,nUnp=cnt(r=>r[C('Stare')]!=='Publicată'),nShelf=cnt(r=>!r[C('Verificat la raft')]),nPub=cnt(r=>r[C('Stare')]==='Publicată');
   const when=s=>String(s||'').slice(0,16);
-  const logRow=r=>{const id=String(r[2]),bk=/^\d+$/.test(id)?bookRow(id):null,what=r[3]==='Carte nouă'?'carte nouă':/^Panou|^Selecție/.test(r[3])?r[3].toLowerCase():'câmpul „'+r[3]+'”';
+  const logRow=r=>{const id=String(r[2]),bk=/^\d+$/.test(id)?bookRow(id):null,what=r[3]==='Carte nouă'?'carte nouă':r[3]==='Modificare propusă'?'modificare propusă: '+r[5]:/^Panou|^Selecție/.test(r[3])?r[3].toLowerCase():'câmpul „'+r[3]+'”';
     const name=bk?esc(bk[C('Titlu')]):/^panou|^selecție/.test(id)?esc(id):esc(r[5]||id);return `<div class="row${bk?' ck':''}" ${bk?`data-id="${esc(id)}"`:''}><span><span class="t">${name}</span> · ${esc(what)}</span><span class="sub">${esc(when(r[0]))} · ${esc(r[1])}</span></div>`;};
   $('#app').innerHTML=`<h2 class="pg">De făcut</h2><p class="sub" style="margin:-6px 0 14px">Tot ce așteaptă o decizie. Apasă pe o cutie și ajungi la lista deja filtrată.</p>
-  <div class="todo">${card(nChk,'cărți cu coperta de verificat','ascunse de pe site până le verifici','chk',true)}${card(nGata,'cărți „Gata de publicare”',adm?'de citit o dată și publicat':'le publică adminul','gata')}${H&&H.proposed.length?card(nProp,'cărți propuse de colegi','adăugate de editori, nepublicate încă','prop'):''}${card(nPan,'propuneri de panouri','evenimente de aprobat în Editorial','pan',true)}${card(nUnp,'cărți nepublicate','ciorne, în lucru și gata de publicare','unp')}${card(nShelf,'neverificate la raft',nShelf?'de bifat în Inventar':'inventarul e la zi','inv')}</div>
+  <div class="todo">${H&&(nPend||adm)?card(nPend,adm?'modificări propuse de colegi':'modificările mele în așteptare',adm?'la cărți publicate, de aprobat în fișă':'le aprobă adminul; până atunci site-ul rămâne cum e','pend',adm):''}${card(nChk,'cărți cu coperta de verificat','ascunse de pe site până le verifici','chk',true)}${card(nGata,'cărți „Gata de publicare”',adm?'de citit o dată și publicat':'le publică adminul','gata')}${H&&H.proposed.length?card(nProp,'cărți propuse de colegi','adăugate de editori, nepublicate încă','prop'):''}${card(nPan,'propuneri de panouri','evenimente de aprobat în Editorial','pan',true)}${card(nUnp,'cărți nepublicate','ciorne, în lucru și gata de publicare','unp')}${card(nShelf,'neverificate la raft',nShelf?'de bifat în Inventar':'inventarul e la zi','inv')}</div>
   <div class="two"><div><h3 class="sec">Ultimele modificări</h3>${H?(H.log.length?H.log.slice(0,14).map(logRow).join(''):'<p class="sub">Nimic încă.</p>'):'<p class="sub">Se încarcă…</p>'}</div>
   <div><h3 class="sec">Pe site acum</h3><div class="row"><span>${nPub} titluri publicate</span><span class="sub">din ${d.rows.length}</span></div><div class="row"><span>${(S.sels||[]).filter(x=>x.show).length||'–'} selecții · ${P.filter(p=>pStat(p)[0]==='on').length} panouri active</span><span class="sub"></span></div>
-  ${H&&H.stat?`<div class="row"><span>Ultimele 7 zile</span><span class="sub">${H.stat.carte} fișe deschise · ${H.stat.cautare} căutări · ${H.stat.lista} în „Lista mea”</span></div>`:''}<div class="row"><span><a href="${esc(d.site)}" target="_blank" rel="noopener">Deschide site-ul</a></span><span class="sub"></span></div></div></div>`;
+  ${H&&H.stat&&adm?`<div class="row"><span>Ultimele 7 zile</span><span class="sub">${H.stat.carte} fișe deschise · ${H.stat.cautare} căutări · ${H.stat.lista} în „Lista mea”</span></div>`:''}<div class="row"><span><a href="${esc(d.site)}" target="_blank" rel="noopener">Deschide site-ul</a></span><span class="sub"></span></div></div></div>`;
   document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.tip='';S.raft='';S.q='';
     if(g==='pan'){S.view='pan';S.pf='pr';route();return;}if(g==='inv'){S.view='inv';route();return;}
-    if(g==='chk')S.chk=true;if(g==='gata')S.stare='Gata de publicare';if(g==='prop')S.prop=true;if(g==='unp')S.stare='';S.view='list';if(g==='unp')S.unp=true;route();});
+    if(g==='pend')S.pend=true;if(g==='chk')S.chk=true;if(g==='gata')S.stare='Gata de publicare';if(g==='prop')S.prop=true;if(g==='unp')S.stare='';S.view='list';if(g==='unp')S.unp=true;route();});
   document.querySelectorAll('.row.ck').forEach(x=>x.onclick=()=>openRec(x.dataset.id));
   if(!S.sels)call('getSelections').then(p=>{S.sels=p;if(S.view==='home'&&!S.rec)renderHome();}).catch(()=>{});
 }
@@ -324,15 +327,17 @@ function renderRec(){
     const extra=g==='Limbă'?langs.join(', '):g==='Colaboratori'?(parseContrib(r['Colaboratori (nume – rol)']).length||'')+'':g==='Text'?(r['Descriere']?'descriere de '+String(r['Descriere']).length+' caractere':'fără descriere'):'';
     return `<details class="sec" ${secOpen(g)||(g==='Limbă')?'open':''}>${sum(g,extra||undefined)}<div style="padding-bottom:12px">${inner}</div></details>`;}).join('');
   const inSel=(S.sels||[]).filter(x=>x.books.indexOf(String(r.ID))>=0),inPan=(S.panels||[]).filter(p=>p.books.indexOf(String(r.ID))>=0);
+  const locked=!adm&&S.orig['Stare']==='Publicată';
   $('#app').innerHTML=`<p><button class="linkbtn" id="back">← Înapoi la Cărți</button></p>
   <div class="fh">${u?`<img src="${esc(u)}" alt="Coperta">`:'<div class="ph"></div>'}<div><h2>${esc(r['Titlu'])||'(fără titlu)'}</h2><div class="sub" style="margin-top:4px">${esc(r['Fotograf / autor'])}${r['An']?' · '+esc(r['An']):''} · ID ${esc(r.ID)}${r['Stare']==='Publicată'?` · <a href="${S.data.site}#carte-${esc(r.ID)}" target="_blank" rel="noopener">vezi pe site</a>`:''}${mod?' · modificată '+esc(mod):''}</div>
-   <div class="seg" id="stare" style="margin-top:10px">${STARI.map(st=>`<button type="button" data-s="${st}" aria-pressed="${r['Stare']===st}" ${st==='Publicată'&&!adm?'disabled title="Doar adminul publică"':''}>${st}</button>`).join('')}</div></div>
-   <div class="acts"><button class="btn sec" id="lkgo">Caută cartea</button><button class="btn" id="save">Salvează</button></div></div>
+   <div class="seg" id="stare" style="margin-top:10px">${STARI.map(st=>`<button type="button" data-s="${st}" aria-pressed="${r['Stare']===st}" ${(st==='Publicată'&&!adm)||locked?'disabled title="Doar adminul schimbă starea unei cărți publicate"':''}>${st}</button>`).join('')}</div>${locked?'<div class="sub" style="margin-top:8px;color:var(--warn)">Cartea e pe site. Ce modifici aici nu intră direct pe site: ajunge la admin, care aprobă sau respinge.</div>':''}</div>
+   <div class="acts"><button class="btn sec" id="lkgo">Caută cartea</button><button class="btn" id="save">${locked?'Trimite spre aprobare':'Salvează'}</button></div></div>
   <div class="flay"><div>${body}
   <details class="sec" id="lksec" ${S.look&&S.look.id===r.ID?'open':''}><summary>Informații din alte surse<span class="sub">Open Library, Google Books, LoC, DNB, BnF</span></summary><div style="padding-bottom:12px">${lkBox()}</div></details>
-  <div class="savebar"><button class="btn" id="save2">Salvează</button><button class="btn sec" id="cancel">Renunță</button><span class="msg" id="msg"></span></div></div>
+  <div class="savebar"><button class="btn" id="save2">${locked?'Trimite spre aprobare':'Salvează'}</button><button class="btn sec" id="cancel">Renunță</button><span class="msg" id="msg"></span></div></div>
   <aside class="rail">${r['Copertă de verificat']?'<div class="box"><h3 class="sec">De verificat</h3>Coperta e marcată „de verificat”, cartea nu apare pe site. Vezi secțiunea Imagini și scoate marcajul când e bună.</div>':''}
    <div class="box"><h3 class="sec">Apare în</h3>${inSel.length||inPan.length?inSel.map(x=>`<div>Selecția „${esc(x.title)}”</div>`).join('')+inPan.map(p=>`<div>Panoul „${esc(p.title||p.kind)}”${p.active?'':' (oprit)'}</div>`).join(''):'<span class="sub">Nicio selecție sau panou.</span>'}${S.sels?'':'<div class="sub">Se încarcă selecțiile…</div>'}</div>
+   <div class="box" id="propbox"><h3 class="sec">${adm?'Modificări propuse':'Propuse de mine'}</h3><span class="sub">Se încarcă…</span></div>
    <div class="box"><h3 class="sec">Istoric</h3><div class="hist" id="hist"><button class="linkbtn" id="showh">Arată modificările</button></div></div></aside></div>`;
   $('#back').onclick=()=>{if(!leaveOk())return;S.rec=null;route();};
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
@@ -345,7 +350,16 @@ function renderRec(){
   imgFill();
   $('#showh').onclick=()=>call('getHistory',r.ID).then(h=>{$('#hist').innerHTML=(h.length?h.map(x=>`<div>${esc(x[0])} · ${esc(x[1])}<br><b>${esc(x[3])}</b><br>${diffHtml(x[4],x[5])}</div>`).join(''):'<div>Nicio modificare încă.</div>');});
   if(!S.sels)call('getSelections').then(p=>{S.sels=p;if(S.rec&&String(S.rec.ID)===String(r.ID))renderRec();}).catch(()=>{});
+  propFill(r.ID);
 }
+function propFill(id){const box=$('#propbox');if(!box)return;const adm=S.data.user.role==='admin';
+  call('getProposals',id).then(P=>{const b=$('#propbox');if(!b||!S.rec||String(S.rec.ID)!==String(id))return;
+    if(!P.length){b.hidden=true;return;}b.hidden=false;
+    b.innerHTML=`<h3 class="sec">${adm?'Modificări propuse':'Propuse de mine'}</h3>`+P.map(p=>`<div style="padding:6px 0;border-bottom:1px solid var(--soft)"><b>${esc(p.field)}</b> <span class="sub">· ${esc(p.by)}, ${esc(p.at)}</span><div class="hist" style="margin-top:3px">${diffHtml(p.before,p.after)}</div>${adm?`<div style="margin-top:5px"><button class="linkbtn" data-pok="${esc(p.pid)}">Aprobă</button> · <button class="linkbtn" data-pno="${esc(p.pid)}">Respinge</button></div>`:''}</div>`).join('');
+    const dec=(pid,ok)=>call('decideProposal',pid,ok).then(()=>{toast(ok?'Aprobată, intră pe site':'Respinsă');if(ok)return call('getRecord',id).then(rec=>{S.orig=rec;S.rec=JSON.parse(JSON.stringify(rec));updRow(rec);renderRec();});propFill(id);}).catch(e=>alert(e.message||e));
+    b.querySelectorAll('[data-pok]').forEach(x=>x.onclick=()=>dec(x.dataset.pok,true));
+    b.querySelectorAll('[data-pno]').forEach(x=>x.onclick=()=>{if(confirm('Respingi modificarea?'))dec(x.dataset.pno,false);});
+  }).catch(()=>{const b=$('#propbox');if(b)b.hidden=true;});}
 /* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
 /* Atenție: Apps Script taie textul de după două bare oblice, chiar și în adrese; de aceea adresele se compun din bucăți. */
 const DS='/'+'/';
@@ -436,6 +450,7 @@ function save(){
     S.orig=res.record;const keep=S.rec;S.rec=JSON.parse(JSON.stringify(res.record));
     updRow(res.record);
     if(res.conflicts.length){res.conflicts.forEach(c=>S.rec[c.field]=keep[c.field]);renderRec();$('#msg').className='msg err';$('#msg').textContent='Altcineva a schimbat între timp: '+res.conflicts.map(c=>c.field).join(', ')+'. Valorile tale sunt încă în formular, marcate; verifică și salvează din nou.';}
+    else if(res.proposed){renderRec();toast('Trimis spre aprobare ('+res.proposed+' câmpuri)');if(S.home)S.home.pending.push(String(S.rec.ID));todoBadge();}
     else{renderRec();toast(res.saved?'Salvat ('+res.saved+' câmpuri)':'Nimic de salvat');}
   }).catch(e=>{$('#save').disabled=false;$('#msg').className='msg err';$('#msg').textContent=e.message||String(e);});
 }

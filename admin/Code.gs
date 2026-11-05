@@ -210,6 +210,8 @@ function saveRecord(session, id, changes, before) {
     const conflicts = [];
     const log = [];
     const now = new Date();
+    const stI = h.indexOf('Stare');
+    const locked = user.role !== 'admin' && stI >= 0 && cur[stI] === 'Publicată';
     /* întâi verificăm tot, abia apoi scriem: o cerere respinsă nu lasă nimic schimbat */
     const writes = [];
     Object.keys(changes).forEach(k => {
@@ -220,10 +222,20 @@ function saveRecord(session, id, changes, before) {
       if (k === 'ID') throw new Error('ID-ul nu se schimbă.');
       if (k === 'Stare' && STATES.indexOf(nv) < 0) throw new Error('Stare necunoscută: ' + nv);
       if (k === 'Stare' && nv === 'Publicată' && user.role !== 'admin') throw new Error('Doar adminul poate publica o carte. Pune „Gata de publicare”.');
+      if (locked && k === 'Stare') throw new Error('Cartea e pe site; doar adminul îi poate schimba starea.');
       if (before && k in before && String(before[k]) !== String(cur[i])) { conflicts.push({ field: k, now: cur[i] }); return; }
       if (nv === cur[i]) return;
       writes.push([i, k, nv]);
     });
+    if (locked && writes.length) {
+      /* cartea e pe site: modificările editorului merg la admin, spre aprobare */
+      const props = propSheet_();
+      const n = Utilities.formatDate(now, 'Europe/Bucharest', 'dd.MM.yyyy HH:mm');
+      const lines = writes.map(([i, k, nv]) => [Utilities.getUuid().slice(0, 8), String(id), k, String(cur[i]).slice(0, 5000), nv.slice(0, 5000), user.name, n, 'în așteptare', '', '']);
+      props.getRange(props.getLastRow() + 1, 1, lines.length, PROP_COLS.length).setNumberFormat('@').setValues(lines);
+      logRow_([now, user.name, String(id), 'Modificare propusă', '', writes.map(w => w[1]).join(', ')]);
+      return { saved: 0, proposed: writes.length, conflicts: conflicts, record: getRecord(session, id) };
+    }
     writes.forEach(([i, k, nv]) => {
       sh.getRange(row, i + 1).setNumberFormat('@').setValue(nv);
       log.push([now, user.name, String(id), k, cur[i], nv]);
@@ -585,6 +597,54 @@ function deleteSelection(session, id) {
   } finally { lock.releaseLock(); }
 }
 
+/* ===================== Modificări propuse de editori la cărțile publicate ===================== */
+const SH_PROP = 'Propuneri modificări';
+const PROP_COLS = ['ID propunere', 'Carte', 'Câmp', 'Înainte', 'Propus', 'De către', 'Data', 'Stare', 'Decis de', 'Decis la'];
+function propSheet_() {
+  let sh = ss_().getSheetByName(SH_PROP);
+  if (!sh) {
+    sh = ss_().insertSheet(SH_PROP);
+    sh.getRange(1, 1, 1, PROP_COLS.length).setValues([PROP_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.getRange(2, 1, 999, PROP_COLS.length).setNumberFormat('@');
+  }
+  return sh;
+}
+function propRows_() {
+  const sh = ss_().getSheetByName(SH_PROP);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, PROP_COLS.length).getDisplayValues().filter(r => r[0])
+    .map((r, i) => ({ pid: r[0], id: r[1], field: r[2], before: r[3], after: r[4], by: r[5], at: r[6], status: r[7], decidedBy: r[8], decidedAt: r[9], row: i + 2 }));
+}
+/** Propunerile în așteptare (toate, sau doar pentru o carte). Editorii văd doar ce au propus ei. */
+function getProposals(session, id) {
+  const user = me_(session);
+  return propRows_().filter(p => p.status === 'în așteptare' && (!id || p.id === String(id)) && (user.role === 'admin' || p.by === user.name))
+    .map(p => ({ pid: p.pid, id: p.id, field: p.field, before: p.before, after: p.after, by: p.by, at: p.at }));
+}
+/** Adminul aprobă (scrie în fișă) sau respinge o propunere. */
+function decideProposal(session, pid, accept) {
+  const user = me_(session);
+  if (user.role !== 'admin') throw new Error('Doar adminul aprobă modificările.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const p = propRows_().find(x => x.pid === String(pid));
+    if (!p) throw new Error('Nu găsesc propunerea.');
+    if (p.status !== 'în așteptare') throw new Error('Propunerea a fost deja ' + p.status + '.');
+    if (accept) {
+      const sh = ss_().getSheetByName(SH_BOOKS), h = headers_(sh), row = findRow_(sh, p.id), i = h.indexOf(p.field);
+      if (row < 0 || i < 0) throw new Error('Nu găsesc cartea sau câmpul.');
+      const cur = sh.getRange(row, i + 1).getDisplayValue();
+      sh.getRange(row, i + 1).setNumberFormat('@').setValue(p.after);
+      logRow_([new Date(), user.name, p.id, p.field, cur, p.after + ' (propus de ' + p.by + ')']);
+      CacheService.getScriptCache().remove('carti');
+    }
+    const ps = propSheet_();
+    ps.getRange(p.row, 8, 1, 3).setNumberFormat('@').setValues([[accept ? 'aprobată' : 'respinsă', user.name, Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm')]]);
+    return true;
+  } finally { lock.releaseLock(); }
+}
+
 /* ===================== Pagina „De făcut” și acțiuni pe mai multe cărți ===================== */
 /** Ultimele modificări, data ultimei modificări pe carte și cifrele pe 7 zile. */
 function getHome(session) {
@@ -598,8 +658,9 @@ function getHome(session) {
   const editors = uv.filter(r => String(r[2] || 'editor').trim().toLowerCase() !== 'admin').map(r => String(r[1] || r[0]));
   const proposed = rows.filter(r => r[3] === 'Carte nouă' && editors.indexOf(String(r[1])) >= 0).map(r => String(r[2]));
   let stat = null;
-  try { stat = getStats(session, 7); } catch (e) {}
-  return { log: rows.slice(-40).reverse(), mod: mod, proposed: proposed, stat: stat && stat.total ? stat.total : null };
+  if (user.role === 'admin') { try { stat = getStats(session, 7); } catch (e) {} }
+  const pend = propRows_().filter(p => p.status === 'în așteptare' && (user.role === 'admin' || p.by === user.name)).map(p => p.id);
+  return { log: rows.slice(-40).reverse(), mod: mod, proposed: proposed, pending: pend, stat: stat && stat.total ? stat.total : null };
 }
 
 /** Aceleași modificări pe mai multe cărți (publicare, raft etc.). Întoarce câte s-au salvat și erorile. */
@@ -874,7 +935,7 @@ function statLog_(p) {
 }
 /** Pentru pagina „Statistici” din admin. */
 function getStats(session, days) {
-  me_(session);
+  const u = me_(session); if (u.role !== 'admin') throw new Error('Statisticile sunt doar pentru admin.');
   days = Math.max(1, Math.min(365, parseInt(days, 10) || 30));
   const out = { days: days, total: { carte: 0, cautare: 0, lista: 0, zero: 0 }, open: [], list: [], search: [], zero: [], perDay: [] };
   const sh = ss_().getSheetByName(SH_STATS);

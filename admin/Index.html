@@ -168,6 +168,7 @@ const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(
 const $=s=>document.querySelector(s);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200);}
 const SKEY='bib.session';
+const DS='/'+'/';
 /* sesiunea stă în sessionStorage (se închide cu browserul); doar cu „rămân conectat” trece în localStorage */
 function getSess(){try{return sessionStorage.getItem(SKEY)||localStorage.getItem(SKEY)||''}catch(e){return ''}}
 function setSess(v,keep){try{sessionStorage.removeItem(SKEY);localStorage.removeItem(SKEY);if(v)(keep?localStorage:sessionStorage).setItem(SKEY,v)}catch(e){}}
@@ -187,7 +188,7 @@ function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.si
 const C=k=>S.data.cols.indexOf(k);
 
 function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;brandInit(d.site);if(d.user.role!=='admin'){document.querySelectorAll('[data-view=stat],[data-view=users]').forEach(t=>t.remove());}route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
-(function boot(){const B=window.BOOT||{};
+(function boot(){const B=window.BOOT||{};brandInit('https:'+DS+'alexmolovatacdrf.github.io/biblioteca-cdrf/');
   if(B.error)return showLogin(B.error);
   if(B.code&&B.state&&getSess())return start();
   if(B.code&&B.state){$('#app').innerHTML='<div class="load">Se verifică contul…</div>';
@@ -375,7 +376,6 @@ function propFill(id){const box=$('#propbox');if(!box)return;const adm=S.data.us
   }).catch(()=>{const b=$('#propbox');if(b)b.hidden=true;});}
 /* ---------- Caută informații despre carte (surse gratuite, fără AI) ---------- */
 /* Atenție: Apps Script taie textul de după două bare oblice, chiar și în adrese; de aceea adresele se compun din bucăți. */
-const DS='/'+'/';
 const BNR_URL='https:'+DS+'aleph.bibnat.ro/F/?func=find-b&local_base=NLR01&request=';
 const WC_URL='https:'+DS+'search.worldcat.org/search?q=';
 const LK_MAP={en:'Engleză',ro:'Română',fr:'Franceză',de:'Germană',it:'Italiană',pl:'Polonă',ja:'Japoneză',nl:'Neerlandeză',es:'Spaniolă',sv:'Suedeză',sl:'Slovenă'};

@@ -87,6 +87,9 @@ body.vb .dd>button,body.vb .fbtn{padding:5px 12px;font-size:14px;gap:6px}
 body.vb .groups button{padding:5px 13px;font-size:14px}
 body.vb .stog{border:1px solid var(--faint);border-radius:999px;padding:5px 12px;gap:6px;font-size:14px;margin-right:0;background:var(--paper)}
 body.vb .stog:hover{text-decoration:none;border-color:var(--muted)}
+body.vb .dd>button,body.vb .fbtn,body.vb .stog,body.vb .field input,body.vb .tag,body.vb .groups button{border-color:#d4d4d9}
+body.vb .dd>button:hover,body.vb .fbtn:hover,body.vb .stog:hover,body.vb .field input:hover,body.vb .tag:hover,body.vb .groups button:hover{border-color:var(--muted)}
+body.vb .dd>button[aria-expanded="true"],body.vb .dd>button.on,body.vb .stog[aria-expanded="true"],body.vb .field input:focus{border-color:var(--ink)}
 body.vb .stog[aria-expanded="true"]{border-color:var(--ink)}
 body.vb .stog svg{transform:rotate(-90deg);transition:transform .15s}
 body.vb .stog[aria-expanded="true"] svg{transform:none}

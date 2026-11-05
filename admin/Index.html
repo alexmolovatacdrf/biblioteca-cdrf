@@ -115,6 +115,8 @@ tr.pr td{vertical-align:top}
 .bchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .bchip{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:10px;padding:4px 6px 4px 4px;max-width:340px;font-size:13px}
 .bchip img{width:40px;height:52px;object-fit:contain;background:#fff;flex:none}
+.bchip .mv{display:flex;flex-direction:column;gap:2px}.bchip .mv button{border:0;background:none;cursor:pointer;font-size:11px;line-height:1;padding:1px 3px;color:#777}.bchip .mv button:hover{color:var(--ink)}
+.selrow td .cv{display:flex;gap:4px}.selrow td .cv img{width:30px;height:40px;object-fit:contain;background:#f5f5f7}
 .bchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bsr{position:relative}
 .bsr .dd{position:absolute;left:0;right:0;top:100%;z-index:4;background:#fff;border:1px solid var(--rule);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:320px;overflow:auto}
@@ -128,7 +130,7 @@ tr.pr td{vertical-align:top}
 </head>
 <body>
 <header><div class="bar"><span class="logo"></span><b>Biblioteca CdRF</b>
-<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Editorial</button><button data-view="stat">Statistici</button></nav>
+<nav class="tabs"><button data-view="list" aria-current="true">Cărți</button><button data-view="inv">Inventar pe raft</button><button data-view="pan">Editorial</button><button data-view="sel">Selecții</button><button data-view="stat">Statistici</button></nav>
 <div class="who" id="who"></div></div></header>
 <main id="app"><div class="load">Se încarcă…</div></main>
 <div class="toast" id="toast"></div>
@@ -167,10 +169,10 @@ function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.use
     raw('finishLogin',B.code,B.state).then(r=>{setSess(r.session,!!r.keep);start();}).catch(e=>showLogin(e.message||String(e)));return;}
   if(B.google&&!getSess())return showLogin();
   start();})();
-document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;route();});
-window.addEventListener('beforeunload',e=>{if(dirty()||panDirty()){e.preventDefault();e.returnValue='';}});
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;if(!leaveOk())return;S.view=b.dataset.view;S.rec=null;S.pe=null;S.se=null;route();});
+window.addEventListener('beforeunload',e=>{if(dirty()||panDirty()||selDirty()){e.preventDefault();e.returnValue='';}});
 
-function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='pan')return renderPan();if(S.view==='inv')return renderInv();if(S.view==='stat')return renderStat();renderList();}
+function route(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===S.view&&!S.rec));if(S.rec)return renderRec();if(S.view==='pan')return renderPan();if(S.view==='sel')return renderSel();if(S.view==='inv')return renderInv();if(S.view==='stat')return renderStat();renderList();}
 
 /* ---------- listă ---------- */
 function filtered(){const ws=norm(S.q).split(/\s+/).filter(Boolean);return S.data.rows.filter(r=>{
@@ -224,7 +226,7 @@ const HINT={'Video':'link YouTube sau Vimeo despre carte (interviu, răsfoire); 
 function openRec(id){$('#app').innerHTML='<div class="load">Se deschide fișa…</div>';call('getRecord',id).then(showRec).catch(e=>alert(e.message||e));}
 function showRec(rec){S.rec=JSON.parse(JSON.stringify(rec));S.orig=rec;route();window.scrollTo(0,0);}
 function dirty(){if(!S.rec)return false;readForm();return Object.keys(S.rec).some(k=>String(S.rec[k])!==String(S.orig[k]));}
-function leaveOk(){return !(dirty()||panDirty())||confirm('Ai modificări nesalvate. Le pierzi?');}
+function leaveOk(){return !(dirty()||panDirty()||selDirty())||confirm('Ai modificări nesalvate. Le pierzi?');}
 function parseContrib(s){return String(s||'').split(/;\s*/).filter(Boolean).map(x=>{const i=x.lastIndexOf(' – ');return i>0?{n:x.slice(0,i).trim(),r:x.slice(i+3).trim()}:{n:x.trim(),r:''};});}
 function field(k,v){
   const L=S.data.lists,ro=(k==='ID'||k==='Wix ID'||(k==='Copertă'&&S.data.user.role!=='admin'));
@@ -485,6 +487,74 @@ const bks=(p.books||[]).map(bookRow).filter(Boolean).slice(0,p.kind==='Meet the 
 function readPan(){if(!S.pe||!$('[data-p=kind]'))return;document.querySelectorAll('[data-p]').forEach(i=>S.pe[i.dataset.p]=i.value.trim());
   const a=document.querySelector('#pact button[aria-pressed=true]');if(a)S.pe.active=a.dataset.a==='1';
   S.pe.books=[...document.querySelectorAll('#bch [data-b]')].map(x=>x.dataset.b);}
+
+/* ---------- selecții ---------- */
+function selDirty(){if(!S.se||!$('#ssave'))return false;readSel();return JSON.stringify(S.se)!==S.seOrig;}
+function readSel(){if(!S.se||!$('[data-s=title]'))return;document.querySelectorAll('[data-s]').forEach(i=>S.se[i.dataset.s]=i.value.trim());
+  const a=document.querySelector('#sact button[aria-pressed=true]');if(a)S.se.show=a.dataset.a==='1';
+  S.se.books=[...document.querySelectorAll('#sch [data-b]')].map(x=>x.dataset.b);}
+function selCover(id){const r=bookRow(id);return r?coverUrl(r[C('Copertă')]):'';}
+function renderSel(){
+  if(S.se)return renderSelEdit();
+  if(!S.sels){$('#app').innerHTML='<div class="load">Se încarcă selecțiile…</div>';
+    call('getSelections').then(p=>{S.sels=p;renderSel();}).catch(e=>{const m=String(e.message||e);
+      $('#app').innerHTML='<div class="load msg err">'+(/getSelections|not found|nu a fost găsit|Script function/i.test(m)?'Selecțiile cer versiunea nouă a scriptului. Cere-i lui Alex să o publice.':esc(m))+'</div>';});return;}
+  const L=S.sels;
+  $('#app').innerHTML=`<div class="tools"><span class="sub">Grupurile de cărți de pe prima pagină, în ordinea de aici. Pe site în câteva minute.</span>${canPan()?'<button class="btn" id="sadd" style="margin-left:auto">+ Selecție nouă</button>':''}</div>
+  <table><thead><tr><th>Stare</th><th>Selecție</th><th class="hide-m">Coperți</th><th>Cărți</th><th></th></tr></thead><tbody>
+  ${L.map((p,k)=>`<tr class="selrow"><td><span class="pst ${p.show?'on':'off'}">${p.show?'Pe site':'Ascunsă'}</span></td>
+   <td><div class="t">${esc(p.title)}</div><div class="sub">${esc(p.sub)} · ${esc(p.id)}</div></td>
+   <td class="hide-m"><div class="cv">${p.books.slice(0,3).map(id=>{const u=selCover(id);return u?`<img src="${esc(u)}" alt="">`:'';}).join('')}</div></td>
+   <td class="sub">${p.books.length}${p.books.filter(id=>{const r=bookRow(id);return !r||r[C('Stare')]!=='Publicată';}).length?' <span class="flag">unele nu sunt pe site</span>':''}</td>
+   <td style="white-space:nowrap;text-align:right">${canPan()?`<button class="linkbtn" data-su="${k}" ${k?'':'disabled'}>↑</button> <button class="linkbtn" data-sd="${k}" ${k<L.length-1?'':'disabled'}>↓</button> · <button class="linkbtn" data-st="${esc(p.id)}">${p.show?'Ascunde':'Arată'}</button> · <button class="linkbtn" data-se="${esc(p.id)}">Editează</button>`:`<button class="linkbtn" data-se="${esc(p.id)}">Vezi</button>`}</td></tr>`).join('')||'<tr><td colspan="5" class="sub">Nicio selecție.</td></tr>'}</tbody></table>`;
+  const P=id=>S.sels.find(p=>p.id===id);
+  document.querySelectorAll('[data-se]').forEach(b=>b.onclick=()=>openSel(JSON.parse(JSON.stringify(P(b.dataset.se)))));
+  document.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{const p=JSON.parse(JSON.stringify(P(b.dataset.st)));p.show=!p.show;b.disabled=true;
+    call('saveSelection',p).then(r=>{S.sels=S.sels.map(x=>x.id===r.id?r:x);renderSel();toast(r.show?'Pe site':'Ascunsă');}).catch(e=>{alert(e.message||e);renderSel();});});
+  const mv=(k,d)=>{const L2=S.sels.slice();const [x]=L2.splice(k,1);L2.splice(k+d,0,x);S.sels=L2;renderSel();
+    call('orderSelections',L2.map(x=>x.id)).then(r=>{S.sels=r;renderSel();}).catch(e=>{alert(e.message||e);S.sels=null;renderSel();});};
+  document.querySelectorAll('[data-su]').forEach(b=>b.onclick=()=>mv(+b.dataset.su,-1));
+  document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>mv(+b.dataset.sd,1));
+  const a=$('#sadd');if(a)a.onclick=()=>openSel({id:'',show:true,title:'',sub:'',books:[],order:0});
+}
+function openSel(p){S.se=p;S.seOrig=JSON.stringify(p);renderSel();window.scrollTo(0,0);}
+function schip(id){const r=bookRow(id);const u=r?coverUrl(r[C('Copertă')]):'';return `<div class="bchip" data-b="${esc(id)}">${u?`<img src="${esc(u)}" alt="">`:''}<span>${r?esc(r[C('Titlu')]):'ID '+esc(id)+' (nu există)'}${r&&r[C('Stare')]!=='Publicată'?' <span class=flag>nu e pe site</span>':''}</span>${canPan()?'<span class="mv"><button type="button" class="up" title="Mai sus">▲</button><button type="button" class="dn" title="Mai jos">▼</button></span><button type="button" class="x" title="Scoate">×</button>':''}</div>`;}
+function renderSelEdit(){
+  const p=S.se,ro=!canPan(),dis=ro?'disabled':'',adm=S.data.user.role==='admin';
+  $('#app').innerHTML=`<p><button class="linkbtn" id="sback">← Înapoi la Selecții</button></p>
+  <h2 style="font-weight:600;margin:6px 0 2px">${p.id?esc(p.title):'Selecție nouă'}</h2><p class="sub">${p.id?esc(p.id)+' · ':''}Primele trei cărți apar pe coperta selecției de pe prima pagină.</p>
+  <fieldset><legend>Pe site</legend><div class="seg" id="sact"><button type="button" data-a="1" aria-pressed="${!!p.show}" ${dis}>Vizibilă</button><button type="button" data-a="0" aria-pressed="${!p.show}" ${dis}>Ascunsă</button></div></fieldset>
+  <fieldset><legend>Selecție</legend><div class="grid">
+   <label class="f w">Titlu<input data-s="title" value="${esc(p.title)}" ${dis}></label>
+   <label class="f w">Subtitlu · o explicație scurtă, ex. „Albume apărute în România”<input data-s="sub" value="${esc(p.sub)}" ${dis}></label></div></fieldset>
+  <fieldset><legend>Cărți</legend><p class="sub" style="margin:0 0 6px">În ordinea de aici. Primele trei dau coperta selecției; evită să începi cu aceleași cărți ca selecția vecină.</p>
+   ${ro?'':'<div class="bsr"><input type="search" id="sq" placeholder="Caută după titlu, autor sau ID…" style="width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:9px"><div class="dd" id="sdd" hidden></div></div>'}
+   <div class="bchips" id="sch">${p.books.map(schip).join('')}</div></fieldset>
+  <div class="savebar">${ro?'':'<button class="btn" id="ssave">Salvează</button><button class="btn sec" id="scancel">Renunță</button>'}${adm&&p.id?'<button class="linkbtn" id="sdel" style="margin-left:auto;color:var(--red)">Șterge selecția</button>':''}<span class="msg" id="smsg"></span></div>`;
+  $('#sback').onclick=()=>{if(!leaveOk())return;S.se=null;renderSel();};
+  if(ro)return;
+  document.querySelectorAll('#sact button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sact button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+  const bq=$('#sq'),dd=$('#sdd');
+  const redraw=()=>{$('#sch').innerHTML=S.se.books.map(schip).join('');bindChips();};
+  const pick=id=>{readSel();if(S.se.books.indexOf(id)<0)S.se.books.push(id);redraw();bq.value='';dd.hidden=true;bq.focus();};
+  bq.addEventListener('input',()=>{const ws=norm(bq.value).split(/\s+/).filter(Boolean);if(!ws.length){dd.hidden=true;return;}
+    const m=S.data.rows.filter(r=>{const h=norm([r[C('ID')],r[C('Titlu')],r[C('Fotograf / autor')]].join(' '));return ws.every(w=>h.includes(w));}).slice(0,12);
+    dd.innerHTML=m.map(r=>{const u=coverUrl(r[C('Copertă')]);return `<button type="button" data-id="${esc(r[C('ID')])}">${u?`<img src="${esc(u)}" alt="">`:'<span style="width:26px"></span>'}<span><b>${esc(r[C('Titlu')])}</b> <span class="sub">${esc(r[C('Fotograf / autor')])} · ID ${esc(r[C('ID')])}${r[C('Stare')]!=='Publicată'?' · nu e pe site':''}</span></span></button>`;}).join('')||'<div class="sub" style="padding:8px 10px">Nimic găsit.</div>';
+    dd.hidden=false;dd.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>pick(b.dataset.id));});
+  bq.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const f=dd.querySelector('[data-id]');if(f)pick(f.dataset.id);}if(e.key==='Escape')dd.hidden=true;});
+  function bindChips(){document.querySelectorAll('#sch .x').forEach(x=>x.onclick=()=>{readSel();const id=x.closest('[data-b]').dataset.b;S.se.books=S.se.books.filter(b=>b!==id);redraw();});
+    document.querySelectorAll('#sch .up,#sch .dn').forEach(x=>x.onclick=()=>{readSel();const id=x.closest('[data-b]').dataset.b,B=S.se.books,i=B.indexOf(id),j=x.classList.contains('up')?i-1:i+1;if(j<0||j>=B.length)return;B.splice(i,1);B.splice(j,0,id);redraw();});}
+  bindChips();
+  $('#scancel').onclick=()=>{S.se=JSON.parse(S.seOrig);renderSelEdit();};
+  $('#ssave').onclick=()=>{readSel();const P=S.se;
+    if(!P.title){$('#smsg').className='msg err';$('#smsg').textContent='Pune un titlu.';return;}
+    if(P.show&&P.books.length<3){$('#smsg').className='msg err';$('#smsg').textContent='O selecție vizibilă are nevoie de cel puțin 3 cărți.';return;}
+    $('#ssave').disabled=true;$('#smsg').className='msg';$('#smsg').textContent='Se salvează…';
+    call('saveSelection',P).then(r=>{const i=S.sels.findIndex(x=>x.id===r.id);if(i>=0)S.sels[i]=r;else S.sels.push(r);S.se=null;renderSel();toast('Salvat · pe site în câteva minute');})
+    .catch(e=>{$('#ssave').disabled=false;$('#smsg').className='msg err';$('#smsg').textContent=e.message||String(e);});};
+  const del=$('#sdel');if(del)del.onclick=()=>{if(!confirm('Ștergi definitiv selecția? Dacă vrei doar să nu mai apară, pune „Ascunsă”.'))return;
+    call('deleteSelection',S.se.id).then(()=>{S.sels=S.sels.filter(x=>x.id!==S.se.id);S.se=null;renderSel();toast('Selecție ștearsă');}).catch(e=>alert(e.message||e));};
+}
 </script>
 </body>
 </html>

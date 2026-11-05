@@ -601,7 +601,7 @@ B.forEach(prepBook);
 const HID={};
 function hideChk(){let n=0; for(let i=B.length-1;i>=0;i--) if(B[i].coverCheck){HID[B[i].id]=B[i]; delete byId[B[i].id]; B.splice(i,1); n++;} return n;}
 hideChk();
-const SELECTIONS=[
+let SELECTIONS=[
   {id:'femei-fotografe',title:'Femei în fotografie',sub:'De la Julia Margaret Cameron la Nan Goldin',ids:['235','95','193','175','278','395','296','510','63']},
   {id:'bucuresti',title:'București, fotografiat',sub:'Orașul văzut de patru fotografi',ids:['223','78','179','283']},
   {id:'fotografie-romaneasca',title:'Fotografie românească',sub:'Albume apărute în România',ids:['168','385','227','522','524','501','63','96','283']},
@@ -656,6 +656,20 @@ function applyImgs(b){
   let h=b.hovImg?ims.findIndex(im=>im.src===b.hovImg&&!im.ext):-1;
   if(h<1){ const o=b._imgs[b._hov0]; h=o?ims.findIndex(im=>im.src===o.src):-1; }
   b.hov=h>0?h:0;
+}
+/* Selecțiile vin din foaia „Selecții” (?api=selectii), în ordinea de acolo; copia din build rămâne rezerva. */
+function selectionsLive(){
+  if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
+  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),6000);
+  fetch(PANELS_API+'?api=selectii',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
+    if(!j||!Array.isArray(j.selections)||!j.selections.length) return;
+    const ok=s=>typeof s==='string'?s.slice(0,200):'';
+    const next=j.selections.map((x,k)=>({id:ok(x.id).replace(/[^a-z0-9-]/g,''),title:ok(x.title),sub:ok(x.sub),ids:(Array.isArray(x.ids)?x.ids:[]).map(String).filter(i=>/^\d+$/.test(i)&&byId[i]),order:k+1})).filter(x=>x.id&&x.title&&x.ids.length);
+    if(!next.length||JSON.stringify(next)===JSON.stringify(SELECTIONS)) return;
+    SELECTIONS=next; selClean();
+    const h=location.hash.slice(1); if(st.sel&&!SELECTIONS.find(x=>x.id===st.sel)) st.sel=null;
+    if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);
+  }).catch(()=>clearTimeout(tm));
 }
 function booksLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
@@ -846,7 +860,7 @@ function renderHome(keepScroll){
   ${!narrowed&&upcoming().length?meetCarousel():''}
   ${!narrowed?`<section aria-labelledby="h-sel">
     <div class="sec-head"><h2 id="h-sel">Selecții</h2><span class="note">Cărți grupate de echipa bibliotecii</span></div>
-    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>rkey('sel'+x.id)-rkey('sel'+y.id)).reduce((acc,s)=>{acc.push({s,cov:selCovers(s,acc.length?acc[acc.length-1].cov:[])});return acc;},[]).map(({s,cov})=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${cov.map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
+    <div class="selrow"><div class="sel-grid">${SELECTIONS.filter(s=>s.show!==false&&s.ids.length).sort((x,y)=>(x.order||y.order)?(x.order||999)-(y.order||999):rkey('sel'+x.id)-rkey('sel'+y.id)).reduce((acc,s)=>{acc.push({s,cov:selCovers(s,acc.length?acc[acc.length-1].cov:[])});return acc;},[]).map(({s,cov})=>`<button class="sel" data-sel="${s.id}"><div class="sel-covers">${cov.map(i=>`<img src="${safeSrc(byId[i].cover)}"${byId[i].cut?' class="cutc"':''} alt="" loading="lazy">`).join('')}</div><div><div class="sel-title">${esc(s.title)}</div><div class="sel-sub">${esc(s.sub)} · ${s.ids.length} titluri</div></div></button>`).join('')}</div><div class="scrollbar" aria-hidden="true"><i></i></div></div>
   </section>`:''}
   <section id="toate" aria-labelledby="h-all" style="padding-bottom:0">
     <div class="sec-head"><h2 id="h-all">${listHeading()}</h2>${narrowed?`<button class="linkbtn" data-rm="all">Înapoi la toate cărțile</button>`:''}</div>
@@ -1255,7 +1269,7 @@ document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
 document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
-setTimeout(panelsLive,50);
+setTimeout(panelsLive,50); setTimeout(selectionsLive,80);
 setTimeout(booksLive,60);
 if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto span');if(pr)pr.innerHTML+=' · <b>varianta B</b> (fără chenare și ovale, bife pentru Lista mea, roșu în loc de negru) · <a href="./">vezi varianta de acum</a>';}
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);

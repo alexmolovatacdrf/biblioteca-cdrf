@@ -36,6 +36,7 @@ function uiHtml_() {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.api === 'panouri') return panelsApi_();
+  if (p.api === 'selectii') return selApi_();
   if (p.api === 'carti') return booksApi_();
   if (p.api === 'stat') return statLog_(p);
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
@@ -457,6 +458,129 @@ function deletePanel(session, id) {
     sh.deleteRow(i + 2);
     logRow_([new Date(), user.name, 'panou ' + id, 'Panou șters', '', '']);
     CacheService.getScriptCache().remove('panels');
+    return true;
+  } finally { lock.releaseLock(); }
+}
+
+/* ===================== Selecții (grupurile de cărți de pe prima pagină) =====================
+ * Stau în foaia „Selecții”. Site-ul le ia prin ?api=selectii; copia din codul site-ului rămâne rezerva.
+ */
+const SH_SEL = 'Selecții';
+const SEL_COLS = ['ID', 'Vizibil', 'Titlu', 'Subtitlu', 'Cărți', 'Ordine', 'Actualizat'];
+const SEL_KEYS = ['id', 'show', 'title', 'sub', 'books', 'order', 'updated'];
+const SEL_SEED = [
+  ['femei-fotografe', 'da', 'Femei în fotografie', 'De la Julia Margaret Cameron la Nan Goldin', '235, 95, 193, 175, 278, 395, 296, 510, 63', '1'],
+  ['bucuresti', 'da', 'București, fotografiat', 'Orașul văzut de patru fotografi', '223, 78, 179, 283', '2'],
+  ['fotografie-romaneasca', 'da', 'Fotografie românească', 'Albume apărute în România', '168, 385, 227, 522, 524, 501, 63, 96, 283', '3'],
+  ['cum-citim', 'da', 'Cum citim o fotografie', 'Istorie, teorie și eseuri', '376, 17, 320, 429, 309, 96', '4'],
+  ['portret', 'da', 'Portretul', 'Chipuri, de la studio la stradă', '227, 418, 63, 364, 154, 332, 395, 87, 453, 264', '5'],
+  ['moda', 'da', 'Moda în fotografie', 'Albume de modă și fotografi de modă', '348, 177, 37, 245, 432, 229, 450, 249', '6'],
+  ['strada', 'da', 'Pe stradă', 'Street photography', '193, 300, 76, 113, 27', '7'],
+  ['invata', 'da', 'Învață fotografia', 'Manuale și ghiduri practice', '101, 418, 421, 107, 403, 2, 345, 336, 428', '8']
+];
+
+function selSheet_() {
+  let sh = ss_().getSheetByName(SH_SEL);
+  if (!sh) {
+    sh = ss_().insertSheet(SH_SEL);
+    sh.getRange(1, 1, 1, SEL_COLS.length).setValues([SEL_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.getRange(2, 1, 999, SEL_COLS.length).setNumberFormat('@');
+    sh.getRange(2, 1, SEL_SEED.length, 6).setValues(SEL_SEED);
+    sh.setColumnWidth(5, 320);
+  }
+  return sh;
+}
+
+function selRows_() {
+  const sh = selSheet_();
+  if (sh.getLastRow() < 2) return [];
+  const h = headers_(sh);
+  return sh.getRange(2, 1, sh.getLastRow() - 1, h.length).getDisplayValues().filter(r => r[0]).map(r => {
+    const o = {};
+    SEL_COLS.forEach((c, i) => { const j = h.indexOf(c); o[SEL_KEYS[i]] = j < 0 ? '' : String(r[j]).trim(); });
+    o.show = /^(da|true|1)$/i.test(o.show);
+    o.books = o.books ? o.books.split(/[\s,;]+/).filter(x => /^\d+$/.test(x)) : [];
+    o.order = Number(o.order) || 0;
+    return o;
+  }).sort((a, b) => (a.order || 999) - (b.order || 999));
+}
+
+/** Public: selecțiile vizibile, în ordinea din foaie. */
+function selApi_() {
+  const cache = CacheService.getScriptCache();
+  let out = cache.get('sel');
+  if (!out) {
+    const list = selRows_().filter(s => s.show && s.books.length)
+      .map(s => ({ id: s.id, title: s.title, sub: s.sub, ids: s.books }));
+    out = JSON.stringify({ selections: list, at: new Date().toISOString() });
+    cache.put('sel', out, 120);
+  }
+  return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSelections(session) { me_(session); return selRows_(); }
+
+function slug_(s) {
+  return String(s || '').toLowerCase().replace(/ă|â/g, 'a').replace(/î/g, 'i').replace(/ș|ş/g, 's').replace(/ț|ţ/g, 't')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+
+/** Salvează o selecție (nouă dacă nu are ID). */
+function saveSelection(session, s) {
+  const user = me_(session); canPanels_(user);
+  if (!String(s.title || '').trim()) throw new Error('Selecția are nevoie de un titlu.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = selSheet_(), h = headers_(sh);
+    const rows = selRows_();
+    let id = String(s.id || '').trim();
+    let row = -1;
+    const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().map(r => r[0]) : [];
+    if (id) {
+      const i = ids.indexOf(id); if (i < 0) throw new Error('Nu găsesc selecția ' + id); row = i + 2;
+    } else {
+      let base = slug_(s.title) || 'selectie'; id = base; let k = 2;
+      while (ids.indexOf(id) >= 0) { id = base + '-' + (k++); }
+      row = sh.getLastRow() + 1;
+    }
+    const before = rows.find(r => r.id === id);
+    const books = (s.books || []).map(String).filter((x, i, a) => /^\d+$/.test(x) && a.indexOf(x) === i);
+    const val = { id: id, show: s.show ? 'da' : 'nu', title: String(s.title).trim(), sub: String(s.sub || '').trim(), books: books.join(', '),
+      order: String(Number(s.order) || (before ? before.order : rows.length + 1) || ''), updated: Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm') + ', ' + user.name };
+    const line = h.map(c => { const i = SEL_COLS.indexOf(c); return i < 0 ? '' : String(val[SEL_KEYS[i]] == null ? '' : val[SEL_KEYS[i]]).slice(0, 2000); });
+    sh.getRange(row, 1, 1, h.length).setNumberFormat('@').setValues([line]);
+    logRow_([new Date(), user.name, 'selecție ' + id, before ? 'Selecție modificată' : 'Selecție nouă', before ? before.title + ' (' + before.books.length + ')' : '', val.title + ' (' + books.length + ')' + (s.show ? '' : ' (ascunsă)')]);
+    CacheService.getScriptCache().remove('sel');
+    return selRows_().find(r => r.id === id);
+  } finally { lock.releaseLock(); }
+}
+
+/** Ordinea selecțiilor: lista de ID-uri în ordinea dorită. */
+function orderSelections(session, idList) {
+  const user = me_(session); canPanels_(user);
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = selSheet_(), h = headers_(sh), col = h.indexOf('Ordine') + 1;
+    if (!col) throw new Error('Lipsește coloana Ordine.');
+    const ids = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 1).getDisplayValues().map(r => r[0]);
+    (idList || []).forEach((id, k) => { const i = ids.indexOf(String(id)); if (i >= 0) sh.getRange(i + 2, col).setNumberFormat('@').setValue(String(k + 1)); });
+    CacheService.getScriptCache().remove('sel');
+    return selRows_();
+  } finally { lock.releaseLock(); }
+}
+
+function deleteSelection(session, id) {
+  const user = me_(session);
+  if (user.role !== 'admin') throw new Error('Doar adminul poate șterge o selecție. O poți ascunde.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = selSheet_();
+    const ids = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 1).getDisplayValues().map(r => r[0]);
+    const i = ids.indexOf(String(id)); if (i < 0) throw new Error('Nu găsesc selecția ' + id);
+    sh.deleteRow(i + 2);
+    logRow_([new Date(), user.name, 'selecție ' + id, 'Selecție ștearsă', '', '']);
+    CacheService.getScriptCache().remove('sel');
     return true;
   } finally { lock.releaseLock(); }
 }

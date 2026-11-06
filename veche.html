@@ -40,8 +40,6 @@ b,strong{font-weight:500}
 @media (max-width:1100px){.hero.hgrad::before{background:linear-gradient(180deg,var(--band) 0,var(--band) 90px,#fff 300px)}}
 
 
-.proto{font-size:11.5px;color:var(--muted);padding-block:6px;display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
-.proto b{color:var(--accent);font-weight:400}
 
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax)}
 .top .wrap{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,640px) minmax(max-content,1fr);align-items:center;gap:24px;padding-block:14px}
@@ -580,7 +578,6 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
 </style>
 
 
-<div class="proto wrap"><span><b>Prototip</b> · versiune de test</span></div>
 
 <header class="top"><div class="wrap">
   <div class="brand"><a class="cdrfhome" id="cdrfhome" href="https://www.cdrf.ro" title="cdrf.ro – pagina principală"><img class="logo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="103" height="40"><img class="logo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="103" height="40"></a><span class="sep" aria-hidden="true"></span><button class="lib" id="home" aria-label="Biblioteca CdRF, pagina principală">Biblioteca CdRF</button></div>
@@ -1311,7 +1308,7 @@ document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
 setTimeout(panelsLive,50); setTimeout(selectionsLive,80);
 setTimeout(booksLive,60);
-if(VARB){document.body.classList.add('vb');const pr=document.querySelector('.proto');if(pr)pr.remove();
+if(VARB){document.body.classList.add('vb');
   document.querySelector('.cdrffoot').hidden=false;
   document.getElementById('cyear').textContent=new Date().getFullYear();
 }

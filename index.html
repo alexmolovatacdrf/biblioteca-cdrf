@@ -592,7 +592,7 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
 
 <footer class="wrap">
   <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b>Str. Popa Tatu nr. 68, București<br>Cărțile se consultă în spațiul CdRF.</div>
-  <div><b>Program</b>Luni: închis<br>Marți–Vineri: 09–18<br>Sâmbătă–Duminică: 10–18</div>
+  <div><b>Program</b>Luni–Vineri: 09–20<br>Sâmbătă–Duminică: 10–20</div>
   <div><b>Despre catalog</b>Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button><br><button class="linkbtn" id="cset" hidden style="margin-top:8px;font-size:13px">Statistici și cookie-uri</button></div>
 </footer>
 <div class="cdrffoot" hidden><div class="wrap">
@@ -1133,7 +1133,7 @@ function renderAbout(){
     ['consultare','Cum consulți cărțile',`<p>Nu avem împrumut: cărțile se citesc pe loc, la CdRF, în timpul programului. Fiecare fișă din catalog arată raftul pe care stă cartea, așa că poți veni știind exact ce cauți.</p>${T('e nevoie de programare? accesul e gratuit? se pot fotografia pagini?')}`],
     ['cercetare','Pentru studenți, cercetători și grupuri',T('dacă oferiți ajutor la căutare, prezentări ale fondului pentru grupuri sau clase, recomandări de lectură pe o temă.')],
     ['donatii','Donații de carte',T('primiți cărți donate? ce fel de titluri și cum se aduc?')],
-    ['contact','Program și contact',`<dl><dt>Adresa</dt><dd>Str. Popa Tatu nr. 68, București</dd><dt>Luni</dt><dd>închis</dd><dt>Marți–Vineri</dt><dd>09–18</dd><dt>Sâmbătă–Duminică</dt><dd>10–18</dd></dl><p style="margin-top:1em"></p>${T('adresa de e-mail a bibliotecii și persoana de contact.')}`],
+    ['contact','Program și contact',`<dl><dt>Adresa</dt><dd>Str. Popa Tatu nr. 68, București</dd><dt>Luni–Vineri</dt><dd>09–20</dd><dt>Sâmbătă–Duminică</dt><dd>10–20</dd></dl><p style="margin-top:1em"></p>${T('adresa de e-mail a bibliotecii și persoana de contact.')}`],
   ];
   /* notițele „de completat” sunt pentru echipă, nu pentru public: le scoatem, iar secțiunile rămase goale nu apar */
   secs.forEach(s=>{s[2]=s[2].replace(/<span class="todo">[\s\S]*?<\/span>/g,'').replace(/<p style="margin-top:1em"><\/p>/g,'');});

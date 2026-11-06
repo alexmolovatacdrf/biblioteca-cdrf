@@ -761,7 +761,7 @@ const CITY_COUNTRY={'București':'România','Timișoara':'România','Cluj-Napoca
 const placeOf=b=>[b.place,b.country||CITY_COUNTRY[b.place]].filter(Boolean).join(', ');
 /* panourile de tip „Sugestii căutare” nu mai apar pe site */
 const SUGK='Sugestii căutare';
-const VARB=false;
+const VARB=true;
 const PAGE=48;
 const st={page:1,pkey:'',fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);

@@ -422,11 +422,17 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
 /* Header și footer replicate după cdrf.ro (doar varianta B) */
 @media (min-width:721px){body.vb .brand .logo{height:60px}body.vb .brand .sep{height:34px}}
 body.vb footer .flogo{display:none}
+.more{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 0 8px}
+.more .sub{font-size:13px;color:var(--muted)}
+.morebtn{display:inline-flex;align-items:center;gap:8px;border:1px solid #d4d4d9;background:var(--paper);padding:9px 18px;border-radius:999px;cursor:pointer;font-size:15px;font:inherit}
+.morebtn:hover{border-color:var(--muted)}
+.morebtn .n{font-size:12px;color:var(--muted)}
+body.vb footer{background:#f7f7f8;box-shadow:0 0 0 100vmax #f7f7f8;clip-path:inset(0 -100vmax);padding-block:36px 44px;border-top:1px solid var(--rule)}
+body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
 .cdrffoot{background:var(--chip);margin-top:0;box-shadow:0 0 0 100vmax var(--chip);clip-path:inset(0 -100vmax);padding-block:36px 40px;font-size:15px;color:var(--muted);text-align:center}
 .cdrffoot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 40px;margin-bottom:28px}
 .cdrffoot a{color:inherit;text-decoration:none}.cdrffoot a:hover{color:var(--ink)}
 .cdrffoot p{margin:0;font-size:14px}
-body.vb footer{margin-bottom:0;border-top:0}
 @media (max-width:720px){.cdrffoot nav{gap:10px 22px}}
 
 .lb{position:fixed;inset:0;background:var(--paper);z-index:60;display:grid;grid-template-rows:auto 1fr auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -587,7 +593,7 @@ body.vb footer{margin-bottom:0;border-top:0}
 <main class="wrap" id="app"></main>
 
 <footer class="wrap">
-  <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b>Str. Popa Tatu nr. 68, București<br>Cărțile se consultă pe loc, în spațiul CdRF.</div>
+  <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b>Str. Popa Tatu nr. 68, București<br>Cărțile se consultă în spațiul CdRF.</div>
   <div><b>Program</b>Luni: închis<br>Marți–Vineri: 09–18<br>Sâmbătă–Duminică: 10–18</div>
   <div><b>Despre catalog</b>Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button><br><button class="linkbtn" id="cset" hidden style="margin-top:8px;font-size:13px">Statistici și cookie-uri</button></div>
 </footer>
@@ -755,7 +761,8 @@ const placeOf=b=>[b.place,b.country||CITY_COUNTRY[b.place]].filter(Boolean).join
 /* panourile de tip „Sugestii căutare” nu mai apar pe site */
 const SUGK='Sugestii căutare';
 const VARB=false;
-const st={fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
+const PAGE=48;
+const st={lim:48,pkey:'',fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);
 /* listă de nume în fișă: la liste lungi arătăm primele 8, restul la cerere; toate rămân căutabile */
 function nameList(ns,more){const L=n=>`<button class="lnk" data-person="${esc(n)}">${esc(n)}</button>`;const k=8;
@@ -885,7 +892,7 @@ function renderHome(keepScroll){
   const hasQ=!!words().length, narrowed=hasQ||st.sel||st.person||st.tag||st.series||st.publisher;
   app.innerHTML=`
   <div class="intro">
-    <div class="facts"><span>consultare pe loc, la CdRF</span></div>
+    <div class="facts"><span>Str. Popa Tatu nr. 68, București · consultare pe loc</span></div>
   </div>
   ${!narrowed&&upcoming().length?meetCarousel():''}
   ${!narrowed?`<section aria-labelledby="h-sel">
@@ -905,7 +912,9 @@ function renderHome(keepScroll){
     </div>
     <div class="active">${activeChips()}</div></div>
     <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${['ppl','tg'].map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
-    <div class="grid">${list.length?list.map(b=>card(b,hasQ)).join(''):`<div class="empty">Nicio carte nu se potrivește. <button class="linkbtn" data-rm="all">Șterge filtrele</button></div>`}</div></div>
+    ${(()=>{const key=JSON.stringify([st.q,st.sort,st.group,...FACETS.map(f=>[...st[f.key]].sort())]); if(key!==st.pkey){st.pkey=key; st.lim=PAGE;} const show=VARB?list.slice(0,st.lim):list; const rest=list.length-show.length;
+      return `<div class="grid">${list.length?show.map(b=>card(b,hasQ)).join(''):`<div class="empty">Nicio carte nu se potrivește. <button class="linkbtn" data-rm="all">Șterge filtrele</button></div>`}</div>
+      ${rest>0?`<div class="more"><button type="button" class="morebtn" data-more>Mai multe cărți<span class="n">${rest}</span></button><span class="sub">${show.length} din ${list.length}</span></div>`:''}`;})()}</div>
   </section>`;
   document.title='Biblioteca CdRF';
   {const fs=app.querySelector('.fstick'); if(fs) document.documentElement.style.setProperty('--fsh',fs.offsetHeight+'px');}
@@ -1217,12 +1226,13 @@ function setQuery(v){
   refreshList(true);
 }
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
+  const t=e.target.closest('[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-more],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
   if(!t){document.querySelectorAll('.dd .menu').forEach(m=>{if(!m.contains(e.target)){m.hidden=true;m.previousElementSibling.setAttribute('aria-expanded','false')}});return;}
   if(t.matches('[data-mstep]')){meetShow(meetIdx+(+t.dataset.mstep)); return;}
   if(t.matches('[data-mgo]')){meetShow(+t.dataset.mgo); return;}
   if(t.matches('[data-fh]')){const k=t.dataset.fh; st.open[k]=!(st.open[k]||st[k].size>0); renderHome(window.scrollY); return;}
   if(t.matches('[data-side]')){st.side=!st.side; renderHome(window.scrollY); return;}
+  if(t.matches('[data-more]')){st.lim+=PAGE; renderHome(window.scrollY); return;}
   if(t.matches('[data-fclr]')){st[t.dataset.fclr].clear(); renderHome(window.scrollY); return;}
   if(t.matches('[data-sscroll]')){const s=t.parentElement.querySelector('.sel-grid'); s.scrollBy({left:(+t.dataset.sscroll)*s.clientWidth,behavior:'smooth'}); return;}
   if(t.matches('[data-tscroll]')){const s=t.parentElement.querySelector('.gthumbs'); s.scrollBy({left:(+t.dataset.tscroll)*s.clientWidth*0.8,behavior:'smooth'}); return;}

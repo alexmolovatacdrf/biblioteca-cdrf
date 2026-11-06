@@ -422,7 +422,8 @@ footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
 /* Header și footer replicate după cdrf.ro (doar varianta B) */
 @media (min-width:721px){body.vb .brand .logo{height:60px}body.vb .brand .sep{height:34px}}
 body.vb footer .flogo{display:none}
-.more{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 0 8px}
+.more{display:flex;align-items:center;justify-content:center;gap:18px;padding:28px 0 8px}
+.morebtn:disabled{opacity:.35;cursor:default}
 .more .sub{font-size:13px;color:var(--muted)}
 .morebtn{display:inline-flex;align-items:center;gap:8px;border:1px solid #d4d4d9;background:var(--paper);padding:9px 18px;border-radius:999px;cursor:pointer;font-size:15px;font:inherit}
 .morebtn:hover{border-color:var(--muted)}
@@ -762,7 +763,7 @@ const placeOf=b=>[b.place,b.country||CITY_COUNTRY[b.place]].filter(Boolean).join
 const SUGK='Sugestii căutare';
 const VARB=false;
 const PAGE=48;
-const st={lim:48,pkey:'',fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
+const st={page:1,pkey:'',fsq:{},side:false,open:{ppl:true,pub:false,tg:false},ppl:new Set(),pub:new Set(),tg:new Set(),group:'toate',q:'',type:new Set(),category:new Set(),lang:new Set(),period:new Set(),tag:null,person:null,series:null,sel:null,sort:'aleator',userSort:false};
 const RSEED=Math.floor(Math.random()*2**31);
 /* listă de nume în fișă: la liste lungi arătăm primele 8, restul la cerere; toate rămân căutabile */
 function nameList(ns,more){const L=n=>`<button class="lnk" data-person="${esc(n)}">${esc(n)}</button>`;const k=8;
@@ -906,15 +907,14 @@ function renderHome(keepScroll){
       <button class="fbtn" data-fpanel>${FICON}Filtre${nAct()?` <span class="n">${nAct()}</span>`:''}</button>
       ${['type','category','lang','period'].map(k=>dd(FACETS.find(f=>f.key===k))).join('')}
       <span class="spacer"></span>
-      ${(narrowed||nAct()||st.ppl.size+st.pub.size+st.tg.size)?`<span class="count">${list.length} ${list.length===1?'carte':(list.length%100>=1&&list.length%100<=19?'cărți':'de cărți')}</span>`:''}
       ${(()=>{const S=[['aleator','Recomandate'],...(hasQ?[['relevanta','Cele mai potrivite']]:[]),['titlu','Titlu A–Z'],['titlu-za','Titlu Z–A'],['an-nou','Cele mai noi'],['an-vechi','Cele mai vechi']]; const cur=(S.find(x=>x[0]===st.sort)||S[0]);
         return `<div class="dd sortdd"><button type="button" aria-expanded="false" data-dd="sort" aria-label="Ordonează: ${cur[1]}"><span class="hide-s sl">Ordonează:</span> ${cur[1]}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><div class="menu" hidden>${S.map(([v,l])=>`<label><input type="radio" name="sortr" value="${v}" ${cur[0]===v?'checked':''}>${l}</label>`).join('')}</div></div>`;})()}
     </div>
     <div class="active">${activeChips()}</div></div>
     <div class="libw${st.side?'':' nofs'}"><aside class="fside" aria-label="Filtre">${['ppl','tg'].map(k=>sideGroup(FACETS.find(f=>f.key===k))).join('')}</aside>
-    ${(()=>{const key=JSON.stringify([st.q,st.sort,st.group,...FACETS.map(f=>[...st[f.key]].sort())]); if(key!==st.pkey){st.pkey=key; st.lim=PAGE;} const show=VARB?list.slice(0,st.lim):list; const rest=list.length-show.length;
+    ${(()=>{const key=JSON.stringify([st.q,st.sort,st.group,...FACETS.map(f=>[...st[f.key]].sort())]); if(key!==st.pkey){st.pkey=key; st.page=1;} const np=Math.max(1,Math.ceil(list.length/PAGE)); if(st.page>np) st.page=np; const show=VARB?list.slice((st.page-1)*PAGE,st.page*PAGE):list;
       return `<div class="grid">${list.length?show.map(b=>card(b,hasQ)).join(''):`<div class="empty">Nicio carte nu se potrivește. <button class="linkbtn" data-rm="all">Șterge filtrele</button></div>`}</div>
-      ${rest>0?`<div class="more"><button type="button" class="morebtn" data-more>Mai multe cărți<span class="n">${rest}</span></button><span class="sub">${show.length} din ${list.length}</span></div>`:''}`;})()}</div>
+      ${VARB&&np>1?`<div class="more"><button type="button" class="morebtn" data-page="${st.page-1}" ${st.page<=1?'disabled':''}><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M7 1 3 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>Înapoi</button><span class="sub">Pagina ${st.page} din ${np}</span><button type="button" class="morebtn" data-page="${st.page+1}" ${st.page>=np?'disabled':''}>Următoarele<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="m3 1 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button></div>`:''}`;})()}</div>
   </section>`;
   document.title='Biblioteca CdRF';
   {const fs=app.querySelector('.fstick'); if(fs) document.documentElement.style.setProperty('--fsh',fs.offsetHeight+'px');}
@@ -998,7 +998,7 @@ function openPanel(){
   const groups=FACETS.map(f=>{const c={}; B.filter(b=>inGroup(b,st.group)).forEach(b=>[].concat(f.get(b)).filter(Boolean).forEach(v=>c[v]=(c[v]||0)+1)); const keys=Object.keys(c).sort((a,b)=>f.order?f.order(a)-f.order(b):coll.compare(a,b));
     return `<fieldset><legend>${f.label}</legend>${keys.map(v=>`<label><input type="checkbox" data-pf="${f.key}" value="${esc(v)}" ${draft[f.key].has(v)?'checked':''}>${esc(f.fmt?f.fmt(v):v)}</label>`).join('')}</fieldset>`;}).join('');
   p.innerHTML=`<div class="sheet"><div class="sh"><b>Filtre</b><button class="x" data-pclose aria-label="Închide filtrele"><svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3l12 12M15 3 3 15" stroke="currentColor" stroke-width="2"/></svg></button></div><div class="body">${groups}</div><div class="ft"><button class="linkbtn" data-pclear>Șterge tot</button><button class="apply" data-papply>Vezi ${count()} titluri</button></div></div>`;
-  const upd=()=>{p.querySelector('[data-papply]').textContent=`Vezi ${count()} ${count()===1?'titlu':'titluri'}`;};
+  const upd=()=>{p.querySelector('[data-papply]').textContent=VARB?(count()?'Vezi cărțile':'Nicio carte'):`Vezi ${count()} ${count()===1?'titlu':'titluri'}`;};
   const close=apply=>{ if(apply){FACETS.forEach(f=>st[f.key]=draft[f.key]); renderHome(0); const el=document.getElementById('toate'); if(el) window.scrollTo({top:el.offsetTop-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||80)-8});} p.remove(); document.body.style.overflow=''; };
   p.addEventListener('change',e=>{const i=e.target.closest('[data-pf]'); if(!i) return; const s=draft[i.dataset.pf]; i.checked?s.add(i.value):s.delete(i.value); upd();});
   p.addEventListener('click',e=>{ if(e.target===p) return close(false); const t=e.target.closest('[data-pclose],[data-papply],[data-pclear]'); if(!t) return;
@@ -1226,13 +1226,13 @@ function setQuery(v){
   refreshList(true);
 }
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-more],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
+  const t=e.target.closest('[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-page],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
   if(!t){document.querySelectorAll('.dd .menu').forEach(m=>{if(!m.contains(e.target)){m.hidden=true;m.previousElementSibling.setAttribute('aria-expanded','false')}});return;}
   if(t.matches('[data-mstep]')){meetShow(meetIdx+(+t.dataset.mstep)); return;}
   if(t.matches('[data-mgo]')){meetShow(+t.dataset.mgo); return;}
   if(t.matches('[data-fh]')){const k=t.dataset.fh; st.open[k]=!(st.open[k]||st[k].size>0); renderHome(window.scrollY); return;}
   if(t.matches('[data-side]')){st.side=!st.side; renderHome(window.scrollY); return;}
-  if(t.matches('[data-more]')){st.lim+=PAGE; renderHome(window.scrollY); return;}
+  if(t.matches('[data-page]')){st.page=+t.dataset.page; renderHome(0); const g=document.querySelector('.libw'); if(g){const y=g.getBoundingClientRect().top+window.scrollY-120; window.scrollTo(0,Math.max(0,y));} return;}
   if(t.matches('[data-fclr]')){st[t.dataset.fclr].clear(); renderHome(window.scrollY); return;}
   if(t.matches('[data-sscroll]')){const s=t.parentElement.querySelector('.sel-grid'); s.scrollBy({left:(+t.dataset.sscroll)*s.clientWidth,behavior:'smooth'}); return;}
   if(t.matches('[data-tscroll]')){const s=t.parentElement.querySelector('.gthumbs'); s.scrollBy({left:(+t.dataset.tscroll)*s.clientWidth*0.8,behavior:'smooth'}); return;}

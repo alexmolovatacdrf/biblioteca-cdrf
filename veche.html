@@ -188,13 +188,13 @@ body.vb .list .acts .pbtn:hover{background:#b80916}
 .fpanel details.pg{border-bottom:1px solid var(--rule)}
 .fpanel.drop{background:transparent}
 .fpanel.drop .sheet{position:fixed;width:max-content;min-width:260px;max-width:calc(100vw - 32px);border:1px solid var(--rule);border-radius:8px;box-shadow:0 14px 40px -12px rgba(0,0,0,.22);padding-bottom:0}
-.fpanel.drop .sh{padding:10px 14px 8px}.fpanel.drop .sh b{font-size:16px}.fpanel.drop .x{width:32px;height:32px}
-.fpanel.drop .body{padding:0 14px 8px}
-.fpanel.drop details.pg summary{padding:12px 2px;font-size:15px;gap:18px}
-.fpanel.drop label{font-size:15px;padding:7px 10px}
-.fpanel.drop .pq{font-size:14px;padding:7px 12px}
-.fpanel.drop .ft{padding:10px 14px}
-.fpanel.drop .apply{padding:10px 16px;font-size:15px}
+.fpanel.drop .sh{padding:12px 16px 10px}.fpanel.drop .sh b{font-size:18px}.fpanel.drop .x{width:34px;height:34px}
+.fpanel.drop .body{padding:0 16px 8px}
+.fpanel.drop details.pg summary{padding:14px 2px;font-size:17px;gap:20px}
+.fpanel.drop label{font-size:16px;padding:8px 10px}
+.fpanel.drop .pq{font-size:16px;padding:8px 14px}
+.fpanel.drop .ft{padding:12px 16px}
+.fpanel.drop .apply{padding:12px 18px;font-size:16px}
 .fpanel details.pg summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 2px;font-size:17px;cursor:pointer}
 .fpanel details.pg summary::-webkit-details-marker{display:none}
 .fpanel details.pg summary span:first-child{flex:1}
@@ -240,6 +240,8 @@ body.vb .fbtn .chv{transform:rotate(-90deg)}
 .card .m{color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
 .card .t{text-wrap:pretty;overflow-wrap:anywhere}
 .card .p{color:var(--muted)}
+.card .yr{display:none}
+@media (max-width:720px){body.vb .card .m{display:none}body.vb .card .yr{display:inline}body.vb .card div.yr{display:block}}
 .card mark{background:color-mix(in srgb,var(--accent) 16%,transparent);color:inherit;border-radius:2px}
 .empty{padding:60px 0;text-align:center;color:var(--muted);grid-column:1/-1}
 
@@ -853,7 +855,7 @@ function card(b,highlight){
   const g=gImg(b);
   /* dacă în grilă e altă imagine decât coperta, la hover arătăm coperta (sau imaginea fixată în admin) */
   if(b.g&&(!b.hovImg||!i2||i2.src===g.src)) i2=b.images[0];
-  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="#carte-${b.id}" data-id="${b.id}"><div class="shelf"><img class="c1${g.cut?' cutc':''}" src="${safeSrc(g.src)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${g.w}" height="${g.h}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${b.images.slice(1).some(im=>!im.ext)?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}</div>`:''}</div></a>`;
+  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="#carte-${b.id}" data-id="${b.id}"><div class="shelf"><img class="c1${g.cut?' cutc':''}" src="${safeSrc(g.src)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${g.w}" height="${g.h}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${b.images.slice(1).some(im=>!im.ext)?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}${b.year?`<span class="yr"> · ${esc(b.year)}</span>`:''}</div>`:(b.year?`<div class="p yr">${esc(b.year)}</div>`:'')}</div></a>`;
 }
 const TIPS=['Album foto','Carte','Catalog expoziție','Revistă','Alte tipuri'];
 const tipF=t=>!t?'':TIPS.includes(t)?t:'Alte tipuri';
@@ -1023,7 +1025,8 @@ function openPanel(){
   p.addEventListener('click',e=>{ if(e.target===p) return close(false); const t=e.target.closest('[data-pclose],[data-papply],[data-pclear]'); if(!t) return;
     if(t.matches('[data-pclose]')) close(false); else if(t.matches('[data-papply]')) close(true); else {FACETS.forEach(f=>draft[f.key].clear()); p.querySelectorAll('[data-pf]').forEach(i=>i.checked=false); p.querySelectorAll('.pn').forEach(x=>x.textContent=''); upd();}});
   upd();
-  if(VARB){ const btn=document.querySelector('[data-fpanel]'); const r=btn.getBoundingClientRect(); p.classList.add('drop');
+  if(VARB){ const btn=document.querySelector('[data-fpanel]'); const hh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||80;
+    window.scrollBy({top:btn.getBoundingClientRect().top-hh-8,behavior:'instant'}); const r=btn.getBoundingClientRect(); p.classList.add('drop');
     const sh=p.querySelector('.sheet'); sh.style.top=Math.round(r.bottom+6)+'px'; sh.style.left=Math.round(Math.max(16,r.left))+'px';
     sh.style.maxHeight=Math.round(window.innerHeight-r.bottom-22)+'px'; }
   document.body.appendChild(p); document.body.style.overflow='hidden'; p.querySelector('[data-pclose]').focus();

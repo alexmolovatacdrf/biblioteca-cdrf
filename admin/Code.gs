@@ -385,8 +385,9 @@ function booksApi_() {
 // Tipuri speciale: „Cartea săptămânii” (o carte, cu text) și „Cărți noi” (până la 12 cărți) au secțiunile lor pe prima pagină;
 // „Sugestii căutare”: cuvinte în Text, despărțite prin virgulă, puse primele la „Încearcă”.
 // Restul sunt evenimente și intră în caruselul de sus.
-const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat'];
-const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated'];
+const PANEL_COLS = ['ID', 'Activ', 'Tip', 'Titlu', 'Invitat', 'Când', 'Data', 'Până la', 'Afișare de la', 'Afișare până la', 'Cărți', 'Text', 'Sursă', 'Actualizat', 'Siglă'];
+const PANEL_KEYS = ['id', 'active', 'kind', 'title', 'guest', 'when', 'date', 'end', 'from', 'to', 'books', 'text', 'src', 'updated', 'logo'];
+const PANEL_LOGOS = ['afcn'];
 
 function panelsSheet_() {
   let sh = ss_().getSheetByName(SH_PANELS);
@@ -423,7 +424,7 @@ function panelsApi_() {
     if (!ss_().getSheetByName(SH_PANELS)) return ContentService.createTextOutput('{"panels":[]}').setMimeType(ContentService.MimeType.JSON);
     const list = panelRows_().filter(p => p.active && (!p.from || p.from <= d) && (p.to ? p.to >= d : (!p.date || (p.end || p.date) >= d)))
       .map(p => ({ id: p.id, active: true, kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
-        from: p.from, to: p.to, books: p.books, text: p.text }));
+        from: p.from, to: p.to, books: p.books, text: p.text, logo: p.logo }));
     out = JSON.stringify({ panels: list, at: new Date().toISOString() });
     cache.put('panels', out, 120);
   }
@@ -465,6 +466,7 @@ function savePanel(session, p) {
     const before = rows.find(r => r.id === id);
     const val = { id: id, active: p.active ? 'da' : 'nu', kind: p.kind, title: p.title, guest: p.guest, when: p.when, date: p.date, end: p.end,
       from: p.from, to: p.to, books: (p.books || []).map(String).filter(x => /^\d+$/.test(x)).join(', '), text: p.text,
+      logo: PANEL_LOGOS.indexOf(p.logo) >= 0 ? p.logo : '',
       src: (user.role === 'admin' && p.src) ? p.src : ((before && before.src) || 'manual'), updated: Utilities.formatDate(new Date(), 'Europe/Bucharest', 'dd.MM.yyyy HH:mm') + ', ' + user.name };
     const line = h.map(c => { const i = PANEL_COLS.indexOf(c); return i < 0 ? '' : String(val[PANEL_KEYS[i]] == null ? '' : val[PANEL_KEYS[i]]).slice(0, 2000); });
     sh.getRange(row, 1, 1, h.length).setNumberFormat('@').setValues([line]);

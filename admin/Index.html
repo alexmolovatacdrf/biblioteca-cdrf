@@ -575,7 +575,7 @@ function renderPan(){
     call('savePanel',p).then(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);renderPan();toast('Aprobat · '+pStat(r)[1].toLowerCase());}).catch(e=>{alert(e.message||e);renderPan();});});
   document.querySelectorAll('[data-pno]').forEach(b=>b.onclick=()=>{if(!confirm('Respingi propunerea? Se șterge din listă.'))return;b.disabled=true;
     call('deletePanel',b.dataset.pno).then(()=>{S.panels=S.panels.filter(x=>x.id!==b.dataset.pno);renderPan();toast('Propunere respinsă');}).catch(e=>{alert(e.message||e);renderPan();});});
-  const a=$('#padd');if(a)a.onclick=()=>openPan({id:'',active:true,kind:'Meet the Book',title:'',guest:'',when:'',date:'',end:'',from:'',to:'',books:[],text:'',src:'manual'});
+  const a=$('#padd');if(a)a.onclick=()=>openPan({id:'',active:true,kind:'Meet the Book',title:'',guest:'',when:'',date:'',end:'',from:'',to:'',books:[],text:'',src:'manual',logo:''});
 }
 function openPan(p){S.pe=p;S.peOrig=JSON.stringify(p);renderPan();window.scrollTo(0,0);}
 function bchip(id){const r=bookRow(id);const u=r?coverUrl(r[C('Copertă')]):'';return `<div class="bchip" data-b="${esc(id)}">${u?`<img src="${esc(u)}" alt="">`:''}<span>${r?esc(r[C('Titlu')]):'ID '+esc(id)+' (nu există)'}${r&&r[C('Stare')]!=='Publicată'?' <span class=flag>nu e pe site</span>':''}</span>${canPan()?'<button type="button" class="x" title="Scoate">×</button>':''}</div>`;}
@@ -594,7 +594,8 @@ function renderPanEdit(){
    ${inp('guest','Invitat','text','apare ca „cu …”')}
    <label class="f w">Când · textul afișat, ex. „Duminică, 8 noiembrie, ora 12:00”<input data-p="when" value="${esc(p.when)}" ${dis}></label>
    ${inp('date','Data evenimentului','date')}${inp('end','Ultima zi','date','dacă ține mai multe zile')}
-   <label class="f w">Text scurt (opțional)<textarea data-p="text" style="min-height:80px" ${dis}>${esc(p.text)}</textarea></label></div></fieldset>
+   <label class="f w">Text scurt (opțional)<textarea data-p="text" style="min-height:80px" ${dis}>${esc(p.text)}</textarea></label>
+   <label class="f">Siglă finanțator · apare mică în panou<select data-p="logo" ${dis}><option value="">fără</option><option value="afcn" ${p.logo==='afcn'?'selected':''}>AFCN · proiect co-finanțat</option></select></label></div></fieldset>
   <fieldset><legend>Cărți din bibliotecă</legend><p class="sub" style="margin:0 0 6px" id="blim"></p>
    ${ro?'':'<div class="bsr"><input type="search" id="bq" placeholder="Caută după titlu, autor sau ID…" style="width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:9px"><div class="dd" id="bdd" hidden></div></div>'}
    <div class="bchips" id="bch">${p.books.map(bchip).join('')}</div></fieldset>

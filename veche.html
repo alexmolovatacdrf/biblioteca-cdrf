@@ -241,6 +241,8 @@ body.vb .fbtn .chv{transform:rotate(-90deg)}
 .card .t{text-wrap:pretty;overflow-wrap:anywhere}
 .card .p{color:var(--muted)}
 .card .yr{display:none}
+.mlogo{display:block;width:96px;height:auto;margin-top:22px;mix-blend-mode:multiply}
+@media (max-width:720px){.mlogo{width:72px;margin-top:16px}}
 body.vb .card .m{display:none}body.vb .card .yr{display:inline}body.vb .card div.yr{display:block}
 .card mark{background:color-mix(in srgb,var(--accent) 16%,transparent);color:inherit;border-radius:2px}
 .empty{padding:60px 0;text-align:center;color:var(--muted);grid-column:1/-1}
@@ -687,7 +689,7 @@ function panelsLive(){
     if(!j||!Array.isArray(j.panels)) return;
     const ok=s=>typeof s==='string'?s.slice(0,600):'', dt=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'')?s:'';
     const next=j.panels.map(p=>({id:ok(p.id),active:p.active!==false,kind:ok(p.kind)||'Eveniment',title:ok(p.title),guest:ok(p.guest),when:ok(p.when),text:ok(p.text),
-      date:dt(p.date),end:dt(p.end),from:dt(p.from),to:dt(p.to),books:(Array.isArray(p.books)?p.books:[]).map(String).filter(x=>/^\d+$/.test(x))}));
+      date:dt(p.date),end:dt(p.end),from:dt(p.from),to:dt(p.to),logo:LOGOS[p.logo]?p.logo:'',books:(Array.isArray(p.books)?p.books:[]).map(String).filter(x=>/^\d+$/.test(x))}));
     if(JSON.stringify(next)===JSON.stringify(MEETS)) return;
     MEETS=next; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)){meetIdx=0; renderHome(window.scrollY);}
   }).catch(()=>clearTimeout(tm));
@@ -959,9 +961,10 @@ function meetSlide(M,i){
     :'';
   return `<div class="mslide${bks.length?'':' nobook'}" data-mi="${i}">
     <div><div class="mk">${M.title?`<b>${esc(M.kind)}</b>`:''}<span>${esc(M.when||'')}</span></div>
-      <h2>${esc(head)}</h2>${M.guest?`<div class="mp">cu ${esc(M.guest)}</div>`:''}${txt}${booksHtml}</div>
+      <h2>${esc(head)}</h2>${M.guest?`<div class="mp">cu ${esc(M.guest)}</div>`:''}${txt}${booksHtml}${M.logo&&LOGOS[M.logo]?`<img class="mlogo" src="${LOGOS[M.logo].src}" alt="${LOGOS[M.logo].alt}" width="72" height="72" loading="lazy">`:''}</div>
     ${bks.length?`<div class="cv${bks.length>1?' many':''}${bks.length>3?' n4':''}">${bks.slice(0,4).map((b,k)=>`<img src="${safeSrc(b.cover)}" class="${[k?'':'big',b.cut?'cutc':''].filter(Boolean).join(' ')}" alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}">`).join('')}</div>`:''}</div>`;
 }
+const LOGOS={afcn:{src:'brand/afcn.webp',alt:'Proiect co-finanțat de Administrația Fondului Cultural Național'}};
 function meetCarousel(){
   const U=upcoming(); if(meetIdx>=U.length) meetIdx=0;
   return `<section class="meet band" aria-roledescription="carusel" aria-label="Evenimente la CdRF">

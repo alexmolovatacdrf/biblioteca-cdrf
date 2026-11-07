@@ -964,7 +964,7 @@ function meetSlide(M,i){
       <h2>${esc(head)}</h2>${M.guest?`<div class="mp">cu ${esc(M.guest)}</div>`:''}${txt}${booksHtml}${M.logo&&LOGOS[M.logo]?`<img class="mlogo" src="${LOGOS[M.logo].src}" alt="${LOGOS[M.logo].alt}" width="72" height="72" loading="lazy">`:''}</div>
     ${bks.length?`<div class="cv${bks.length>1?' many':''}${bks.length>3?' n4':''}">${bks.slice(0,4).map((b,k)=>`<img src="${safeSrc(b.cover)}" class="${[k?'':'big',b.cut?'cutc':''].filter(Boolean).join(' ')}" alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-id="${b.id}">`).join('')}</div>`:''}</div>`;
 }
-const LOGOS={afcn:{src:'brand/afcn.webp',alt:'Proiect co-finanțat de Administrația Fondului Cultural Național'}};
+const LOGOS={afcn:{src:'brand/afcn-t.webp',alt:'Proiect co-finanțat de Administrația Fondului Cultural Național'}};
 function meetCarousel(){
   const U=upcoming(); if(meetIdx>=U.length) meetIdx=0;
   return `<section class="meet band" aria-roledescription="carusel" aria-label="Evenimente la CdRF">

@@ -186,6 +186,15 @@ body.vb .list .acts .pbtn:hover{background:#b80916}
 .fpanel .body{overflow:auto;padding:6px max(18px,env(safe-area-inset-left,0px)) 12px;-webkit-overflow-scrolling:touch}
 .fpanel fieldset{border:0;padding:12px 0;margin:0;border-bottom:1px solid var(--rule)}
 .fpanel details.pg{border-bottom:1px solid var(--rule)}
+.fpanel.drop{background:transparent}
+.fpanel.drop .sheet{position:fixed;width:max-content;min-width:260px;max-width:calc(100vw - 32px);border:1px solid var(--rule);border-radius:8px;box-shadow:0 14px 40px -12px rgba(0,0,0,.22);padding-bottom:0}
+.fpanel.drop .sh{padding:10px 14px 8px}.fpanel.drop .sh b{font-size:16px}.fpanel.drop .x{width:32px;height:32px}
+.fpanel.drop .body{padding:0 14px 8px}
+.fpanel.drop details.pg summary{padding:12px 2px;font-size:15px;gap:18px}
+.fpanel.drop label{font-size:15px;padding:7px 10px}
+.fpanel.drop .pq{font-size:14px;padding:7px 12px}
+.fpanel.drop .ft{padding:10px 14px}
+.fpanel.drop .apply{padding:10px 16px;font-size:15px}
 .fpanel details.pg summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 2px;font-size:17px;cursor:pointer}
 .fpanel details.pg summary::-webkit-details-marker{display:none}
 .fpanel details.pg summary span:first-child{flex:1}
@@ -1014,6 +1023,9 @@ function openPanel(){
   p.addEventListener('click',e=>{ if(e.target===p) return close(false); const t=e.target.closest('[data-pclose],[data-papply],[data-pclear]'); if(!t) return;
     if(t.matches('[data-pclose]')) close(false); else if(t.matches('[data-papply]')) close(true); else {FACETS.forEach(f=>draft[f.key].clear()); p.querySelectorAll('[data-pf]').forEach(i=>i.checked=false); p.querySelectorAll('.pn').forEach(x=>x.textContent=''); upd();}});
   upd();
+  if(VARB){ const btn=document.querySelector('[data-fpanel]'); const r=btn.getBoundingClientRect(); p.classList.add('drop');
+    const sh=p.querySelector('.sheet'); sh.style.top=Math.round(r.bottom+6)+'px'; sh.style.left=Math.round(Math.max(16,r.left))+'px';
+    sh.style.maxHeight=Math.round(window.innerHeight-r.bottom-22)+'px'; }
   document.body.appendChild(p); document.body.style.overflow='hidden'; p.querySelector('[data-pclose]').focus();
 }
 (function(){const h=document.querySelector('header.top'), hs=document.getElementById('hsearch'); const mq=window.matchMedia('(max-width:760px)'); const set=()=>{ if(mq.matches){h.style.top=(-(hs.offsetTop-8))+'px';} else h.style.top=''; document.documentElement.style.setProperty('--hh',(h.getBoundingClientRect().height+(parseFloat(getComputedStyle(h).top)||0))+'px');}; set(); if('ResizeObserver' in window) new ResizeObserver(set).observe(h); window.addEventListener('resize',set);})();

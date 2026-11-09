@@ -695,11 +695,21 @@ const weekPick=()=>MEETS.filter(m=>m.kind===WEEK&&meetVis(m)&&(m.books||[]).some
 const upcoming=()=>{const ok=m=>meetVis(m)&&m.kind!==SUGK&&(m.kind!==WEEK&&m.kind!==NEWK||(m.books||[]).some(i=>byId[i]));
   const L=MEETS.filter(m=>ok(m)&&m.kind!==WEEK).sort((a,b)=>(a.date||a.from||'').localeCompare(b.date||b.from||''));
   const w=weekPick(); if(w) L.splice(Math.min(1,L.length),0,w); return L;};
-function panelsLive(){
-  if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
+/* Apps Script răspunde uneori foarte încet (pornire la rece); așteptăm până la 30 s și mai încercăm o dată.
+   Răspunsul bun se ține în browser 14 zile și se aplică imediat la vizita următoare, până vine cel nou. */
+const apiOK=()=>/^https?:/.test(PANELS_API)&&/^https?:$/.test(location.protocol)&&!!window.fetch;
+function apiGet(q,tries){
+  tries=tries==null?2:tries;
   const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
-  const giveUp=()=>{clearTimeout(tm); if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
-  fetch(PANELS_API+'?api=panouri',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
+  return fetch(PANELS_API+'?api='+q,{signal:ctl&&ctl.signal}).then(r=>{clearTimeout(tm); return r.ok?r.json():null;})
+    .catch(e=>{clearTimeout(tm); if(tries>1) return new Promise(res=>setTimeout(res,2500)).then(()=>apiGet(q,tries-1)); throw e;});
+}
+const cacheGet=k=>{try{const c=JSON.parse(localStorage.getItem(k)||'null'); return c&&Date.now()-c.t<14*864e5?c.v:null;}catch(e){return null;}};
+const cachePut=(k,v)=>{try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v:v}));}catch(e){}};
+function panelsLive(){
+  if(!apiOK()) return;
+  const giveUp=()=>{if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
+  apiGet('panouri').then(j=>{
     if(!j||!Array.isArray(j.panels)){giveUp(); return;}
     const ok=s=>typeof s==='string'?s.slice(0,600):'', dt=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'')?s:'';
     const next=j.panels.map(p=>({id:ok(p.id),active:p.active!==false,kind:ok(p.kind)||'Eveniment',title:ok(p.title),guest:ok(p.guest),when:ok(p.when),text:ok(p.text),
@@ -730,9 +740,11 @@ function applyImgs(b){
 const gImg=b=>b.g?{src:b.g.src,w:b.g.w,h:b.g.h,cut:false}:{src:b.cover,w:b.cw,h:b.ch,cut:b.cut};
 /* Selecțiile vin din foaia „Selecții” (?api=selectii), în ordinea de acolo; copia din build rămâne rezerva. */
 function selectionsLive(){
-  if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
-  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
-  fetch(PANELS_API+'?api=selectii',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
+  if(!apiOK()) return;
+  const c=cacheGet('bib.selectii'); if(c) applySel(c);
+  apiGet('selectii').then(j=>{ if(j&&Array.isArray(j.selections)&&j.selections.length){cachePut('bib.selectii',j); applySel(j);} }).catch(()=>{});
+}
+function applySel(j){
     if(!j||!Array.isArray(j.selections)||!j.selections.length) return;
     const ok=s=>typeof s==='string'?s.slice(0,200):'';
     const next=j.selections.map((x,k)=>({id:ok(x.id).replace(/[^a-z0-9-]/g,''),title:ok(x.title),sub:ok(x.sub),all:(Array.isArray(x.ids)?x.ids:[]).map(String).filter(i=>/^\d+$/.test(i)),ids:(Array.isArray(x.ids)?x.ids:[]).map(String).filter(i=>/^\d+$/.test(i)&&byId[i]),order:k+1})).filter(x=>x.id&&x.title&&x.ids.length);
@@ -740,12 +752,13 @@ function selectionsLive(){
     SELECTIONS=next; selClean();
     const h=location.hash.slice(1); if(st.sel&&!SELECTIONS.find(x=>x.id===st.sel)) st.sel=null;
     if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);
-  }).catch(()=>clearTimeout(tm));
 }
 function booksLive(){
-  if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
-  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
-  fetch(PANELS_API+'?api=carti',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
+  if(!apiOK()) return;
+  const c=cacheGet('bib.carti'); if(c) applyBooks(c);
+  apiGet('carti').then(j=>{ if(j&&Array.isArray(j.books)){cachePut('bib.carti',j); applyBooks(j);} }).catch(()=>{});
+}
+function applyBooks(j){
     if(!j||!Array.isArray(j.books)) return;
     const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');
     const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
@@ -773,7 +786,6 @@ function booksLive(){
     if(!ch) return; selClean();
     const h=location.hash.slice(1);
     if(h.startsWith('carte-')) renderBook(h.slice(6)); else if(!/^(despre|lista)/.test(h)) renderHome(window.scrollY);
-  }).catch(()=>clearTimeout(tm));
 }
 let meetIdx=0, meetTimer=null;
 /* Grupuri mari: tot ce e periodic sau tipăritură mică merge la „Reviste și zine-uri”. */

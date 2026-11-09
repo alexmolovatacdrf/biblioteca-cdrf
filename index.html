@@ -706,11 +706,21 @@ function apiGet(q,tries){
 }
 const cacheGet=k=>{try{const c=JSON.parse(localStorage.getItem(k)||'null'); return c&&Date.now()-c.t<14*864e5?c.v:null;}catch(e){return null;}};
 const cachePut=(k,v)=>{try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v:v}));}catch(e){}};
-function panelsLive(){
+const panelsGiveUp=()=>{if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
+/* Un singur apel (?api=tot) aduce panourile, selecțiile și cărțile editate: trei apeluri în paralel se blocau des. */
+function liveAll(){
   if(!apiOK()) return;
-  const giveUp=()=>{if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
-  apiGet('panouri').then(j=>{
-    if(!j||!Array.isArray(j.panels)){giveUp(); return;}
+  const cs=cacheGet('bib.selectii'); if(cs) applySel(cs);
+  const cb=cacheGet('bib.carti'); if(cb) applyBooks(cb);
+  apiGet('tot').then(j=>{
+    if(!j){panelsGiveUp(); return;}
+    applyPanels(j);
+    if(Array.isArray(j.selections)&&j.selections.length){cachePut('bib.selectii',j); applySel(j);}
+    if(Array.isArray(j.books)){cachePut('bib.carti',j); applyBooks(j);}
+  }).catch(panelsGiveUp);
+}
+function applyPanels(j){
+    if(!j||!Array.isArray(j.panels)){panelsGiveUp(); return;}
     const ok=s=>typeof s==='string'?s.slice(0,600):'', dt=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'')?s:'';
     const next=j.panels.map(p=>({id:ok(p.id),active:p.active!==false,kind:ok(p.kind)||'Eveniment',title:ok(p.title),guest:ok(p.guest),when:ok(p.when),text:ok(p.text),
       date:dt(p.date),end:dt(p.end),from:dt(p.from),to:dt(p.to),logo:LOGOS[p.logo]?p.logo:'',books:(Array.isArray(p.books)?p.books:[]).map(String).filter(x=>/^\d+$/.test(x))}));
@@ -718,9 +728,8 @@ function panelsLive(){
     const was=MEETS_OK; MEETS_OK=true;
     if(was&&JSON.stringify(next)===JSON.stringify(MEETS)) return;
     MEETS=next; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)){meetIdx=0; renderHome(window.scrollY);}
-  }).catch(giveUp);
 }
-/* Fișele schimbate în admin vin la zi din tabel (?api=carti): doar cărțile atinse în admin, câmpurile editate.
+/* Fișele schimbate în admin vin la zi din tabel (prin ?api=tot): doar cărțile atinse în admin, câmpurile editate.
    Copia din build rămâne rezerva; pozele rămân cele din build. */
 /* Imaginile alese în admin: unele se pot ascunde (nu și coperta), iar imaginea de la mouse se poate fixa. */
 function applyImgs(b){
@@ -738,12 +747,7 @@ function applyImgs(b){
   b.g=g>0?ims[g]:null;
 }
 const gImg=b=>b.g?{src:b.g.src,w:b.g.w,h:b.g.h,cut:false}:{src:b.cover,w:b.cw,h:b.ch,cut:b.cut};
-/* Selecțiile vin din foaia „Selecții” (?api=selectii), în ordinea de acolo; copia din build rămâne rezerva. */
-function selectionsLive(){
-  if(!apiOK()) return;
-  const c=cacheGet('bib.selectii'); if(c) applySel(c);
-  apiGet('selectii').then(j=>{ if(j&&Array.isArray(j.selections)&&j.selections.length){cachePut('bib.selectii',j); applySel(j);} }).catch(()=>{});
-}
+/* Selecțiile vin din foaia „Selecții” (prin ?api=tot), în ordinea de acolo; copia din build rămâne rezerva. */
 function applySel(j){
     if(!j||!Array.isArray(j.selections)||!j.selections.length) return;
     const ok=s=>typeof s==='string'?s.slice(0,200):'';
@@ -752,11 +756,6 @@ function applySel(j){
     SELECTIONS=next; selClean();
     const h=location.hash.slice(1); if(st.sel&&!SELECTIONS.find(x=>x.id===st.sel)) st.sel=null;
     if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);
-}
-function booksLive(){
-  if(!apiOK()) return;
-  const c=cacheGet('bib.carti'); if(c) applyBooks(c);
-  apiGet('carti').then(j=>{ if(j&&Array.isArray(j.books)){cachePut('bib.carti',j); applyBooks(j);} }).catch(()=>{});
 }
 function applyBooks(j){
     if(!j||!Array.isArray(j.books)) return;
@@ -1369,8 +1368,7 @@ document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
 document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
 window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
-setTimeout(panelsLive,50); setTimeout(selectionsLive,80);
-setTimeout(booksLive,60);
+setTimeout(liveAll,50);
 if(VARB){document.body.classList.add('vb');
   document.querySelector('.cdrffoot').hidden=false;
   document.getElementById('cyear').textContent=new Date().getFullYear();

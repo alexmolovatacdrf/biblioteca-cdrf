@@ -40,6 +40,7 @@ function doGet(e) {
   if (p.api === 'panouri') return panelsApi_();
   if (p.api === 'selectii') return selApi_();
   if (p.api === 'carti') return booksApi_();
+  if (p.api === 'tot') return allApi_();
   if (p.api === 'stat') return statLog_(p);
   const boot = { code: String(p.code || '').slice(0, 4096), state: String(p.state || '').slice(0, 256),
     error: p.error ? 'Conectarea Google nu s-a finalizat.' : '', google: !!props_().getProperty('GOOGLE_CLIENT_ID') };
@@ -417,6 +418,12 @@ function panelRows_() {
 function today_() { return Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd'); }
 
 /** Public: panourile pornite care nu au expirat (filtrarea pe ziua de azi o face și site-ul). */
+/* Totul într-un singur răspuns: site-ul face un apel, nu trei (apelurile paralele se blocau). */
+function allApi_() {
+  const g = f => { try { return JSON.parse(f().getContent()); } catch (e) { return {}; } };
+  const out = { panels: g(panelsApi_).panels || [], selections: g(selApi_).selections || [], books: g(booksApi_).books || [], at: new Date().toISOString() };
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
 function panelsApi_() {
   const cache = CacheService.getScriptCache();
   let out = cache.get('panels');

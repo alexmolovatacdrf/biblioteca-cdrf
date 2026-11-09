@@ -65,7 +65,7 @@ iframe{border:0;width:100%;flex:1;display:block;background:#fff}
   <div class="dev android" id="dA">
     <div class="phone"><div class="punch"></div><div class="screen">
       <div class="status"><span>12:30</span><span class="ic"><i style="width:15px;height:10px"></i><i style="width:20px;height:10px"></i></span></div>
-      <div class="bar"><span class="url" id="uA">alexmolovatacdrf.github.io/biblioteca-cdrf</span><span>⋮</span></div>
+      <div class="bar"><span class="url" id="uA">biblioteca.cdrf.ro</span><span>⋮</span></div>
       <iframe id="fA" title="Site-ul pe Android" src="./"></iframe>
       <div class="nav"><i></i></div>
     </div></div>
@@ -75,7 +75,7 @@ iframe{border:0;width:100%;flex:1;display:block;background:#fff}
     <div class="phone"><div class="island"></div><div class="screen">
       <div class="status"><span>9:41</span><span class="ic"><i style="width:17px;height:10px"></i><i style="width:24px;height:11px"></i></span></div>
       <iframe id="fI" title="Site-ul pe iPhone" src="./"></iframe>
-      <div class="bar"><span class="url" id="uI">alexmolovatacdrf.github.io</span></div>
+      <div class="bar"><span class="url" id="uI">biblioteca.cdrf.ro</span></div>
       <div class="home"></div>
     </div></div>
     <div class="cap"><b>iPhone</b> · Safari · ecran 393 × 852 (iPhone 15)</div>
@@ -101,7 +101,7 @@ function hook(f,other,u){
   f.addEventListener('load',()=>{
     try{
       const w=f.contentWindow;
-      const upd=()=>{ u.textContent=(u.id==='uI'?'alexmolovatacdrf.github.io':'alexmolovatacdrf.github.io/biblioteca-cdrf/'+w.location.hash);
+      const upd=()=>{ u.textContent=(u.id==='uI'?'biblioteca.cdrf.ro':'biblioteca.cdrf.ro/'+w.location.hash);
         if(document.getElementById('sync').checked&&!lock){ lock=true; go(other,w.location.hash); setTimeout(()=>lock=false,50);} };
       w.addEventListener('hashchange',upd); upd();
     }catch(e){}

@@ -1237,7 +1237,8 @@ function gaSearch(v){
     stat('cautare',{q:q,n:n});},1500);
 }
 /* Statistica proprie a bibliotecii: doar numărători (ce carte s-a deschis, ce s-a căutat), fără cookie-uri și fără date despre vizitator. */
-const pubHost=()=>/(github\.io|cdrf\.ro)$/.test(location.hostname);
+/* statistici doar pe adresa publică și doar în fereastra principală (nu și din telefon.html, care încarcă site-ul în două iframe-uri) */
+const pubHost=()=>/(pages\.dev|cdrf\.ro)$/.test(location.hostname)&&window.self===window.top;
 let statLastH='';
 function stat(t,o){
   if(!pubHost()||!/^https:/.test(PANELS_API)) return;

@@ -697,7 +697,7 @@ const upcoming=()=>{const ok=m=>meetVis(m)&&m.kind!==SUGK&&(m.kind!==WEEK&&m.kin
   const w=weekPick(); if(w) L.splice(Math.min(1,L.length),0,w); return L;};
 function panelsLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
-  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),6000);
+  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
   const giveUp=()=>{clearTimeout(tm); if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
   fetch(PANELS_API+'?api=panouri',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
     if(!j||!Array.isArray(j.panels)){giveUp(); return;}
@@ -731,7 +731,7 @@ const gImg=b=>b.g?{src:b.g.src,w:b.g.w,h:b.g.h,cut:false}:{src:b.cover,w:b.cw,h:
 /* Selecțiile vin din foaia „Selecții” (?api=selectii), în ordinea de acolo; copia din build rămâne rezerva. */
 function selectionsLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
-  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),6000);
+  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
   fetch(PANELS_API+'?api=selectii',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
     if(!j||!Array.isArray(j.selections)||!j.selections.length) return;
     const ok=s=>typeof s==='string'?s.slice(0,200):'';
@@ -744,7 +744,7 @@ function selectionsLive(){
 }
 function booksLive(){
   if(!/^https?:/.test(PANELS_API)||!/^https?:$/.test(location.protocol)||!window.fetch) return;
-  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),8000);
+  const ctl=window.AbortController?new AbortController():null; const tm=setTimeout(()=>ctl&&ctl.abort(),30000);
   fetch(PANELS_API+'?api=carti',{signal:ctl&&ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(tm);
     if(!j||!Array.isArray(j.books)) return;
     const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');

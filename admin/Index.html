@@ -149,6 +149,7 @@ td.ck{width:28px}td.ck input{width:15px;height:15px;margin:0;display:block}
 .flay{display:grid;grid-template-columns:1fr 290px;gap:28px;align-items:start}
 details.sec{border-top:1px solid var(--rule);padding:2px 0}details.sec>summary{cursor:pointer;padding:10px 0;font-weight:600;display:flex;gap:10px;list-style:none;align-items:baseline}details.sec>summary::-webkit-details-marker{display:none}details.sec>summary::before{content:"›";display:inline-block;width:12px;transform:rotate(90deg);color:var(--muted);transition:transform .15s}details.sec:not([open])>summary::before{transform:none}details.sec>summary .sub{font-weight:400;margin-left:auto;text-align:right}
 details.sec .grid{padding-bottom:12px}details.sec fieldset{border:0;padding:0 0 10px;margin:0}details.sec legend{display:none}
+.sitewarn{border:1px solid var(--warn);background:#fff8ed;padding:10px 14px;margin:0 0 12px;font-size:14px}.sitewarn ul{margin:4px 0 0 18px;padding:0}.sitewarn li{margin:2px 0}
 .rail .box{border:1px solid var(--rule);padding:12px 14px;margin-bottom:14px;font-size:14px}.rail .box .linkbtn{display:inline-block;margin-top:6px;font-size:13px}.rail .box .hist div{padding:5px 0}
 @media(max-width:860px){.lay,.flay,.two{grid-template-columns:1fr}.side{display:flex;gap:18px;overflow-x:auto}.side .grp{min-width:150px}}
 </style>
@@ -321,7 +322,7 @@ function field(k,v){
   if(k==='Intrată în bibliotecă'){const iso=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:(m=>m?m[3]+'-'+m[2]+'-'+m[1]:'')(String(v).match(/^(\d{2})[.\/](\d{2})[.\/](\d{4})$/));return `<label class="f">${k}<input data-k="${k}" type="date" class="${ch}" value="${esc(iso)}"></label>`;}
   if(k==='Situație'){const cur=String(v||'').replace(/\s*\(.*\)$/,'');const opts=['La raft','Lipsă','Împrumutată','Altundeva'];return `<div class="f" style="font-size:12px;color:var(--muted)">Situație${v?' · '+esc(v):''}<div class="seg" id="sit" style="margin-top:4px">${opts.map(o=>`<button type="button" data-sit="${o==='La raft'?'':o}" aria-pressed="${(o==='La raft'?'':o)===cur}">${o}</button>`).join('')}</div><input type="hidden" data-k="Situație" value="${esc(v)}"></div>`;}
   if(k==='La cine / unde')return `<label class="f">La cine / unde · dacă nu e la raft<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
-  if(k==='Legătură'){const o=bindOpts(v),more=BINDS_ALL.filter(x=>!o.some(y=>y[0].toLowerCase()===x.toLowerCase()));return `<label class="f">Legătură · cele din catalog întâi<select data-k="${k}" class="${ch}"><option value="">—</option>${o.map(([b,n])=>`<option value="${esc(b)}" ${b===v?'selected':''}>${esc(b)}${n?' ('+n+')':''}</option>`).join('')}${more.length?'<option disabled>──────</option>':''}${more.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></label>`;}
+  if(k==='Legătură'){const o=bindOpts(v),more=BINDS_ALL.filter(x=>!o.some(y=>y[0].toLowerCase()===x.toLowerCase()));return `<label class="f">Legătură · cele din catalog întâi<select data-k="${k}" class="${ch}"><option value="">—</option>${o.map(([b,n])=>{const sel=b.toLowerCase()===String(v||'').trim().toLowerCase();return `<option value="${esc(sel?v:b)}" ${sel?'selected':''}>${esc(b)}${n?' ('+n+')':''}</option>`;}).join('')}${more.length?'<option disabled>──────</option>':''}${more.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></label>`;}
   if(k==='Tip'||k==='Categorie'||k==='Raft'){const arr=L[k]||[];const extra=v&&arr.indexOf(v)<0?[v]:[];
     return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option>${arr.concat(extra).map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;}
   if(k==='Copertă de verificat')return `<label class="f">${k}<select data-k="${k}" class="${ch}"><option value=""></option><option ${v==='da'?'selected':''}>da</option></select></label>`;
@@ -339,6 +340,15 @@ function bindOpts(cur){const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);const c
   return Object.keys(c).sort((a,b)=>c[b]-c[a]||a.localeCompare(b,'ro')).map(k=>[k,c[k]]);}
 const SEC_SUB={'Carte':'titlu, autor, editură, an, ISBN','Colaboratori':'nume și rol','Limbă':'','Clasificare':'categorie, teme, raft','Obiectul fizic':'pagini, dimensiuni, legătură','Text':'descriere, surse, video','Imagini':'coperta și imaginile de pe site','Inventar':'intrată, verificat la raft, situație, note','Sistem':'ID, Wix ID'};
 function secOpen(g){const r=S.rec;if(g==='Carte'||g==='Clasificare')return true;if(g==='Text')return !!r['Descriere'];if(g==='Imagini')return !!r['Copertă de verificat'];return false;}
+/* de ce nu se vede (bine) pe site: aceleași reguli ca în site */
+function siteIssues(r){const out=[];const cov=String(r['Copertă']||'').trim();
+  if(r['Stare']!=='Publicată') out.push('Starea e „'+(r['Stare']||'—')+'”. Pe site intră doar cărțile Publicate.');
+  if(!cov) out.push('Nu are copertă. Fără copertă cartea nu are imagine pe site.');
+  else if(/^wix:/.test(cov)) out.push('Coperta e doar o referință veche din Wix (imagine mică, 240 px). Trebuie o copertă nouă, în folderul covers/ al site-ului.');
+  else if(!/^covers\/[\w.-]+\.(webp|jpe?g|png)$/i.test(cov)) out.push('Coperta are o cale neașteptată („'+cov.slice(0,40)+'”). Site-ul acceptă doar covers/ID.webp.');
+  if(/^(da|1|true)$/i.test(String(r['Copertă de verificat']||''))) out.push('E bifat „Copertă de verificat”: cartea e ascunsă pe site până se scoate bifa.');
+  if(!String(r['Titlu']||'').trim()) out.push('Nu are titlu.');
+  return out;}
 function renderRec(){
   const r=S.rec,L=S.data.lists,adm=S.data.user.role==='admin',u=coverUrl(r['Copertă']),mod=(S.home&&S.home.mod&&S.home.mod[String(r.ID)])||'';
   const langs=String(r['Limbă']||'').split(/;\s*/).filter(Boolean);
@@ -359,7 +369,9 @@ function renderRec(){
     return `<details class="sec" ${secOpen(g)||(g==='Limbă')?'open':''}>${sum(g,extra||undefined)}<div style="padding-bottom:12px">${inner}</div></details>`;}).join('');
   const inSel=(S.sels||[]).filter(x=>x.books.indexOf(String(r.ID))>=0),inPan=(S.panels||[]).filter(p=>p.books.indexOf(String(r.ID))>=0);
   const locked=!adm&&S.orig['Stare']==='Publicată';
+  const why=siteIssues(r);
   $('#app').innerHTML=`<p><button class="linkbtn" id="back">← Înapoi la Cărți</button></p>
+  ${why.length?`<div class="sitewarn"><b>${r['Stare']==='Publicată'?'Pe site nu se vede cum trebuie':'Nu apare pe site'}</b><ul>${why.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
   <div class="fh">${u?`<img src="${esc(u)}" alt="Coperta">`:'<div class="ph"></div>'}<div><h2>${esc(r['Titlu'])||'(fără titlu)'}</h2><div class="sub" style="margin-top:4px">${esc(r['Fotograf / autor'])}${r['An']?' · '+esc(r['An']):''} · ID ${esc(r.ID)}${r['Stare']==='Publicată'?` · <a href="${S.data.site}#carte-${esc(r.ID)}" target="_blank" rel="noopener">vezi pe site</a>`:''}${mod?' · modificată '+esc(mod):''}</div>
    <div class="seg" id="stare" style="margin-top:10px">${STARI.map(st=>`<button type="button" data-s="${st}" aria-pressed="${r['Stare']===st}" ${(st==='Publicată'&&!adm)||locked?'disabled title="Doar adminul schimbă starea unei cărți publicate"':''}>${st}</button>`).join('')}</div>${locked?'<div class="sub" style="margin-top:8px;color:var(--warn)">Cartea e pe site. Ce modifici aici nu intră direct pe site: ajunge la admin, care aprobă sau respinge.</div>':''}</div>
    <div class="acts" ${canW()?'':'hidden'}><button class="btn" id="lkgo" style="background:var(--ok);border-color:var(--ok)">Caută date online</button><button class="btn" id="save">${locked?'Trimite spre aprobare':'Salvează'}</button></div></div>

@@ -330,7 +330,7 @@ function field(k,v){
   if(k==='Sursa descrierii')return `<label class="f w">${k} · de unde vine textul (sursă, autor, „DE RESCRIS”…)<textarea data-k="${k}" class="${ch}" style="min-height:70px">${esc(v)}</textarea></label>`;
   if(k==='Teme'){const sel=String(v||'').split(/;\s*/).filter(Boolean),all=(L['Teme']||[]).concat(sel.filter(x=>(L['Teme']||[]).indexOf(x)<0));
     return `<div class="f w" style="font-size:12px;color:var(--muted)">Teme<div class="seg" id="teme" style="margin-top:4px">${all.map(t=>`<button type="button" data-t="${esc(t)}" aria-pressed="${sel.indexOf(t)>=0}">${esc(t)}</button>`).join('')}</div></div>`;}
-  if(k==='Video'||k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
+  if(k==='Video'||k==='Linkuri surse'||k==='Note'||k==='Titlu'||k==='Subtitlu'||k==='Fotograf / autor')return `<label class="f w">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
   return `<label class="f">${k}${HINT[k]?' · '+HINT[k]:''}<input data-k="${k}" class="${ch}" value="${esc(v)}" ${ro?'readonly':''}></label>`;
 }
 const LANGS_ALL=['engleză','română','franceză','germană','italiană','spaniolă','neerlandeză','portugheză','polonă','maghiară','cehă','slovacă','slovenă','croată','sârbă','bulgară','ucraineană','rusă','greacă','turcă','suedeză','daneză','norvegiană','finlandeză','japoneză','chineză','coreeană','ebraică','arabă','catalană','latină','estonă','letonă','lituaniană'];

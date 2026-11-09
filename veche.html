@@ -418,10 +418,22 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .li .pp{font-size:17px;color:var(--muted)}
 .li .rm{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px}
 .li .rm:hover{color:var(--ink);text-decoration:underline}
+.phead,.pfoot,.pchk,.pdet{display:none}
 @media print{
-  .proto,header.top,footer,.cdrffoot,#consent,#toast,.list .acts,.li .rm,.list .lead{display:none!important}
-  body{padding:0}.list{padding:0}.list h1{font-size:28px}
-  .li{grid-template-columns:70px 60px 1fr;padding:8px 0;break-inside:avoid}.li .th{width:60px;height:60px}.li .r{font-size:22px}.li .tt{font-size:14px}.li .pp{font-size:12px}
+  @page{margin:16mm 14mm 18mm}
+  .proto,header.top,footer,.cdrffoot,#consent,#toast,.list .acts,.li .rm,.list .lead,.list h1,.hdrsp{display:none!important}
+  body{padding:0;color:#000}.list{padding:0}
+  .phead{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid #000;margin-bottom:6px}
+  .phead img{height:34px;width:auto}.phead .plib{font-size:20px;letter-spacing:-.02em;display:inline-flex;align-items:center;gap:8px;padding-left:14px;border-left:1px solid #999}
+  .phead .plib::before{content:"";width:10px;height:10px;border:2px solid var(--accent);flex:none}
+  .phead .pdate{margin-left:auto;font-size:12px;color:#555}
+  .li{grid-template-columns:22px 60px 54px minmax(0,1fr) 150px;gap:14px;padding:9px 0;break-inside:avoid;border-bottom:1px solid #ddd}
+  .pdet{display:block;font-size:12px;color:#333;text-align:right;line-height:1.35}.pdet small{display:block;font-size:11px;color:#777}
+  .pchk{display:block;width:14px;height:14px;border:1.5px solid #000;box-sizing:border-box}
+  .li .th{width:54px;height:54px;background:#f2f2f2}.li .th img{box-shadow:none}
+  .li .r{font-size:22px}.li .r small{font-size:10px;margin-bottom:2px}.li .tt{font-size:14px}.li .tt a{color:#000}.li .pp{font-size:12px;color:#555}
+  .pfoot{display:grid;grid-template-columns:44px repeat(4,minmax(0,1fr));gap:16px;align-items:start;margin-top:22px;padding-top:12px;border-top:1px solid #000;font-size:11px;color:#333;break-inside:avoid}
+  .pfoot b{display:block;font-weight:500;color:#000;margin-bottom:2px}.pmark{width:40px;height:40px}
 }
 
 /* despre bibliotecă */
@@ -1058,11 +1070,14 @@ function meetStart(){
 }
 function renderList(){
   const items=mine.map(i=>byId[i]).filter(Boolean).sort((a,b)=>coll.compare(a.shelf||'~',b.shelf||'~')||coll.compare(a.title,b.title));
+  const pdate=new Date().toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'});
   app.innerHTML=`<div class="list">
+    <div class="phead" aria-hidden="true"><img src="brand/logo-negru.png" alt="" width="103" height="40"><span class="plib">Biblioteca CdRF</span><span class="pdate">Lista mea · ${esc(pdate)}</span></div>
     <h1>Lista mea</h1>
     <p class="lead">Cărțile pe care vrei să le vezi la bibliotecă, ordonate după raft. Lista rămâne doar în acest browser.</p>
     ${items.length?`<div class="acts"><button class="pbtn" data-print><span class="hide-s">Tipărește sau salvează ca PDF</span><span class="show-s">Salvează PDF</span></button><button class="linkbtn" data-clearlist>Golește lista</button></div>`:''}
-    <div class="litems">${items.length?items.map(b=>`<div class="li"><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
+    <div class="litems">${items.length?items.map(b=>`<div class="li"><span class="pchk" aria-hidden="true"></span><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><div class="pdet" aria-hidden="true">${esc(b.publisher||'')}<small>${esc([b.type,(b.lang||[]).map(l=>l.toLowerCase()).join(', ')].filter(Boolean).join(' · '))}</small></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
+    <div class="pfoot" aria-hidden="true"><img class="pmark" src="brand/semn-negru.png" alt="" width="40" height="40"><div><b>Centrul de Resurse în Fotografie</b>Str. Popa Tatu nr. 68, București</div><div><b>Program</b>Luni–Vineri 09–20 · Sâmbătă–Duminică 10–20</div><div><b>Cum funcționează</b>Cărțile se consultă pe loc — cere-le la bibliotecar, după raft.</div><div><b>Catalogul online</b>biblioteca.cdrf.ro</div></div>
   </div>`;
   document.title='Lista mea · Biblioteca CdRF'; watchHero();
 }

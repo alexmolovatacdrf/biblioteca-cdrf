@@ -1,0 +1,601 @@
+[
+ {
+  "id": "P1",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Construcția poveștii în fotografie",
+  "guest": "Cornel Lazia",
+  "when": "Marți, 3 noiembrie, 18:00–21:00",
+  "date": "2026-11-03",
+  "end": "",
+  "from": "",
+  "to": "",
+  "books": [
+   "429",
+   "27",
+   "376"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P2",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Istorie",
+  "guest": "Cristina Irian",
+  "when": "Sâmbătă, 7 noiembrie, 11:00–17:00",
+  "date": "2026-11-07",
+  "end": "",
+  "from": "",
+  "to": "",
+  "books": [
+   "17",
+   "18",
+   "312"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P3",
+  "active": true,
+  "kind": "Meet the Book",
+  "title": "",
+  "guest": "Matei Dumitru (isopatrusute)",
+  "when": "Duminică, 8 noiembrie, ora 12:00",
+  "date": "2026-11-08",
+  "end": "",
+  "from": "",
+  "to": "",
+  "books": [
+   "437"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P4",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Fotografia documentară",
+  "guest": "Ioana Moldovan",
+  "when": "Marți și miercuri, 10–11 noiembrie, 18:00–21:00",
+  "date": "2026-11-10",
+  "end": "2026-11-11",
+  "from": "",
+  "to": "",
+  "books": [
+   "285",
+   "464",
+   "275",
+   "370"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P5",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Photowalk",
+  "guest": "Alex Busuioceanu",
+  "when": "Sâmbătă, 14 noiembrie, 10:00–16:00",
+  "date": "2026-11-14",
+  "end": "",
+  "from": "",
+  "to": "",
+  "books": [
+   "193",
+   "76",
+   "27"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P6",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Personal Style",
+  "guest": "Natan Dvir",
+  "when": "Sâmbătă, 21 noiembrie și 5 decembrie, 15:00–19:00 · online",
+  "date": "2026-11-21",
+  "end": "2026-12-05",
+  "from": "",
+  "to": "",
+  "books": [
+   "309",
+   "428",
+   "379"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P7",
+  "active": true,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Edit",
+  "guest": "Ioana Moldovan",
+  "when": "Joi, 26 noiembrie; miercuri și joi, 2–3 decembrie, 18:00–21:00",
+  "date": "2026-11-26",
+  "end": "2026-12-03",
+  "from": "",
+  "to": "",
+  "books": [
+   "285",
+   "429",
+   "411"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P8",
+  "active": true,
+  "kind": "Meet the Book",
+  "title": "",
+  "guest": "Vladimir",
+  "when": "Duminică, 29 noiembrie, ora 12:00",
+  "date": "2026-11-29",
+  "end": "",
+  "from": "",
+  "to": "",
+  "books": [],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P9",
+  "active": true,
+  "kind": "Târg",
+  "title": "FotoMarket 13",
+  "guest": "",
+  "when": "Sâmbătă și duminică, 5–6 decembrie, de la ora 12:00",
+  "date": "2026-12-05",
+  "end": "2026-12-06",
+  "from": "",
+  "to": "",
+  "books": [
+   "566",
+   "557",
+   "385"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P10",
+  "active": true,
+  "kind": "Curs · Școala de educație vizuală",
+  "title": "Fotografie documentară",
+  "guest": "Ioana Moldovan",
+  "when": "Marți, 9 februarie – joi, 24 iunie 2027, la CdRF și online",
+  "date": "2027-02-09",
+  "end": "2027-06-24",
+  "from": "",
+  "to": "",
+  "books": [
+   "285",
+   "275",
+   "370",
+   "466"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P11",
+  "active": true,
+  "kind": "Atelier · Școala de educație vizuală",
+  "title": "Atelier de antropologie vizuală",
+  "guest": "Ana-Cristina Irian",
+  "when": "Sâmbătă și duminică, 13–14 februarie 2027, 11:00–17:00",
+  "date": "2027-02-13",
+  "end": "2027-02-14",
+  "from": "",
+  "to": "",
+  "books": [
+   "99",
+   "506",
+   "209",
+   "174"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P12",
+  "active": true,
+  "kind": "Curs · Școala de educație vizuală",
+  "title": "Introducere în fotografia din China și Japonia",
+  "guest": "Ana-Cristina Irian",
+  "when": "Duminică, 21 și 28 februarie, 7 martie 2027, 11:30–15:30",
+  "date": "2027-02-21",
+  "end": "2027-03-07",
+  "from": "",
+  "to": "",
+  "books": [
+   "315",
+   "344",
+   "57",
+   "116"
+  ],
+  "text": "",
+  "src": "manual"
+ },
+ {
+  "id": "P13",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Imitating Life: The Audacity of Suzanne Heintz",
+  "guest": "",
+  "when": "Joi, 5 noiembrie, ora 19:00",
+  "date": "2026-11-05",
+  "end": "",
+  "from": "2026-11-02",
+  "to": "2026-11-05",
+  "books": [
+   "93",
+   "54",
+   "364"
+  ],
+  "text": "Documentar despre Suzanne Heintz, regia Karen Whitehead.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P14",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Paul Kodjo: I Remain a Photographer",
+  "guest": "",
+  "when": "Joi, 12 noiembrie, ora 19:00",
+  "date": "2026-11-12",
+  "end": "",
+  "from": "2026-11-06",
+  "to": "2026-11-12",
+  "books": [
+   "204",
+   "364",
+   "41"
+  ],
+  "text": "Documentar despre fotograful ivorian Paul Kodjo, regia Ananias Léki Dago.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P15",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Foto Estudio Luisita",
+  "guest": "",
+  "when": "Joi, 19 noiembrie, ora 19:00",
+  "date": "2026-11-19",
+  "end": "",
+  "from": "2026-11-13",
+  "to": "2026-11-19",
+  "books": [
+   "204",
+   "510",
+   "18"
+  ],
+  "text": "Documentar despre Luisita Escarria, fotografă columbiană stabilită în Argentina, regia Sol Miraglia și Hugo Manso.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P16",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Enrique Metinides: The Man Who Saw Too Much",
+  "guest": "",
+  "when": "Joi, 26 noiembrie, ora 19:00",
+  "date": "2026-11-26",
+  "end": "",
+  "from": "2026-11-20",
+  "to": "2026-11-26",
+  "books": [
+   "189",
+   "45",
+   "212"
+  ],
+  "text": "Documentar despre fotoreporterul mexican Enrique Metinides, regia Trisha Ziff.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P17",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Willy Ronis: Self-Portrait of a Photographer",
+  "guest": "",
+  "when": "Joi, 3 decembrie, ora 19:00",
+  "date": "2026-12-03",
+  "end": "",
+  "from": "2026-11-27",
+  "to": "2026-12-03",
+  "books": [
+   "520",
+   "34",
+   "218"
+  ],
+  "text": "Documentar despre Willy Ronis, regia Michel Toutain.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P18",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "By the Ways, a Journey with William Eggleston",
+  "guest": "",
+  "when": "Joi, 10 decembrie, ora 19:00",
+  "date": "2026-12-10",
+  "end": "",
+  "from": "2026-12-04",
+  "to": "2026-12-10",
+  "books": [
+   "292",
+   "101",
+   "273",
+   "365"
+  ],
+  "text": "Documentar despre William Eggleston, regia Vincent Gérard și Cédric Laty.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P19",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Searching for Gerda Taro",
+  "guest": "",
+  "when": "Joi, 17 decembrie, ora 19:00",
+  "date": "2026-12-17",
+  "end": "",
+  "from": "2026-12-11",
+  "to": "2026-12-17",
+  "books": [
+   "510",
+   "356",
+   "544"
+  ],
+  "text": "Documentar despre Gerda Taro, regia Camille Ménager.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P20",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Koudelka Shooting Holy Land",
+  "guest": "",
+  "when": "Joi, 24 decembrie, ora 19:00",
+  "date": "2026-12-24",
+  "end": "",
+  "from": "2026-12-18",
+  "to": "2026-12-24",
+  "books": [
+   "221",
+   "27"
+  ],
+  "text": "Documentar despre Josef Koudelka, regia Gilad Baram.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P21",
+  "active": true,
+  "kind": "Seara de film",
+  "title": "Elliott Erwitt: Silence Sounds Good",
+  "guest": "",
+  "when": "Joi, 31 decembrie, ora 19:00",
+  "date": "2026-12-31",
+  "end": "",
+  "from": "2026-12-25",
+  "to": "2026-12-31",
+  "books": [
+   "113",
+   "401",
+   "355"
+  ],
+  "text": "Documentar despre Elliott Erwitt, regia Adriana López Sanfeliu.",
+  "src": "calendar CdRF"
+ },
+ {
+  "id": "P22",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Prelucrare foto",
+  "guest": "Alex Busuioceanu",
+  "when": "Miercuri, 4 noiembrie, 18:00–21:00",
+  "date": "2026-11-04",
+  "end": "",
+  "from": "2026-10-21",
+  "to": "2026-11-04",
+  "books": [
+   "131",
+   "345",
+   "101",
+   "132"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P23",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Prelucrare foto",
+  "guest": "Alex Busuioceanu",
+  "when": "Marți, 17 noiembrie, 18:00–21:00",
+  "date": "2026-11-17",
+  "end": "",
+  "from": "2026-11-05",
+  "to": "2026-11-17",
+  "books": [
+   "131",
+   "345",
+   "101",
+   "132"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P24",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Prelucrare foto",
+  "guest": "Alex Busuioceanu",
+  "when": "Marți, 8 decembrie, 18:00–21:00",
+  "date": "2026-12-08",
+  "end": "",
+  "from": "2026-11-18",
+  "to": "2026-12-08",
+  "books": [
+   "131",
+   "345",
+   "101",
+   "132"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P25",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Construcția poveștii în imagine",
+  "guest": "Cornel Lazia",
+  "when": "Marți, 24 noiembrie, 18:00–21:00",
+  "date": "2026-11-24",
+  "end": "",
+  "from": "2026-11-10",
+  "to": "2026-11-24",
+  "books": [
+   "429",
+   "13",
+   "140"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P26",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Workshop critică",
+  "guest": "Panos Kasimis",
+  "when": "Miercuri, 16 decembrie, 18:00–21:00 · online",
+  "date": "2026-12-16",
+  "end": "",
+  "from": "2026-12-02",
+  "to": "2026-12-16",
+  "books": [
+   "440",
+   "202",
+   "346",
+   "81"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P27",
+  "active": false,
+  "kind": "Curs · Bazele fotografiei",
+  "title": "Workshop critică",
+  "guest": "Panos Kasimis",
+  "when": "Sâmbătă, 19 decembrie, 12:00–15:00 · online",
+  "date": "2026-12-19",
+  "end": "",
+  "from": "2026-12-17",
+  "to": "2026-12-19",
+  "books": [
+   "440",
+   "202",
+   "346",
+   "81"
+  ],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P28",
+  "active": false,
+  "kind": "Prezentare de carte",
+  "title": "",
+  "guest": "Răzvan Voinea",
+  "when": "Sâmbătă, 14 noiembrie, ora 12:00",
+  "date": "2026-11-14",
+  "end": "",
+  "from": "2026-10-31",
+  "to": "2026-11-14",
+  "books": [],
+  "text": "",
+  "src": "propunere · calendar CdRF"
+ },
+ {
+  "id": "P29",
+  "active": true,
+  "kind": "Cartea săptămânii",
+  "title": "",
+  "guest": "",
+  "when": "2–8 noiembrie",
+  "date": "",
+  "end": "",
+  "from": "2026-11-02",
+  "to": "2026-11-08",
+  "books": [
+   "56"
+  ],
+  "text": "Supranumit «Ochiul Istanbulului», Ara Güler a fotografiat în alb-negru străzile, docurile și oamenii orașului. Monografia acoperă aproape trei sferturi de secol de lucru, cu imagini celebre și altele mai puțin văzute.",
+  "src": "manual"
+ },
+ {
+  "id": "P30",
+  "active": false,
+  "kind": "Cartea săptămânii",
+  "title": "",
+  "guest": "",
+  "when": "9–15 noiembrie",
+  "date": "",
+  "end": "",
+  "from": "2026-11-09",
+  "to": "2026-11-15",
+  "books": [
+   "522"
+  ],
+  "text": "Anii 1980: un grup de prieteni studenți urcau pe munte în blugi, cu bocanci de oraș și pulovere tricotate de bunici. Andrei Bîrsan era printre ei, iar albumul lui e mai ales o poveste despre prietenie.",
+  "src": "propunere · Claude"
+ },
+ {
+  "id": "P31",
+  "active": false,
+  "kind": "Cartea săptămânii",
+  "title": "",
+  "guest": "",
+  "when": "16–22 noiembrie",
+  "date": "",
+  "end": "",
+  "from": "2026-11-16",
+  "to": "2026-11-22",
+  "books": [
+   "278"
+  ],
+  "text": "Jurnalul vizual în care Nan Goldin își fotografiază prietenii și iubiții, „tribul” ei din East Village la începutul anilor ’80. Ediția din 2012 are 127 de fotografii, tipărite din scanări noi după diapozitivele originale.",
+  "src": "propunere · Claude"
+ },
+ {
+  "id": "P32",
+  "active": false,
+  "kind": "Cartea săptămânii",
+  "title": "",
+  "guest": "",
+  "when": "23–29 noiembrie",
+  "date": "",
+  "end": "",
+  "from": "2026-11-23",
+  "to": "2026-11-29",
+  "books": [
+   "148"
+  ],
+  "text": "De trei decenii, Gregory Crewdson pune în scenă, cu mijloace de film, o Americă de provincie cufundată în amurg. Albumul adună trei serii gândite ca o trilogie, făcute între 2012 și 2022.",
+  "src": "propunere · Claude"
+ }
+]

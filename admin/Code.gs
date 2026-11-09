@@ -10,14 +10,14 @@ const SH_LISTS = 'Liste';
 const SH_USERS = 'Utilizatori';
 const SH_LOG = 'Istoric';
 const SH_PANELS = 'Panouri';
-const SITE = 'https://alexmolovatacdrf.github.io/biblioteca-cdrf/';
+const SITE = 'https://biblioteca.cdrf.ro/';
 
 // Coloane afișate în listă (restul se încarcă la deschiderea fișei)
 const LIST_COLS = ['ID', 'Stare', 'Titlu', 'Fotograf / autor', 'An', 'Tip', 'Raft', 'Copertă', 'Verificat la raft', 'Copertă de verificat', 'Limbă', 'Legătură', 'Situație', 'La cine / unde'];
 // Câmpuri de inventar: editorii le schimbă direct și la cărțile publicate (nu trec prin aprobare)
 const INV_FIELDS = ['Verificat la raft', 'Situație', 'La cine / unde', 'Note', 'Raft'];
 // Câmpuri pe care editorii nu le pot schimba
-const ADMIN_ONLY = ['ID', 'Wix ID'];
+const ADMIN_ONLY = ['ID', 'Wix ID', 'Copertă'];
 
 // Interfața (Index.html) se ia direct din GitHub, ca să nu mai fie nevoie de redeploy la fiecare schimbare.
 // Dacă GitHub nu răspunde, se folosește copia locală „Index” din proiect.
@@ -338,6 +338,7 @@ function apiVal_(k, v) {
   if (k === 'coverCheck') return /^da$/i.test(v);
   if (k === 'video') return list(v).map(u => { const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? { yt: m[1] } : null; }).filter(Boolean);
   if (k === 'cover') return /^covers\/[\w.-]+\.(webp|jpe?g|png)$/i.test(v) ? v : '';
+  if (k === 'dim') { const m = v.replace(/,/g, '.').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/i); return m ? [parseFloat(m[1]), parseFloat(m[2])] : []; }
   return v;
 }
 function booksApi_() {
@@ -979,7 +980,7 @@ function rawSheet_() {
 
 /** Păstrează materialul brut al sursei din care s-a preluat ceva (intern, nu apare pe site). */
 function saveRawSource(session, id, c) {
-  const user = me_(session);
+  const user = me_(session); canWrite_(user);
   const sh = rawSheet_();
   const row = [new Date(), user.name, String(id), String(c.src || ''), String(c.url || ''), String(c.title || ''),
     String(c.desc || '').slice(0, 45000), String(c.raw || '').slice(0, 45000)];

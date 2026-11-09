@@ -152,7 +152,6 @@ details.sec .grid{padding-bottom:12px}details.sec fieldset{border:0;padding:0 0 
 .rail .box{border:1px solid var(--rule);padding:12px 14px;margin-bottom:14px;font-size:14px}.rail .box .linkbtn{display:inline-block;margin-top:6px;font-size:13px}.rail .box .hist div{padding:5px 0}
 @media(max-width:860px){.lay,.flay,.two{grid-template-columns:1fr}.side{display:flex;gap:18px;overflow-x:auto}.side .grp{min-width:150px}}
 </style>
-<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token":"f44006c6040f4a51b455d77179d36fac","spa":true}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <header><div class="bar"><img class="logo" id="logo" alt="Centrul de Resurse în Fotografie" width="103" height="40"><span class="sep" aria-hidden="true"></span><span class="lib">Biblioteca CdRF<small>admin</small></span>
@@ -189,7 +188,7 @@ function coverUrl(v){v=String(v||'');if(v.startsWith('covers/'))return S.data.si
 const C=k=>S.data.cols.indexOf(k);
 
 function start(){call('getInit').then(d=>{S.data=d;$('#who').innerHTML=esc(d.user.name)+' · '+(d.user.role==='admin'?'admin':'editor')+(window.BOOT&&BOOT.google?' · <button class="linkbtn" id="lo" style="font-size:13px">Ieși</button>':'');const lo=$('#lo');if(lo)lo.onclick=logout;brandInit(d.site);if(d.user.role!=='admin'){document.querySelectorAll('[data-view=stat],[data-view=users]').forEach(t=>t.remove());}document.querySelector('.tabs').hidden=false;route();loadHome();}).catch(e=>{$('#app').innerHTML='<div class="load msg err">'+esc(e.message||e)+'</div>';});}
-(function boot(){const B=window.BOOT||{};brandInit('https:'+DS+'alexmolovatacdrf.github.io/biblioteca-cdrf/');
+(function boot(){const B=window.BOOT||{};brandInit('https:'+DS+'biblioteca.cdrf.ro/');
   if(B.error)return showLogin(B.error);
   if(B.code&&B.state&&getSess())return start();
   if(B.code&&B.state){$('#app').innerHTML='<div class="load">Se verifică contul…</div>';
@@ -291,7 +290,7 @@ function renderHome(){
   <div class="two"><div><h3 class="sec">Ultimele modificări</h3>${H?(H.log.length?H.log.slice(0,14).map(logRow).join(''):'<p class="sub">Nimic încă.</p>'):'<p class="sub">Se încarcă…</p>'}</div>
   <div><h3 class="sec">Pe site acum</h3><div class="row"><span>${nPub} titluri publicate</span><span class="sub">din ${d.rows.length}</span></div><div class="row"><span>${(S.sels||[]).filter(x=>x.show).length||'–'} selecții · ${P.filter(p=>pStat(p)[0]==='on').length} panouri active</span><span class="sub"></span></div>
   ${H&&H.stat&&adm?`<div class="row"><span>Ultimele 7 zile</span><span class="sub">${H.stat.carte} fișe deschise · ${H.stat.cautare} căutări · ${H.stat.lista} în „Lista mea”</span></div>`:''}<div class="row"><span><a href="${esc(d.site)}" target="_blank" rel="noopener">Deschide site-ul</a></span><span class="sub"></span></div></div></div>`;
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.tip='';S.raft='';S.q='';
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;S.stare='';S.chk=false;S.prop=false;S.noshelf=false;S.unp=false;S.pend=false;S.miss=false;S.tip='';S.raft='';S.q='';
     if(g==='pan'){S.view='pan';S.pf='pr';route();return;}if(g==='inv'){S.view='inv';route();return;}
     if(g==='pend')S.pend=true;if(g==='chk')S.chk=true;if(g==='gata')S.stare='Gata de publicare';if(g==='prop')S.prop=true;if(g==='unp')S.stare='';S.view='list';if(g==='unp')S.unp=true;route();});
   document.querySelectorAll('.row.ck').forEach(x=>x.onclick=()=>openRec(x.dataset.id));
@@ -375,7 +374,7 @@ function renderRec(){
   $('#cancel').onclick=()=>{S.rec=JSON.parse(JSON.stringify(S.orig));renderRec();};
   document.querySelectorAll('#stare button').forEach(b=>b.onclick=()=>{readForm();S.rec['Stare']=b.dataset.s;renderRec();});
   document.querySelectorAll('#langs button,#teme button').forEach(b=>b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');});
-  document.querySelectorAll('#sit button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sit button').forEach(x=>x.setAttribute('aria-pressed',x===b));const h=$('[data-k="Situație"]');const cur=String(S.orig['Situație']||'').replace(/\s*\(.*\)$/,'');h.value=b.dataset.sit===cur?String(S.orig['Situație']||''):(b.dataset.sit?b.dataset.sit+' ('+today().split('-').reverse().join('.')+', '+S.data.user.name+')':'');});
+  document.querySelectorAll('#sit button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sit button').forEach(x=>x.setAttribute('aria-pressed',x===b));const h=$('[data-k="Situație"]');const cur=String(S.orig['Situație']||'').replace(/\s*\(.*\)$/,'');h.value=b.dataset.sit===cur?String(S.orig['Situație']||''):(b.dataset.sit?b.dataset.sit+' ('+today().split('-').reverse().join('.')+', '+S.data.user.name+')':'');if(!b.dataset.sit){const w=$('[data-k="La cine / unde"]');if(w)w.value='';}});
   document.querySelectorAll('#langs button').forEach(b=>b.onclick=()=>{readForm();S.rec['Limbă']=langs.filter(x=>x!==b.dataset.l).join('; ');renderRec();});
   const lm=$('#langmore');if(lm)lm.onchange=()=>{const v=lm.value.replace(/\s*\(\d+ cărți\)$/,'');if(!v)return;readForm();S.rec['Limbă']=langs.concat([v]).join('; ');renderRec();};
   $('#addc').onclick=()=>{$('#contrib').insertAdjacentHTML('beforeend',crow({n:'',r:''},roles));bindC();};bindC();
@@ -514,7 +513,7 @@ function renderInv(){
   const ia=$('#imall');if(ia)ia.onclick=()=>{S.invSel=rows.map(r=>r[C('ID')]);renderInv();};
   const ig=$('#imgo');if(ig)ig.onclick=()=>{const v=$('#imraft').value;if(!v||!S.invSel.length)return;if(!confirm('Muți '+S.invSel.length+' cărți pe raftul '+v+'?'))return;ig.disabled=true;
     call('bulkUpdate',S.invSel,{'Raft':v}).then(r=>call('getInit').then(d=>{S.data=d;S.invSel=[];S.invMove=false;renderInv();toast('Mutate: '+r.saved+(r.errors.length?' · erori: '+r.errors.length:''));if(r.errors.length)alert(r.errors.join('\n'));})).catch(e=>{alert(e.message||e);renderInv();});};
-  document.querySelectorAll('.inv input[type=checkbox]').forEach(cb=>cb.onchange=()=>{cb.disabled=true;
+  document.querySelectorAll('.inv input[data-id]').forEach(cb=>cb.onchange=()=>{cb.disabled=true;
     call('markShelf',cb.dataset.id,cb.checked,null).then(res=>{updRow(res.record);renderInv();}).catch(e=>{alert(e.message||e);renderInv();});});
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openRec(b.dataset.open));
   document.querySelectorAll('[data-miss][data-id]').forEach(b=>b.onclick=()=>{const who=prompt(b.dataset.miss==='Lipsă'?'Cartea lipsește. Știi ceva despre ea (unde ar putea fi)? Poți lăsa gol.':'La cine e împrumutată?');if(who==null)return;b.disabled=true;

@@ -46,7 +46,7 @@ b,strong{font-weight:500}
 
 
 
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;transition:transform .28s ease;background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax)}
 .top .wrap{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,640px) minmax(max-content,1fr);align-items:center;gap:24px;padding-block:14px}
 .brand{display:flex;align-items:center;gap:16px;justify-self:start}
 .brand .cdrfhome{display:block;line-height:0}
@@ -167,7 +167,8 @@ body.vb .list .acts .pbtn:hover{background:#b80916}
 .sel-title{font-size:22px;line-height:1.25;letter-spacing:-.015em}
 .sel-sub{font-size:18px;line-height:1.3;color:var(--muted);letter-spacing:-.01em}
 
-.fstick{position:sticky;top:var(--hh,80px);background:var(--paper);z-index:10}
+.fstick{position:sticky;top:var(--hh,80px);background:var(--paper);z-index:10;transition:top .28s ease}
+html.hdr-off header.top{transform:translateY(calc(-100% - 2px))}html.hdr-off .fstick,html.hdr-off .anav{top:0}
 .fstick:has(.active:not(:empty)){padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-block:14px}
 .filters::before{content:"";position:absolute;inset:0;background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax);z-index:-1;pointer-events:none}
@@ -435,7 +436,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .asec h2{display:flex;align-items:center;gap:.36em}
 .asec h2::before{content:"";width:.3em;height:.3em;border:max(2px,.06em) solid var(--accent);flex:none;box-sizing:border-box;transform:translateY(.04em)}
 .ahero p{font-size:clamp(20px,1.6vw,26px);line-height:1.35;letter-spacing:-.015em;margin:0;max-width:34ch}
-.anav{display:flex;gap:8px 26px;flex-wrap:wrap;padding-block:18px;font-size:16px;position:sticky;top:var(--hh,80px);background:var(--paper);z-index:5}
+.anav{display:flex;gap:8px 26px;flex-wrap:wrap;padding-block:18px;font-size:16px;position:sticky;top:var(--hh,80px);background:var(--paper);z-index:5;transition:top .28s ease}
 .anav button{background:none;border:0;padding:0;cursor:pointer}
 .anav button:hover{text-decoration:underline;text-underline-offset:4px}
 .asec{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px 64px;padding-block:44px;border-top:1px solid var(--rule);scroll-margin-top:calc(var(--hh,80px) + 64px)}
@@ -448,7 +449,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .todo::before{content:"de completat · ";color:#9a7a00}
 
 footer{border-top:1px solid var(--rule);padding-block:40px 56px;margin-top:56px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;font-size:15px;color:var(--muted)}
-footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}
+footer b{display:block;color:var(--ink);font-weight:400;margin-bottom:6px}footer .fl{display:block}
 /* Header și footer replicate după cdrf.ro (doar varianta B) */
 @media (min-width:721px){body.vb .brand .logo{height:60px}body.vb .brand .sep{height:34px}}
 body.vb footer .flogo{display:none}
@@ -524,7 +525,7 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .filters .count{font-size:13px;white-space:nowrap}
   section{padding-block:24px}
   .sec-head{margin-bottom:16px}
-  .sel-grid{grid-auto-columns:82%;gap:16px}.selrow .tsc{display:none}
+  .sel-grid{grid-auto-columns:calc((100% - 16px) / 1.5);gap:16px}.selrow .tsc{display:none}
   .sel-title{font-size:20px}.sel-sub{font-size:16px}
   .crumbs .back{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
   .crumbs .back svg{vertical-align:-3px;margin-right:4px}
@@ -535,7 +536,7 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .titles .sub{font-size:21px}
   .people{font-size:24px}
   .hero{grid-template-areas:"crumbs" "gallery" "titles";gap:16px}
-  .stage{height:min(46vh,380px);padding:10px 8px}
+  .stage{height:min(40vh,340px);padding:8px 8px}
   .savebig{margin-top:16px}
   .stage .arr{display:none}
   .gthumbs button{height:62px}
@@ -549,6 +550,18 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .row .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .card{gap:10px}
   .card .cap{font-size:15px}
+  .card .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body.vb .save{width:36px;height:36px;top:6px;right:6px}body.vb .save::before{width:14px;height:14px}
+  .gbar{justify-content:center;gap:14px}.gbar .counter::after{content:"·";margin-left:14px;color:var(--faint)}.gbar>span:empty{display:none}
+  .list .acts{gap:12px 18px;flex-wrap:nowrap}.list .acts .pbtn{padding:11px 16px;font-size:15px;white-space:nowrap}
+  /* footer scurt pe telefon: adresa și programul pe câte un rând, fără titluri; linkurile cdrf.ro curg pe un paragraf */
+  footer,body.vb footer{display:flex;flex-direction:column;gap:6px;padding-block:22px 24px;margin-top:32px;font-size:14px;line-height:1.5}
+  footer b,footer .fnote,footer .fnote+br{display:none}
+  footer .fl{display:inline}footer .fl+.fl::before{content:" · ";color:var(--faint)}
+  footer .linkbtn{margin-top:4px!important;font-size:14px}
+  .cdrffoot,body.vb .cdrffoot{padding-block:16px 18px;font-size:13px}
+  .cdrffoot nav{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:4px 14px;margin-bottom:8px;text-align:left}
+  .cdrffoot p{font-size:13px;text-align:left}
   .card .badge{display:none}
   .intro{display:none}
   .intro .facts{display:none}
@@ -607,7 +620,11 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .right .nav.ab{display:none}
   .top .wrap{padding-block:8px}
   .intro{padding-block:2px 8px}
-  .meet{padding-block:16px 24px}.meet .cv{height:220px}
+  .meet{padding-block:14px 20px}
+  .mslide{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 28px;align-items:start}.meet .cv{order:0;height:250px;justify-content:center;align-items:flex-end;position:sticky;top:0}
+  .mslide h2{font-size:30px}.meet .mp{font-size:19px}
+  section{padding-block:22px}.sec-head{margin-bottom:14px}
+  .stage{height:min(70vh,320px)}
 }
 @media (max-width:480px){.brand .logo{height:36px}.brand .lib{font-size:19px;gap:8px}.brand .lib::before{width:9px;height:9px}}
 @media (max-width:370px){.brand .logo{height:32px}.brand .lib{font-size:17px}body.vb .right .nav{padding:6px 10px;font-size:13px}}
@@ -640,9 +657,9 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
 <main class="wrap" id="app"></main>
 
 <footer class="wrap">
-  <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b>Str. Popa Tatu nr. 68, București<br>Cărțile se consultă în spațiul CdRF.</div>
-  <div><b>Program</b>Luni–Vineri: 09–20<br>Sâmbătă–Duminică: 10–20</div>
-  <div><b>Despre catalog</b>Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button><br><button class="linkbtn" id="cset" hidden style="margin-top:8px;font-size:13px">Statistici și cookie-uri</button></div>
+  <div><img class="flogo logo-l" src="brand/logo-negru.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><img class="flogo logo-d" src="brand/logo-alb.png" alt="Centrul de Resurse în Fotografie" width="93" height="36"><b>Unde ne găsești</b><span class="fl">Str. Popa Tatu nr. 68, București</span><span class="fl">Cărțile se consultă în spațiul CdRF.</span></div>
+  <div><b>Program</b><span class="fl">Luni–Vineri: 09–20</span><span class="fl">Sâmbătă–Duminică: 10–20</span></div>
+  <div><b>Despre catalog</b><span class="fnote">Fișele sunt în curs de verificare; dacă vezi o greșeală, spune-ne la bibliotecă.<br></span><button class="linkbtn" data-about style="margin-top:8px">Despre bibliotecă</button><br><button class="linkbtn" id="cset" hidden style="margin-top:8px;font-size:13px">Statistici și cookie-uri</button></div>
 </footer>
 <div class="cdrffoot" hidden><div class="wrap">
   <nav aria-label="Linkuri cdrf.ro"><a href="https://www.cdrf.ro/contact">Contact</a><a href="https://www.cdrf.ro/gdpr-politici-de-confidențialitate">GDPR</a><a href="https://www.cdrf.ro/cookies">Cookies</a><a href="https://www.cdrf.ro/termeni-și-condiții">Termeni și condiții</a><a href="https://www.cdrf.ro/newsletter">Newsletter</a><a href="https://www.cdrf.ro/parteneri-media">Parteneri media</a><a href="https://www.cdrf.ro/faq">FAQ</a></nav>
@@ -1044,7 +1061,7 @@ function renderList(){
   app.innerHTML=`<div class="list">
     <h1>Lista mea</h1>
     <p class="lead">Cărțile pe care vrei să le vezi la bibliotecă, ordonate după raft. Lista rămâne doar în acest browser.</p>
-    ${items.length?`<div class="acts"><button class="pbtn" data-print>Tipărește sau salvează ca PDF</button><button class="linkbtn" data-clearlist>Golește lista</button></div>`:''}
+    ${items.length?`<div class="acts"><button class="pbtn" data-print><span class="hide-s">Tipărește sau salvează ca PDF</span><span class="show-s">Salvează PDF</span></button><button class="linkbtn" data-clearlist>Golește lista</button></div>`:''}
     <div class="litems">${items.length?items.map(b=>`<div class="li"><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
   </div>`;
   document.title='Lista mea · Biblioteca CdRF'; watchHero();
@@ -1079,7 +1096,15 @@ function openPanel(){
     sh.style.maxHeight=Math.round(window.innerHeight-r.bottom-22)+'px'; }
   document.body.appendChild(p); document.body.style.overflow='hidden'; p.querySelector('[data-pclose]').focus();
 }
-(function(){const h=document.querySelector('header.top'), hs=document.getElementById('hsearch'); const mq=window.matchMedia('(max-width:760px)'); const set=()=>{ if(mq.matches){h.style.top=(-(hs.offsetTop-8))+'px';} else h.style.top=''; document.documentElement.style.setProperty('--hh',(h.getBoundingClientRect().height+(parseFloat(getComputedStyle(h).top)||0))+'px');}; set(); if('ResizeObserver' in window) new ResizeObserver(set).observe(h); window.addEventListener('resize',set);})();
+/* Pe telefon și tabletă antetul se ascunde la derulare în jos și revine la cea mai mică derulare în sus („sticky on scroll up”). */
+(function(){const h=document.querySelector('header.top'), de=document.documentElement; const mq=window.matchMedia('(max-width:1100px)');
+  const set=()=>{ de.style.setProperty('--hh',h.getBoundingClientRect().height+'px'); }; set(); if('ResizeObserver' in window) new ResizeObserver(set).observe(h); window.addEventListener('resize',set);
+  let ly=window.scrollY, acc=0; const off=v=>de.classList.toggle('hdr-off',v);
+  window.addEventListener('scroll',()=>{ if(!mq.matches){off(false); return;} const y=window.scrollY, d=y-ly; ly=y;
+    if(y<h.offsetHeight||document.activeElement===document.querySelector('#hsearch input')){off(false); acc=0; return;}
+    if(d>0){acc=Math.max(0,acc)+d; if(acc>24) off(true);} else if(d<0){acc=Math.min(0,acc)+d; if(acc<-8) off(false);} },{passive:true});
+  window.addEventListener('hashchange',()=>off(false));
+})();
 function refreshList(scrollTop){
   renderHome(scrollTop?0:window.scrollY);
 }

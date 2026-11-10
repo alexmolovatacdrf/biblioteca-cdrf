@@ -7,10 +7,11 @@ for d in proto desc tax nb panels db grok_in; do mkdir -p $H/$d; cp -r $R/sursa/
 # imaginile publicate sunt deja în repo; build-ul le copiază din proto/
 mkdir -p $H/proto/covers $H/proto/pages $H/proto/fonts $H/proto/brand
 cp -r $R/covers/. $H/proto/covers/; cp -r $R/pages/. $H/proto/pages/; cp -r $R/fonts/. $H/proto/fonts/; cp -r $R/brand/. $H/proto/brand/
-# GA și Cloudflare: le recitește din index.html publicat (sunt publice în pagină)
+# GA și Cloudflare: le recitește din app.<hash>.js publicat (index.html e subțire din 10 nov.; sunt publice în pagină)
 python3 - <<'PY'
 import re
-t=open('/home/claude/biblioteca-cdrf/index.html').read()
+import glob
+t=''.join(open(f).read() for f in glob.glob('/home/claude/biblioteca-cdrf/app.*.js')+['/home/claude/biblioteca-cdrf/index.html'])
 g=re.search(r"const GA_ID='([^']*)'",t); c=re.search(r"const CF_TOKEN='([^']*)'",t)
 if g: open('/home/claude/db/ga_id.txt','w').write(g.group(1))
 if c: open('/home/claude/db/cf_token.txt','w').write(c.group(1))

@@ -2,6 +2,9 @@
 import json,os,shutil
 P='/home/claude/proto/'; R='/home/claude/biblioteca-cdrf/'
 B=json.load(open(P+'books2.json'))
+import sys; sys.path.insert(0,'/home/claude/db'); from related import compute as _rel
+_R=_rel(B)
+for b in B: b['related']=_R.get(b['id'],[])
 pub=[{k:(v if k!='images' else [{kk:vv for kk,vv in im.items() if kk not in ('from','credit')} for im in v]) for k,v in b.items() if k not in ('desc_old','batch','descSrc','srcs','press')} for b in B]
 data='window.BOOKS='+json.dumps(pub,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c')+';'
 t=open(P+'template.html').read()

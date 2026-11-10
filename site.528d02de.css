@@ -216,7 +216,7 @@ body.vb .fbtn .chv{transform:rotate(-90deg)}
 .chip:hover .x{color:var(--ink)}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:56px 24px;padding-block:28px 12px}
-.card{display:flex;flex-direction:column;gap:16px;text-decoration:none;cursor:pointer;min-width:0}
+.card{display:flex;flex-direction:column;gap:16px;text-decoration:none;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
 .card .shelf{aspect-ratio:1;background:none;position:relative;overflow:visible}
 .card .shelf img{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);transform-origin:50% 100%;max-width:74%;max-height:82%;width:auto;height:auto;object-fit:contain;box-shadow:var(--vol);background:var(--paper);transition:transform .5s var(--ease),box-shadow .5s var(--ease),opacity .45s ease}
 /* coperți de verificat: bandă roșie și contur, să sară în ochi */
@@ -386,7 +386,8 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 @media (hover:none){.save{opacity:1}}
 .acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .share{margin-top:26px;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--faint);background:none;border-radius:999px;cursor:pointer;color:inherit}
-.share svg{width:18px;height:18px}
+.share svg{width:20px;height:20px;margin-left:-2px}
+button,a{-webkit-tap-highlight-color:transparent}
 .share:hover{border-color:var(--muted)}
 .savebig{margin-top:26px;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--faint);background:none;border-radius:999px;padding:10px 18px;font-size:16px;cursor:pointer}
 .savebig svg{width:16px;height:16px}

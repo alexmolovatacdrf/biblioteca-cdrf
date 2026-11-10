@@ -103,6 +103,13 @@ function applyPanels(j){
 /* Fișele schimbate în admin vin la zi din tabel (prin ?api=tot): doar cărțile atinse în admin, câmpurile editate.
    Copia din build rămâne rezerva; pozele rămân cele din build. */
 /* Imaginile alese în admin: unele se pot ascunde (nu și coperta), iar imaginea de la mouse se poate fixa. */
+/* Coperta aleasă în admin poate fi oricare dintre imaginile cărții: ea trece prima, iar cea veche rămâne în galerie (și se poate ascunde). */
+function setCover(b,src){
+  const L=b._imgs||b.images; const k=L.findIndex(im=>im.src===src);
+  if(k>0){ const im=L.splice(k,1)[0]; if(L[0]&&L[0].cap==='Coperta') L[0].cap='Coperta (varianta anterioară)'; im.cap='Coperta'; L.unshift(im); }
+  else if(k<0&&L[0]){ L[0]=Object.assign({},L[0],{src}); }
+  b.cover=L[0].src; b.cw=L[0].w; b.ch=L[0].h; if(b._imgs) b.images=b._imgs;
+}
 function applyImgs(b){
   if(!b._imgs){ b._imgs=b.images; b._hov0=b.hov||0; }
   const hide=b.imgHide||[];
@@ -144,7 +151,7 @@ function applyBooks(j){
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
       if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); });
-        if(ed.includes('cover')&&/^covers\/[\w.-]+\.(webp|jpe?g|png)$/i.test(S(f.cover))&&b.cover!==S(f.cover)){ b.cover=S(f.cover); if(b.images&&b.images[0]) b.images[0].src=b.cover; if(b._imgs&&b._imgs[0]) b._imgs[0].src=b.cover; } if(ed.includes('imgHide')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
+        if(ed.includes('cover')&&/^(covers|pages)\/[\w.-]+\.(webp|jpe?g|png)$/i.test(S(f.cover))&&b.cover!==S(f.cover)) setCover(b,S(f.cover)); if(ed.includes('cover')||ed.includes('imgHide')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
       else if(ed.includes('stare')||ed.includes('*')){
         const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
         const cv=safeSrc(S(f.cover))!==PH?S(f.cover):'';

@@ -394,6 +394,10 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .save[aria-pressed="true"]{opacity:1;background:var(--ink);color:var(--paper)}
 .card:hover .save,.save:focus-visible{opacity:1}
 @media (hover:none){.save{opacity:1}}
+.acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.share{margin-top:26px;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--faint);background:none;border-radius:999px;cursor:pointer;color:inherit}
+.share svg{width:18px;height:18px}
+.share:hover{border-color:var(--muted)}
 .savebig{margin-top:26px;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--faint);background:none;border-radius:999px;padding:10px 18px;font-size:16px;cursor:pointer}
 .savebig svg{width:16px;height:16px}
 .savebig[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -549,7 +553,7 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .people{font-size:24px}
   .hero{grid-template-areas:"crumbs" "gallery" "titles";gap:16px}
   .stage{height:min(40vh,340px);padding:8px 8px}
-  .savebig{margin-top:16px}
+  .savebig,.share{margin-top:16px}
   .stage .arr{display:none}
   .gthumbs button{height:62px}
   .d-body{padding-top:22px}
@@ -684,6 +688,13 @@ window.BOOKS=[{"id":"78","title":"București optimist","subtitle":"","people":["
 <script>
 (function(){
 const B=window.BOOKS, byId=Object.fromEntries(B.map(b=>[b.id,b]));
+/* Adrese: fiecare carte are /carte/0417-titlu; codul (4 cifre) identifică, titlul e doar de citit. #carte-N vechi merge în continuare. */
+const pad4=id=>String(id).padStart(4,'0');
+function slug(t){let x=(t||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t').replace(/ß/g,'ss').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); if(x.length>60){x=x.slice(0,60); x=x.slice(0,x.lastIndexOf('-')>0?x.lastIndexOf('-'):60);} return x||'carte';}
+const bookPath=b=>'/carte/'+pad4(b.id)+'-'+slug(b.title);
+function curH(){const m=location.pathname.match(/^\/carte\/0*(\d+)/); return m?'carte-'+m[1]:location.hash.slice(1);}
+function nav(h,replace){const b=h.startsWith('carte-')?byId[h.slice(6)]:null; const url=h.startsWith('carte-')?(b?bookPath(b):'/'):('/'+(h?'#'+h:'')); if(url!==location.pathname+location.hash) history[replace?'replaceState':'pushState'](null,'',url); onRoute();}
+function onRoute(){route(); gaPage(); statPage();}
 const app=document.getElementById('app');
 const norm=s=>(s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const esc=s=>(s||'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -753,7 +764,7 @@ function apiGet(q,tries){
 }
 const cacheGet=k=>{try{const c=JSON.parse(localStorage.getItem(k)||'null'); return c&&Date.now()-c.t<14*864e5?c.v:null;}catch(e){return null;}};
 const cachePut=(k,v)=>{try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v:v}));}catch(e){}};
-const panelsGiveUp=()=>{if(!MEETS_OK){MEETS_OK=true; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
+const panelsGiveUp=()=>{if(!MEETS_OK){MEETS_OK=true; const h=curH(); if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);}};
 /* Un singur apel (?api=tot) aduce panourile, selecțiile și cărțile editate: trei apeluri în paralel se blocau des. */
 function liveAll(){
   if(!apiOK()) return;
@@ -774,7 +785,7 @@ function applyPanels(j){
     try{localStorage.setItem(PKEY,JSON.stringify({t:Date.now(),p:next}));}catch(e){}
     const was=MEETS_OK; MEETS_OK=true;
     if(was&&JSON.stringify(next)===JSON.stringify(MEETS)) return;
-    MEETS=next; const h=location.hash.slice(1); if(!/^(admin|carte-|despre|lista)/.test(h)){meetIdx=0; renderHome(window.scrollY);}
+    MEETS=next; const h=curH(); if(!/^(admin|carte-|despre|lista)/.test(h)){meetIdx=0; renderHome(window.scrollY);}
 }
 /* Fișele schimbate în admin vin la zi din tabel (prin ?api=tot): doar cărțile atinse în admin, câmpurile editate.
    Copia din build rămâne rezerva; pozele rămân cele din build. */
@@ -801,7 +812,7 @@ function applySel(j){
     const next=j.selections.map((x,k)=>({id:ok(x.id).replace(/[^a-z0-9-]/g,''),title:ok(x.title),sub:ok(x.sub),all:(Array.isArray(x.ids)?x.ids:[]).map(String).filter(i=>/^\d+$/.test(i)),ids:(Array.isArray(x.ids)?x.ids:[]).map(String).filter(i=>/^\d+$/.test(i)&&byId[i]),order:k+1})).filter(x=>x.id&&x.title&&x.ids.length);
     if(!next.length||JSON.stringify(next)===JSON.stringify(SELECTIONS)) return;
     SELECTIONS=next; selClean();
-    const h=location.hash.slice(1); if(st.sel&&!SELECTIONS.find(x=>x.id===st.sel)) st.sel=null;
+    const h=curH(); if(st.sel&&!SELECTIONS.find(x=>x.id===st.sel)) st.sel=null;
     if(!/^(admin|carte-|despre|lista)/.test(h)) renderHome(window.scrollY);
 }
 function applyBooks(j){
@@ -830,7 +841,7 @@ function applyBooks(j){
     });
     if(hideChk()) ch=true;
     if(!ch) return; selClean();
-    const h=location.hash.slice(1);
+    const h=curH();
     if(h.startsWith('carte-')) renderBook(h.slice(6)); else if(!/^(despre|lista)/.test(h)) renderHome(window.scrollY);
 }
 let meetIdx=0, meetTimer=null;
@@ -850,9 +861,9 @@ function toast(html){let el=document.getElementById('toast'); if(!el){el=documen
   el.innerHTML=html; el.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('on'),4200);}
 function toggleMine(id){ const add=!isMine(id); if(!add) mine=mine.filter(x=>x!==id); else mine.push(id); saveMine(); if(add) stat('lista',{id:id});
   const n=document.querySelector('#navlist .n'); if(n){n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump');}
-  if(location.hash!=='#lista') toast(add?`<span>Adăugată în Lista mea · ${mine.length} ${mine.length===1?'carte':'cărți'}</span><button data-list>Vezi lista</button>`:`<span>Scoasă din Lista mea</span>`);
+  if(curH()!=='lista') toast(add?`<span>Adăugată în Lista mea · ${mine.length} ${mine.length===1?'carte':'cărți'}</span><button data-list>Vezi lista</button>`:`<span>Scoasă din Lista mea</span>`);
   document.querySelectorAll(`[data-save="${id}"]`).forEach(b=>{const on=isMine(id); b.setAttribute('aria-pressed',on); b.setAttribute('aria-label',on?'Scoate din lista mea':'Adaugă în lista mea'); b.innerHTML=b.classList.contains('savebig')?(on?BMF+'În lista mea':BM+'Adaugă în lista mea'):(on?BMF:BM);});
-  if(location.hash==='#lista') renderList(); }
+  if(curH()==='lista') renderList(); }
 /* țara se deduce din oraș doar pentru orașe fără ambiguitate; altfel se completează în fișă */
 const CITY_COUNTRY={'București':'România','Timișoara':'România','Cluj-Napoca':'România','Iași':'România','Brașov':'România','Sibiu':'România','Chișinău':'Republica Moldova','Londra':'Regatul Unit','Paris':'Franța','Arles':'Franța','New York':'SUA','Chicago':'SUA','Los Angeles':'SUA','San Francisco':'SUA','Kempen':'Germania','Berlin':'Germania','Köln':'Germania','Göttingen':'Germania','München':'Germania','Heidelberg':'Germania','Ostfildern':'Germania','Bologna':'Italia','Milano':'Italia','Roma':'Italia','Amsterdam':'Țările de Jos','Zürich':'Elveția','Tokyo':'Japonia','Varșovia':'Polonia','Praga':'Cehia','Viena':'Austria','Madrid':'Spania','Barcelona':'Spania','Craiova':'România','Onești':'România','Petrila':'România','Seoul':'Coreea de Sud','Melbourne':'Australia','Oslo':'Norvegia'};
 const placeOf=b=>[b.place,b.country||CITY_COUNTRY[b.place]].filter(Boolean).join(', ');
@@ -933,7 +944,7 @@ function card(b,highlight){
   const g=gImg(b);
   /* dacă în grilă e altă imagine decât coperta, la hover arătăm coperta (sau imaginea fixată în admin) */
   if(b.g&&(!b.hovImg||!i2||i2.src===g.src)) i2=b.images[0];
-  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="#carte-${b.id}" data-id="${b.id}"><div class="shelf"><img class="c1${g.cut?' cutc':''}" src="${safeSrc(g.src)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${g.w}" height="${g.h}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${b.images.slice(1).some(im=>!im.ext)?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}${b.year?`<span class="yr"> · ${esc(b.year)}</span>`:''}</div>`:(b.year?`<div class="p yr">${esc(b.year)}</div>`:'')}</div></a>`;
+  return `<a class="card${i2?' has2':''}${b.coverCheck?' chk':''}" href="${bookPath(b)}" data-id="${b.id}"><div class="shelf"><img class="c1${g.cut?' cutc':''}" src="${safeSrc(g.src)}" alt="Coperta: ${esc(b.title)}" loading="lazy" width="${g.w}" height="${g.h}">${i2?`<img class="c2" src="${safeSrc(i2.src)}" alt="" loading="lazy" width="${i2.w}" height="${i2.h}">`:''}<button class="save" data-save="${b.id}" title="Lista mea: cărțile pe care vrei să le vezi la bibliotecă" aria-pressed="${isMine(b.id)}" aria-label="${isMine(b.id)?'Scoate din lista mea':'Adaugă în lista mea'}">${isMine(b.id)?BMF:BM}</button>${b.images.slice(1).some(im=>!im.ext)?'<span class="pgs" title="Are pagini din interior" aria-label="Are pagini din interior"><i></i><i></i></span>':''}</div><div class="cap">${m?`<div class="m">${m}</div>`:''}<div class="t">${highlight?hl(b.title):esc(b.title)}</div>${ppl?`<div class="p">${highlight?hl(ppl):esc(ppl)}${b.people.length>2?' și alții':''}${b.year?`<span class="yr"> · ${esc(b.year)}</span>`:''}</div>`:(b.year?`<div class="p yr">${esc(b.year)}</div>`:'')}</div></a>`;
 }
 const TIPS=['Album foto','Carte','Catalog expoziție','Revistă','Alte tipuri'];
 const tipF=t=>!t?'':TIPS.includes(t)?t:'Alte tipuri';
@@ -1078,7 +1089,7 @@ function renderList(){
     <h1>Lista mea</h1>
     <p class="lead">Cărțile pe care vrei să le vezi la bibliotecă, ordonate după raft. Lista rămâne doar în acest browser.</p>
     ${items.length?`<div class="acts"><button class="pbtn" data-print><span class="hide-s">Tipărește sau salvează ca PDF</span><span class="show-s">Salvează PDF</span></button><button class="linkbtn" data-clearlist>Golește lista</button></div>`:''}
-    <div class="litems">${items.length?items.map(b=>`<div class="li"><span class="pchk" aria-hidden="true"></span><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="#carte-${b.id}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><div class="pdet" aria-hidden="true">${esc(b.publisher||'')}<small>${esc([b.type,(b.lang||[]).map(l=>l.toLowerCase()).join(', ')].filter(Boolean).join(' · '))}</small></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
+    <div class="litems">${items.length?items.map(b=>`<div class="li"><span class="pchk" aria-hidden="true"></span><div class="r"><small>Raft</small>${esc(b.shelf||'—')}</div><div class="th"><img src="${safeSrc(b.cover)}"${b.cut?' class="cutc"':''} alt="" width="${b.cw}" height="${b.ch}"></div><div><div class="tt"><a href="${bookPath(b)}" data-id="${b.id}">${esc(b.title)}</a></div><div class="pp">${esc([b.people.slice(0,2).join(', '),b.year].filter(Boolean).join(' · '))}</div></div><div class="pdet" aria-hidden="true">${esc(b.publisher||'')}<small>${esc([b.type,(b.lang||[]).map(l=>l.toLowerCase()).join(', ')].filter(Boolean).join(' · '))}</small></div><button class="rm" data-save="${b.id}" aria-pressed="true" aria-label="Scoate din lista mea">Scoate</button></div>`).join(''):`<div class="empty" style="text-align:left">Lista e goală. ${VARB?'Bifează pătratul din colțul unei coperte':`Apasă semnul ${BM.replace('<svg','<svg style="width:14px;height:14px;vertical-align:-2px"')} de pe o copertă`} ca să adaugi cărți.<br><button class="linkbtn" data-back style="margin-top:12px">Mergi la catalog</button></div>`}</div>
     <div class="pfoot" aria-hidden="true"><img class="pmark" src="brand/semn-negru.png" alt="" width="40" height="40"><div><b>Centrul de Resurse în Fotografie</b>Str. Popa Tatu nr. 68, București</div><div><b>Program</b>Luni–Vineri 09–20 · Sâmbătă–Duminică 10–20</div><div><b>Cum funcționează</b>Cărțile se consultă pe loc — cere-le la bibliotecar, după raft.</div><div><b>Catalogul online</b>biblioteca.cdrf.ro</div></div>
   </div>`;
   document.title='Lista mea · Biblioteca CdRF'; watchHero();
@@ -1120,7 +1131,7 @@ function openPanel(){
   window.addEventListener('scroll',()=>{ if(!mq.matches){off(false); return;} const y=window.scrollY, d=y-ly; ly=y;
     if(y<h.offsetHeight||document.activeElement===document.querySelector('#hsearch input')){off(false); acc=0; return;}
     if(d>0){acc=Math.max(0,acc)+d; if(acc>24) off(true);} else if(d<0){acc=Math.min(0,acc)+d; if(acc<-8) off(false);} },{passive:true});
-  window.addEventListener('hashchange',()=>off(false));
+  window.addEventListener('popstate',()=>off(false));
 })();
 function refreshList(scrollTop){
   renderHome(scrollTop?0:window.scrollY);
@@ -1139,7 +1150,8 @@ function backLabel(){
   return 'Înapoi la toate cărțile';
 }
 function renderBook(id){
-  const b=byId[id]; if(!b){location.hash='';return;}
+  const b=byId[id]; if(!b){nav('',true);return;}
+  if(location.pathname!==bookPath(b)) history.replaceState(null,'',bookPath(b));
   const order=B.slice().sort((x,y)=>coll.compare(x.title,y.title)).map(x=>x.id);
   const k=order.indexOf(id), prev=order[(k-1+order.length)%order.length], next=order[(k+1)%order.length];
   const others=x=>x.id!==id;
@@ -1179,7 +1191,7 @@ function renderBook(id){
         <h1>${esc(b.title)}</h1>
         ${b.subtitle?`<div class="sub">${esc(b.subtitle)}</div>`:''}
         ${ppl?`<div class="people">${ppl}</div>`:''}
-        <button class="savebig" data-save="${b.id}" aria-pressed="${isMine(b.id)}">${isMine(b.id)?BMF+'În lista mea':BM+'Adaugă în lista mea'}</button>
+        <div class="acts"><button class="savebig" data-save="${b.id}" aria-pressed="${isMine(b.id)}">${isMine(b.id)?BMF+'În lista mea':BM+'Adaugă în lista mea'}</button><button class="share" data-share title="Trimite linkul cărții" aria-label="Trimite linkul cărții"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2m0 0L5 5m3-3 3 3M3 8v5.5h10V8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
       </div>
       <div class="gallery">
         <div class="stage${b.coverCheck?' chk':''}">${b.coverCheck?'<span class="chkb">Copertă de verificat</span>':''}<img id="mainimg"${b.cut?' class="cutc"':''} src="${safeSrc(b.cover)}" alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-open-cur>
@@ -1211,7 +1223,7 @@ function renderBook(id){
   watchHero();
 }
 function setImg(i){
-  const b=byId[location.hash.slice(7)]; if(!b) return; const n=b.images.length; galIdx=(i+n)%n; const im=b.images[galIdx];
+  const b=byId[curH().slice(6)]; if(!b) return; const n=b.images.length; galIdx=(i+n)%n; const im=b.images[galIdx];
   const m=document.getElementById('mainimg'); m.src=safeSrc(im.src); m.width=im.w; m.height=im.h; m.alt=(galIdx?`${b.title}, ${im.cap}`:`Coperta: ${b.title}`); m.classList.toggle('cover',galIdx===0); m.classList.toggle('cut',!!im.cut); m.classList.toggle('cutc',!!im.cutc);
   const c=document.getElementById('counter'); if(c) c.textContent=`${galIdx+1} / ${n}`;
   document.querySelectorAll('[data-thumb]').forEach(x=>{const on=+x.dataset.thumb===galIdx; x.setAttribute('aria-current',String(on)); if(on){const s=x.parentElement; const l=x.offsetLeft-s.offsetLeft, r=l+x.offsetWidth; if(l<s.scrollLeft||r>s.scrollLeft+s.clientWidth) s.scrollTo({left:l-s.clientWidth/2+x.offsetWidth/2,behavior:'smooth'});}});
@@ -1238,7 +1250,7 @@ function lightbox(b,i){
   draw(); document.body.appendChild(lb);
 }
 function route(){
-  const h=location.hash.slice(1);
+  const h=curH();
   document.querySelector('.right .nav.ab').setAttribute('aria-current',h==='despre'?'page':'false'); document.getElementById('navlist').setAttribute('aria-current',h==='lista'?'page':'false');
   if(h.startsWith('carte-')) renderBook(h.slice(6));
   else if(h==='despre') renderAbout();
@@ -1266,8 +1278,8 @@ function renderAbout(){
   document.title='Despre bibliotecă · Biblioteca CdRF';
   window.scrollTo(0,0); watchHero();
 }
-function openBook(id){ if(!location.hash.startsWith('#carte-')) lastScroll=window.scrollY; location.hash='carte-'+id; }
-function goHomeWith(fn){ fn(); if(location.hash){ lastScroll=0; history.replaceState(null,'',location.pathname+location.search); } renderHome(); const el=document.getElementById('toate'); if(el) window.scrollTo({top:el.offsetTop-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||80)-8}); }
+function openBook(id){ if(!curH().startsWith('carte-')) lastScroll=window.scrollY; nav('carte-'+id); }
+function goHomeWith(fn){ fn(); if(curH()){ lastScroll=0; history.replaceState(null,'','/'); } renderHome(); const el=document.getElementById('toate'); if(el) window.scrollTo({top:el.offsetTop-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||80)-8}); }
 
 // meniurile de filtre se deschid la trecerea mausului (doar unde există maus)
 let ddHoverAt=0, ddTimer=null;
@@ -1291,7 +1303,7 @@ function gaLoad(){
 }
 function gaPage(){
   if(!gaReady||window['ga-disable-'+GA_ID]) return;
-  const h=location.hash.slice(1); if(h===gaLast) return; gaLast=h;
+  const h=curH(); if(h===gaLast) return; gaLast=h;
   let title='Biblioteca CdRF', path=location.pathname.replace(/[^/]*$/,'');
   if(h.startsWith('carte-')){const b=byId[h.slice(6)]; title=b?(b.full||b.title):'Carte'; path+='carte/'+h.slice(6);}
   else if(h==='despre'){title='Despre bibliotecă'; path+='despre';}
@@ -1314,7 +1326,7 @@ function stat(t,o){
   try{ const u=PANELS_API+'?api=stat&t='+t+Object.keys(o).map(k=>'&'+k+'='+encodeURIComponent(o[k])).join('');
     fetch(u,{mode:'no-cors',keepalive:true,credentials:'omit'}).catch(()=>{}); }catch(e){}
 }
-function statPage(){ const h=location.hash.slice(1); if(h===statLastH) return; statLastH=h; if(h.startsWith('carte-')&&byId[h.slice(6)]) stat('carte',{id:h.slice(6)}); }
+function statPage(){ const h=curH(); if(h===statLastH) return; statLastH=h; if(h.startsWith('carte-')&&byId[h.slice(6)]) stat('carte',{id:h.slice(6)}); }
 /* Cloudflare Web Analytics: fără cookie-uri, deci fără acord; doar pe site-ul public */
 const CF_TOKEN='f44006c6040f4a51b455d77179d36fac';
 function cfInit(){ if(!pubHost()||!/^[0-9a-f]{32}$/.test(CF_TOKEN)) return;
@@ -1339,11 +1351,11 @@ function setQuery(v){
   st.q=v; const q2=document.getElementById('q2'); if(q2.value!==v) q2.value=v; gaSearch(v);
   if(v.trim()&&!st.userSort) st.sort='relevanta';
   if(!v.trim()&&st.sort==='relevanta') st.sort='aleator';
-  if(location.hash.startsWith('#carte-')){goHomeWith(()=>{}); window.scrollTo(0,0); return;}
+  if(curH().startsWith('carte-')){goHomeWith(()=>{}); window.scrollTo(0,0); return;}
   refreshList(true);
 }
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-page],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
+  const t=e.target.closest('[data-share],[data-sscroll],[data-mstep],[data-mgo],[data-meetadd],[data-meetrm],[data-fh],[data-side],[data-page],[data-fclr],[data-tscroll],[data-login],[data-logout],[data-save],[data-list],[data-group],[data-print],[data-clearlist],[data-about],[data-scroll],[data-id],[data-sel],[data-rm],[data-dd],[data-person],[data-tag],[data-series],[data-pub],[data-cat],[data-back],[data-go],[data-open-cur],[data-img],[data-thumb],[data-try],[data-fpanel],#home');
   if(!t){document.querySelectorAll('.dd .menu').forEach(m=>{if(!m.contains(e.target)){m.hidden=true;m.previousElementSibling.setAttribute('aria-expanded','false')}});return;}
   if(t.matches('[data-mstep]')){meetShow(meetIdx+(+t.dataset.mstep)); return;}
   if(t.matches('[data-mgo]')){meetShow(+t.dataset.mgo); return;}
@@ -1354,18 +1366,20 @@ document.addEventListener('click',e=>{
   if(t.matches('[data-sscroll]')){const s=t.parentElement.querySelector('.sel-grid'); s.scrollBy({left:(+t.dataset.sscroll)*s.clientWidth,behavior:'smooth'}); return;}
   if(t.matches('[data-tscroll]')){const s=t.parentElement.querySelector('.gthumbs'); s.scrollBy({left:(+t.dataset.tscroll)*s.clientWidth*0.8,behavior:'smooth'}); return;}
   if(t.matches('[data-save]')){e.preventDefault();e.stopPropagation();toggleMine(t.dataset.save);return;}
-  if(t.matches('[data-list]')){const tt=document.getElementById('toast'); if(tt) tt.classList.remove('on'); location.hash='lista';return;}
+  if(t.matches('[data-list]')){const tt=document.getElementById('toast'); if(tt) tt.classList.remove('on'); nav('lista');return;}
   if(t.matches('[data-group]')){st.group=t.dataset.group; FACETS.forEach(f=>st[f.key].clear()); refreshList(); return;}
   if(t.matches('[data-print]')){try{window.print();}catch(err){} return;}
   if(t.matches('[data-clearlist]')){mine=[]; saveMine(); renderList(); return;}
-  if(t.matches('[data-about]')){location.hash='despre';return;}
+  if(t.matches('[data-about]')){nav('despre');return;}
   if(t.matches('[data-scroll]')){const el=document.getElementById(t.dataset.scroll); if(el) el.scrollIntoView({behavior:'smooth'});return;}
   if(t.matches('[data-id]')){e.preventDefault();openBook(t.dataset.id);return;}
   /* sigla = acasă de la zero: fără căutare, filtre, serie sau editură, ordinea implicită, sus pe pagină */
-  if(t.id==='home'){clearAll(); st.sort='aleator'; st.userSort=false; lastScroll=0; if(location.hash){history.replaceState(null,'',location.pathname+location.search);} renderHome(); window.scrollTo(0,0); return;}
-  if(t.matches('[data-back]')){if(location.hash){location.hash='';}else window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(t.matches('[data-go]')){location.hash='carte-'+t.dataset.go;return;}
-  if(t.matches('[data-open-cur]')){lightbox(byId[location.hash.slice(7)],galIdx);return;}
+  if(t.id==='home'){clearAll(); st.sort='aleator'; st.userSort=false; lastScroll=0; if(curH()){history.replaceState(null,'','/');} renderHome(); window.scrollTo(0,0); return;}
+  if(t.matches('[data-back]')){if(curH()){nav('');}else window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(t.matches('[data-go]')){nav('carte-'+t.dataset.go);return;}
+  if(t.matches('[data-share]')){const b=byId[curH().slice(6)]; if(!b) return; const url=location.origin+bookPath(b); const d={title:b.title,text:[b.title,b.people.slice(0,2).join(', ')].filter(Boolean).join(' · '),url};
+    if(navigator.share&&matchMedia('(pointer:coarse)').matches&&(!navigator.canShare||navigator.canShare(d))) navigator.share(d).catch(()=>{}); else navigator.clipboard.writeText(url).then(()=>toast('<span>Link copiat</span>'),()=>prompt('Linkul cărții:',url)); return;}
+  if(t.matches('[data-open-cur]')){lightbox(byId[curH().slice(6)],galIdx);return;}
   if(t.matches('[data-img]')){setImg(galIdx+(+t.dataset.img));return;}
   if(t.matches('[data-thumb]')){setImg(+t.dataset.thumb);return;}
   if(t.matches('[data-fpanel]')){openPanel();return;}
@@ -1398,8 +1412,8 @@ document.addEventListener('input',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='q2'){clearTimeout(qTimer); setQuery(e.target.value);}
   if(e.key==='Escape'&&document.querySelector('.fpanel')){document.querySelector('.fpanel [data-pclose]').click();return;}
-  if(e.key==='Escape'){const m=[...document.querySelectorAll('.dd .menu')].find(x=>!x.hidden); if(m){m.hidden=true;return;} if(location.hash.startsWith('#carte-')) location.hash='';}
-  if(location.hash.startsWith('#carte-') && !e.target.matches('input,select') && (e.key==='ArrowLeft'||e.key==='ArrowRight')){const d=e.key==='ArrowLeft'?-1:1; if(document.getElementById('counter')) setImg(galIdx+d); else {const b=document.querySelector(`.booknav [data-go]:${d<0?'first':'last'}-child`); if(b) b.click();}}
+  if(e.key==='Escape'){const m=[...document.querySelectorAll('.dd .menu')].find(x=>!x.hidden); if(m){m.hidden=true;return;} if(curH().startsWith('carte-')) nav('');}
+  if(curH().startsWith('carte-') && !e.target.matches('input,select') && (e.key==='ArrowLeft'||e.key==='ArrowRight')){const d=e.key==='ArrowLeft'?-1:1; if(document.getElementById('counter')) setImg(galIdx+d); else {const b=document.querySelector(`.booknav [data-go]:${d<0?'first':'last'}-child`); if(b) b.click();}}
 });
 let sw=null;
 document.addEventListener('touchstart',e=>{const z=e.target.closest('.stage,.lb .view,.meet'); if(!z||e.touches.length!==1) return; sw={z,x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
@@ -1425,7 +1439,7 @@ document.addEventListener('pointerdown',e=>{const s=e.target.closest('.gthumbs,.
 document.addEventListener('pointermove',e=>{if(!drag) return; const dx=e.clientX-drag.x; if(!drag.moved&&Math.abs(dx)>5){drag.moved=true; drag.s.classList.add('dragging');} if(drag.moved){drag.s.scrollLeft=drag.left-dx; e.preventDefault();}});
 document.addEventListener('pointerup',e=>{if(!drag) return; const d=drag; drag=null; if(d.moved){setTimeout(()=>d.s.classList.remove('dragging'),0);} });
 document.addEventListener('wheel',e=>{const s=e.target.closest(VARB?'.gthumbs':'.gthumbs,.sel-grid'); if(!s||s.scrollWidth<=s.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY)) return; s.scrollLeft+=e.deltaY; e.preventDefault();},{passive:false});
-window.addEventListener('hashchange',()=>{route(); gaPage(); statPage();});
+window.addEventListener('popstate',onRoute);
 setTimeout(liveAll,50);
 if(VARB){document.body.classList.add('vb');
   document.querySelector('.cdrffoot').hidden=false;
@@ -1435,6 +1449,7 @@ if(VARB){document.body.classList.add('vb');
 if(!VARB) document.getElementById('cdrfhome').addEventListener('click',e=>{e.preventDefault();document.getElementById('home').click();});
 setTimeout(gaInit,400); setTimeout(()=>{statPage(); cfInit();},500);
 updNav();
+if(/^#carte-\d+$/.test(location.hash)&&!/^\/carte\//.test(location.pathname)){const _b=byId[location.hash.slice(7)]; history.replaceState(null,'',_b?bookPath(_b):'/');}
 route();
 })();
 </script>

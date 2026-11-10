@@ -302,13 +302,13 @@ function roleBox(){const r=S.data.user.role,L=ROLE_CAN[r]||ROLE_CAN.vizitator;le
 /* ---------- pagina de start: de făcut ---------- */
 function loadHome(){call('getHome').then(h=>{S.home=h;todoBadge();if(S.view==='home'&&!S.rec)renderHome();if(S.view==='list'&&!S.rec)renderList();}).catch(()=>{S.home={log:[],mod:{},proposed:[],stat:null};});
   if(!S.panels)call('getPanels').then(p=>{S.panels=p;todoBadge();if(S.view==='home'&&!S.rec)renderHome();}).catch(()=>{});}
-function todoN(){const c=(S.home?new Set(S.home.pending).size:0)+cnt(r=>r[C('Copertă de verificat')])+((S.panels||[]).filter(isProp).length)+(S.home?cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0);return c;}
+function todoN(){const c=(S.home?new Set(S.home.pending).size:0)+cnt(r=>r[C('Copertă de verificat')])+((S.panels||[]).filter(isPropOpen).length)+(S.home?cnt(r=>S.home.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0);return c;}
 function todoBadge(){const b=$('#todo');if(b)b.textContent=S.data?(todoN()||''):'';}
 function renderHome(){
   const d=S.data,H=S.home,P=S.panels||[],adm=d.user.role==='admin';
   const card=(n,lab,sub,go,alert)=>`<button class="card${alert&&n?' alert':''}" data-go="${go}"><b class="${n?'':'z'}">${n}</b><span>${lab}</span><div class="sub">${sub}</div></button>`;
   const nPend=H?new Set(H.pending).size:0;
-  const nChk=cnt(r=>r[C('Copertă de verificat')]),nGata=cnt(r=>r[C('Stare')]==='Gata de publicare'),nProp=H?cnt(r=>H.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0,nPan=P.filter(isProp).length,nUnp=cnt(r=>r[C('Stare')]!=='Publicată'),nShelf=cnt(r=>!r[C('Verificat la raft')]),nPub=cnt(r=>r[C('Stare')]==='Publicată');
+  const nChk=cnt(r=>r[C('Copertă de verificat')]),nGata=cnt(r=>r[C('Stare')]==='Gata de publicare'),nProp=H?cnt(r=>H.proposed.indexOf(r[C('ID')])>=0&&r[C('Stare')]!=='Publicată'):0,nPan=P.filter(isPropOpen).length,nUnp=cnt(r=>r[C('Stare')]!=='Publicată'),nShelf=cnt(r=>!r[C('Verificat la raft')]),nPub=cnt(r=>r[C('Stare')]==='Publicată');
   const when=s=>String(s||'').slice(0,16);
   const logRow=r=>{const id=String(r[2]),bk=/^\d+$/.test(id)?bookRow(id):null,what=r[3]==='Carte nouă'?'carte nouă':r[3]==='Modificare propusă'?'modificare propusă: '+r[5]:/^Panou|^Selecție/.test(r[3])?r[3].toLowerCase():'câmpul „'+r[3]+'”';
     const name=bk?esc(bk[C('Titlu')]):/^panou|^selecție/.test(id)?esc(id):esc(r[5]||id);return `<div class="row${bk?' ck':''}" ${bk?`data-id="${esc(id)}"`:''}><span><span class="t">${name}</span> · ${esc(what)}</span><span class="sub">${esc(when(r[0]))} · ${esc(r[1])}</span></div>`;};
@@ -587,7 +587,9 @@ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth
 const addDays=(iso,n)=>{const d=new Date((iso||today())+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const fmtD=iso=>iso?new Date(iso+'T12:00').toLocaleDateString('ro-RO',{day:'numeric',month:'short',year:'numeric'}):'';
 const isProp=p=>!p.active&&/^propunere/i.test(p.src||'');
-function pStat(p){const d=today();if(isProp(p))return['pr','Propunere'];if(!p.active)return['off','Oprit'];if(p.from&&p.from>d)return['pl','Programat'];
+const pPast=p=>{const d=today();return p.to?p.to<d:!!(p.date&&(p.end||p.date)<d);};
+const isPropOpen=p=>isProp(p)&&!pPast(p);
+function pStat(p){const d=today();if(isProp(p))return pPast(p)?['ex','Expirat']:['pr','Propunere'];if(!p.active)return['off','Oprit'];if(p.from&&p.from>d)return['pl','Programat'];
   if(p.to?p.to<d:(p.date&&(p.end||p.date)<d))return['ex','Expirat'];return['on','Pe site acum'];}
 function pWin(p){const a=p.from?fmtD(p.from):'acum',b=p.to?fmtD(p.to):(p.end||p.date?fmtD(p.end||p.date)+' (sfârșitul evenimentului)':'fără termen');return 'pe site: '+a+' – '+b;}
 /* ---------- Editorial: vedere calendar (cronologie pe săptămâni) ----------
@@ -649,13 +651,13 @@ function renderPan(){
     call('getPanels').then(p=>{S.panels=p;renderPan();}).catch(e=>{const m=String(e.message||e);
       $('#app').innerHTML='<div class="load msg err">'+(/getPanels|not found|nu a fost găsit|Script function/i.test(m)?'Panourile cer versiunea nouă a scriptului (Code.gs). Cere-i lui Alex să o publice.':esc(m))+'</div>';});return;}
   const f=S.pf||'act',d=today();
-  const groups={act:p=>['on','pl','pr'].indexOf(pStat(p)[0])>=0,pr:isProp,on:p=>pStat(p)[0]==='on',pl:p=>pStat(p)[0]==='pl',off:p=>!p.active&&!isProp(p),ex:p=>pStat(p)[0]==='ex',all:()=>true};
+  const groups={act:p=>['on','pl','pr'].indexOf(pStat(p)[0])>=0,pr:isPropOpen,on:p=>pStat(p)[0]==='on',pl:p=>pStat(p)[0]==='pl',off:p=>!p.active&&!isProp(p),ex:p=>pStat(p)[0]==='ex',all:()=>true};
   const lab={act:'Pe site, programate și propuneri',pr:'Propuneri',on:'Pe site acum',pl:'Programate',off:'Oprite',ex:'Expirate',all:'Toate'};
   const kinds=[...new Set(S.panels.map(p=>p.kind).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ro'));
   const q=norm(S.pq||''),ws=q.split(/\s+/).filter(Boolean);
   const srt=S.ps||'date';const key=p=>p.date||p.from||'';const upd=p=>{const m=String(p.updated||'').match(/(\d{2})\.(\d{2})\.(\d{4})(?: (\d{2}):(\d{2}))?/);return m?m[3]+m[2]+m[1]+(m[4]||'00')+(m[5]||'00'):'';};
   const sorters={date:(a,b)=>(key(a)||'9').localeCompare(key(b)||'9'),date_desc:(a,b)=>(key(b)||'0').localeCompare(key(a)||'0'),upd:(a,b)=>upd(b).localeCompare(upd(a)),kind:(a,b)=>(a.kind||'').localeCompare(b.kind||'','ro')||(key(a)||'9').localeCompare(key(b)||'9'),title:(a,b)=>(a.title||a.guest||'').localeCompare(b.title||b.guest||'','ro')};
-  const L=S.panels.filter(groups[f]).filter(p=>!S.pk||p.kind===S.pk).filter(p=>!ws.length||ws.every(w=>norm([p.kind,p.title,p.guest,p.when,p.text,p.id].join(' ')).includes(w))).sort(sorters[srt]||sorters.date);
+  const L=S.panels.filter(groups[f]).filter(p=>!S.pk||p.kind===S.pk).filter(p=>!ws.length||ws.every(w=>norm([p.kind,p.title,p.guest,p.when,p.text,p.id].join(' ')).includes(w))).sort((a,b)=>((pStat(a)[0]==='ex')-(pStat(b)[0]==='ex'))||(sorters[srt]||sorters.date)(a,b));
   const sel=(S.psel||[]).filter(id=>L.some(p=>p.id===id));S.psel=sel;
   $('#app').innerHTML=`<div class="stats">${Object.keys(lab).map(k=>`<span data-pf="${k}" class="${f===k?'on':''}" title="Arată doar: ${lab[k]}">${lab[k]} · ${S.panels.filter(groups[k]).length}</span>`).join('')}</div>
   <div class="tools"><h2 class="pg" style="margin:0">Editorial</h2><span class="sub">Panourile de pe prima pagină: evenimente, cartea săptămânii, cărți noi. Pe site în câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
@@ -679,7 +681,7 @@ function renderPan(){
     Promise.all(todo.map(p=>{p.active=on;if(on)p.src=String(p.src||'').replace(/^propunere\s*·?\s*/i,'')||'manual';return call('savePanel',p);})).then(rs=>{rs.forEach(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);});S.psel=[];renderPan();toast((on?'Pornite: ':'Oprite: ')+rs.length);}).catch(e=>{alert(e.message||e);S.panels=null;renderPan();});});
   const P=id=>S.panels.find(p=>p.id===id);
   document.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>openPan(JSON.parse(JSON.stringify(P(b.dataset.pe)))));
-  document.querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const c=JSON.parse(JSON.stringify(P(b.dataset.pd)));c.id='';c.active=false;c.src='manual';openPan(c);toast('Copie: completează și salvează');});
+  document.querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const c=JSON.parse(JSON.stringify(P(b.dataset.pd)));c.id='';c.active=false;c.src='manual';c.when='';c.date='';c.end='';c.from='';c.to='';openPan(c);toast('Copie fără date: pune data și salvează');});
   document.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{const p=JSON.parse(JSON.stringify(P(b.dataset.pt)));p.active=!p.active;b.disabled=true;
     call('savePanel',p).then(r=>{S.panels=S.panels.map(x=>x.id===r.id?r:x);renderPan();toast(r.active?'Pornit':'Oprit');}).catch(e=>{alert(e.message||e);renderPan();});});
   document.querySelectorAll('[data-pok]').forEach(b=>b.onclick=()=>{const p=JSON.parse(JSON.stringify(P(b.dataset.pok)));p.active=true;p.src=String(p.src||'').replace(/^propunere\s*·?\s*/i,'')||'manual';b.disabled=true;

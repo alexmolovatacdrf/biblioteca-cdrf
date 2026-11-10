@@ -318,7 +318,7 @@ const API_FIELDS = {
   'ISBN': 'isbn', 'Limbă': 'lang', 'Tip': 'type', 'Categorie': 'category', 'Teme': 'tags', 'Raft': 'shelf',
   'Pagini': 'pages', 'Dimensiuni (cm)': 'dim', 'Legătură': 'binding', 'Descriere': 'desc',
   'Copertă de verificat': 'coverCheck', 'Video': 'video', 'Copertă': 'cover',
-  'Imagini ascunse': 'imgHide', 'Imagine la mouse': 'hovImg', 'Imagine în grilă': 'gridImg'
+  'Imagini ascunse': 'imgHide', 'Imagine la mouse': 'hovImg', 'Imagine în grilă': 'gridImg', 'Ordine imagini': 'imgOrder'
 };
 function apiVal_(k, v) {
   v = String(v == null ? '' : v).trim();
@@ -333,7 +333,7 @@ function apiVal_(k, v) {
     });
     return out;
   }
-  if (k === 'imgHide') return list(v).filter(x => /^(covers|pages)\/[\w.-]+$/.test(x));
+  if (k === 'imgHide' || k === 'imgOrder') return list(v).filter(x => /^(covers|pages)\/[\w.-]+$/.test(x));
   if (k === 'hovImg') return /^pages\/[\w.-]+$/.test(v) ? v : '';
   if (k === 'gridImg') return /^(covers|pages)\/[\w.-]+$/.test(v) ? v : '';
   if (k === 'coverCheck') return /^da$/i.test(v);

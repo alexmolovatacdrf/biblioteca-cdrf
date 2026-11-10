@@ -46,7 +46,7 @@ td.th img{width:90px;height:120px;object-fit:contain;display:block;background:#f
 .cg .t{font-size:13px;font-weight:600;margin-top:7px;line-height:1.25}.cg .sub{font-size:12px;margin-top:2px}.cg:hover .t{text-decoration:underline}
 .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .ic{border:1px solid var(--rule);padding:8px;font-size:12px}.ic img{width:100%;height:120px;object-fit:contain;background:var(--soft);display:block;margin-bottom:6px}
-.ic.off img{opacity:.25}.ic .il{font-weight:600;margin-bottom:3px}.ic label{display:block;margin-top:3px;cursor:pointer}
+.ic.off img{opacity:.25}.ic .mv{float:right;display:flex;gap:2px}.ic .mv button{border:1px solid var(--rule);background:#fff;font-size:11px;line-height:1;padding:3px 6px;cursor:pointer}.ic .mv button:disabled{opacity:.3;cursor:default}.ic[draggable=true]{cursor:grab}.ic.drop{outline:2px solid #000}.ic .il{font-weight:600;margin-bottom:3px}.ic label{display:block;margin-top:3px;cursor:pointer}
 .sug{background:var(--ink);color:#fff;padding:1px 7px;font-size:11px;font-weight:400}
 .t{font-weight:500}
 .sub{color:var(--muted);font-size:13px}
@@ -443,17 +443,20 @@ function lkBind(){const go=$('#lkgo');if(!go)return;
 /* ---------- imaginile de pe site: ce se vede și ce apare la mouse ---------- */
 let IMGS=null;
 function loadImgs(){if(IMGS)return Promise.resolve(IMGS);return fetch(S.data.site+'imagini.json?v='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():{}).then(j=>IMGS=j).catch(()=>({}));}
-function imgBox(r){return `<fieldset><legend>Imagini pe site</legend><div id="imgs"><span class="sub">Se încarcă imaginile…</span></div><input type="hidden" data-k="Imagini ascunse" value="${esc(r['Imagini ascunse']||'')}"><input type="hidden" data-k="Imagine la mouse" value="${esc(r['Imagine la mouse']||'')}"><input type="hidden" data-k="Imagine în grilă" value="${esc(r['Imagine în grilă']||'')}"></fieldset>`;}
+function imgBox(r){return `<fieldset><legend>Imagini pe site</legend><div id="imgs"><span class="sub">Se încarcă imaginile…</span></div><input type="hidden" data-k="Imagini ascunse" value="${esc(r['Imagini ascunse']||'')}"><input type="hidden" data-k="Imagine la mouse" value="${esc(r['Imagine la mouse']||'')}"><input type="hidden" data-k="Imagine în grilă" value="${esc(r['Imagine în grilă']||'')}"><input type="hidden" data-k="Ordine imagini" value="${esc(r['Ordine imagini']||'')}"></fieldset>`;}
 function imgFill(){const box=$('#imgs');if(!box)return;const id=String(S.rec.ID);
   loadImgs().then(J=>{const b2=$('#imgs');if(!b2||!S.rec||String(S.rec.ID)!==id)return;const d=J[id];
     if(!d||!d.i||!d.i.length){b2.innerHTML='<span class="sub">Cartea nu are încă imagini pe site.</span>';return;}
     const hide=String(S.rec['Imagini ascunse']||'').split(/\s*;\s*/).filter(Boolean),hov=String(S.rec['Imagine la mouse']||''),grd=String(S.rec['Imagine în grilă']||'');
     const covSet=String(S.rec['Copertă']||''),cov=d.i.some(y=>y[0]===covSet)?covSet:d.i[0][0];
     const sug=d.i[d.h]&&d.h>0?d.i[d.h][0]:'',site=S.data.site;
-    b2.innerHTML=`<p class="sub" style="margin:0 0 8px">Alege coperta (prima imagine de pe fișa cărții și cea din previzualizarea linkului), imaginea din grilă (implicit coperta) și pe cea de la hover. Debifează ce nu vrei să apară pe site; coperta rămâne mereu. „Sugerat” e alegerea automată pentru hover.</p>
+    /* ordinea: coperta prima, apoi „Ordine imagini” din tabel, apoi restul în ordinea de pe site */
+    const ordS=String(S.rec['Ordine imagini']||'').split(/\s*;\s*/).filter(Boolean),rest=d.i.filter(y=>y[0]!==cov);
+    const list=[d.i.find(y=>y[0]===cov)].concat(ordS.map(s=>rest.find(y=>y[0]===s)).filter(Boolean),rest.filter(y=>ordS.indexOf(y[0])<0));
+    b2.innerHTML=`<p class="sub" style="margin:0 0 8px">Alege coperta (prima imagine de pe fișa cărții și cea din previzualizarea linkului), imaginea din grilă (implicit coperta) și pe cea de la hover. Debifează ce nu vrei să apară pe site; coperta rămâne mereu prima. Ordinea celorlalte o schimbi cu ◀ ▶ sau trăgând imaginea. „Sugerat” e alegerea automată pentru hover.</p>
     <label class="sub" style="display:block;margin-bottom:8px"><input type="radio" name="hov" value="" ${hov?'':'checked'}> Hover: automat (cea sugerată)</label><div class="igrid">`+
-    d.i.map((x,i)=>{const src=x[0],ext=!!x[1],cap=x[2]||'',isCov=src===cov,isInt=!isCov&&!ext,lab=isCov?'Coperta':ext?'Exterior':(cap||'Interior');
-      return `<div class="ic${hide.indexOf(src)>=0&&!isCov?' off':''}"><img loading="lazy" src="${esc(site+src)}" alt=""><div class="il">${esc(lab)}${src===sug?' <span class="sug">sugerat</span>':''}</div>`+
+    list.map((x,i)=>{const src=x[0],ext=!!x[1],cap=x[2]||'',isCov=src===cov,isInt=!isCov&&!ext,lab=isCov?'Coperta':ext?'Exterior':cap==='Coperta'?'Coperta anterioară':/^Interior · /.test(cap)?'Interior':(cap||'Interior');
+      return `<div class="ic${hide.indexOf(src)>=0&&!isCov?' off':''}"${isCov?'':` draggable="true" data-src="${esc(src)}"`}><img loading="lazy" src="${esc(site+src)}" alt="" draggable="false"><div class="il">${isCov?'':`<span class="mv"><button type="button" data-mv="-1" title="Mai în față" ${i<2?'disabled':''}>◀</button><button type="button" data-mv="1" title="Mai în spate" ${i===list.length-1?'disabled':''}>▶</button></span>`}${esc(lab)}${src===sug&&!isCov?' <span class="sug">sugerat</span>':''}</div>`+
       (ext?'':`<label><input type="radio" name="cov" value="${esc(src)}" ${isCov?'checked':''}> copertă</label>`)+
       (isCov?'<div class="sub">rămâne mereu</div>':`<label><input type="checkbox" data-img="${esc(src)}" ${hide.indexOf(src)>=0?'':'checked'}> pe site</label>`)+
       `<label><input type="radio" name="grd" value="${isCov?'':esc(src)}" ${(isCov?!grd||grd===cov||!d.i.some(y=>y[0]===grd):grd===src)?'checked':''}> în grilă</label>`+
@@ -472,7 +475,18 @@ function imgFill(){const box=$('#imgs');if(!box)return;const id=String(S.rec.ID)
       if(gv&&hv===gv){hv='';b2.querySelector('input[name=hov][value=""]').checked=true;toast('Aceeași imagine nu poate fi și în grilă, și la hover; la hover am pus „automat”.');}
       b2.querySelectorAll('[data-img]').forEach(c=>c.closest('.ic').classList.toggle('off',!c.checked));
       $('[data-k="Imagini ascunse"]').value=h.join('; ');$('[data-k="Imagine la mouse"]').value=hv;$('[data-k="Imagine în grilă"]').value=gv;};
-    b2.querySelectorAll('input').forEach(i=>i.onchange=upd);});}
+    b2.querySelectorAll('input').forEach(i=>i.onchange=upd);
+    /* mutare: ◀ ▶ sau drag & drop; ordinea nouă se scrie în „Ordine imagini” și se salvează cu „Salvează” */
+    const setOrd=a=>{['Imagini ascunse','Imagine la mouse','Imagine în grilă'].forEach(k=>{const e=$(`[data-k="${k}"]`);if(e)S.rec[k]=e.value;});
+      const v=a.join('; ');$('[data-k="Ordine imagini"]').value=v;S.rec['Ordine imagini']=v;imgFill();};
+    const cur=()=>list.slice(1).map(y=>y[0]);
+    b2.querySelectorAll('[data-mv]').forEach(bt=>bt.onclick=()=>{const a=cur(),src=bt.closest('.ic').dataset.src,k=a.indexOf(src),j=k+(+bt.dataset.mv);if(j<0||j>=a.length)return;a.splice(k,1);a.splice(j,0,src);setOrd(a);});
+    let drag=null;b2.querySelectorAll('.ic[draggable=true]').forEach(c=>{
+      c.ondragstart=e=>{drag=c.dataset.src;e.dataTransfer.effectAllowed='move';};
+      c.ondragover=e=>{if(drag&&drag!==c.dataset.src){e.preventDefault();c.classList.add('drop');}};
+      c.ondragleave=()=>c.classList.remove('drop');
+      c.ondrop=e=>{e.preventDefault();c.classList.remove('drop');const a=cur(),t=c.dataset.src;if(!drag||drag===t)return;const k=a.indexOf(drag);a.splice(k,1);a.splice(a.indexOf(t)+(k<=a.indexOf(t)?1:0),0,drag);drag=null;setOrd(a);};
+      c.ondragend=()=>{drag=null;};});});}
 /* ---------- statistici ---------- */
 function renderStat(){const d=S.sdays||30;
   $('#app').innerHTML=`<div class="tools"><h2 class="pg" style="margin:0">Statistici</h2><span class="sub">Doar numărători, fără date despre vizitatori. Vizitatori, țări, surse și dispozitive: <a href="https:${DS}analytics.google.com" target="_blank" rel="noopener">Google Analytics</a> · <a href="https:${DS}dash.cloudflare.com" target="_blank" rel="noopener">Cloudflare Web Analytics</a></span><span class="vt" id="sdays" style="margin-left:auto">${[7,30,90].map(n=>`<button type="button" data-d="${n}" aria-pressed="${n===d}">${n} zile</button>`).join('')}</span></div><div id="sbody" class="load">Se încarcă…</div>`;

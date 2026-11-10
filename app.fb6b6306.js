@@ -27,7 +27,7 @@ function prepBook(b){
 }
 B.forEach(prepBook);
 /* imaginile ascunse / alese în admin, deja scrise în build */
-B.forEach(b=>{ if((b.imgHide&&b.imgHide.length)||b.hovImg||b.gridImg) applyImgs(b); });
+B.forEach(b=>{ if((b.imgHide&&b.imgHide.length)||b.hovImg||b.gridImg||(b.imgOrder&&b.imgOrder.length)) applyImgs(b); });
 /* Cărțile cu coperta de verificat nu apar public; le vedeți în admin, marcate cu roșu, până le confirmați. */
 const HID={};
 function hideChk(){let n=0; for(let i=B.length-1;i>=0;i--) if(B[i].coverCheck){HID[B[i].id]=B[i]; delete byId[B[i].id]; B.splice(i,1); n++;} return n;}
@@ -113,7 +113,11 @@ function setCover(b,src){
 function applyImgs(b){
   if(!b._imgs){ b._imgs=b.images; b._hov0=b.hov||0; }
   const hide=b.imgHide||[];
-  let ims=b._imgs.filter((im,i)=>i===0||!hide.includes(im.src));
+  /* ordinea aleasă în admin („Ordine imagini”): coperta rămâne prima, cele nelistate vin după, în ordinea din build */
+  let base=b._imgs;
+  const ord=(b.imgOrder||[]).filter(src=>base.some((im,i)=>i>0&&im.src===src));
+  if(ord.length){ const rest=base.slice(1); base=[base[0]].concat(ord.map(src=>rest.find(im=>im.src===src)),rest.filter(im=>!ord.includes(im.src))); }
+  let ims=base.filter((im,i)=>i===0||!hide.includes(im.src));
   const ints=ims.filter(im=>/^Interior · \d+ din \d+$/.test(im.cap||''));
   ims=ims.map(im=>{const k=ints.indexOf(im); return k>=0?Object.assign({},im,{cap:'Interior · '+(k+1)+' din '+ints.length}):im;});
   b.images=ims;
@@ -139,9 +143,9 @@ function applyBooks(j){
     if(!j||!Array.isArray(j.books)) return;
     const S=v=>typeof v==='string'?v.slice(0,6000):(typeof v==='number'?String(v):'');
     const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
-    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg','gridImg'];
+    const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg','gridImg','imgOrder'];
     const dimA=v=>{if(Array.isArray(v)) return v.slice(0,2).map(Number).filter(n=>n>0); const m=String(v||'').replace(',','.').replace(',','.').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/i); return m?[parseFloat(m[1]),parseFloat(m[2])]:[];};
-    const clean=(k,v)=>k==='dim'?dimA(v):(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):k==='imgHide'?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='gridImg'?(/^(covers|pages)\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
+    const clean=(k,v)=>k==='dim'?dimA(v):(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):(k==='imgHide'||k==='imgOrder')?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='gridImg'?(/^(covers|pages)\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
     let ch=false;
     j.books.forEach(r=>{
       const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
@@ -151,7 +155,7 @@ function applyBooks(j){
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
       if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); });
-        if(ed.includes('cover')&&/^(covers|pages)\/[\w.-]+\.(webp|jpe?g|png)$/i.test(S(f.cover))&&b.cover!==S(f.cover)) setCover(b,S(f.cover)); if(ed.includes('cover')||ed.includes('imgHide')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
+        if(ed.includes('cover')&&/^(covers|pages)\/[\w.-]+\.(webp|jpe?g|png)$/i.test(S(f.cover))&&b.cover!==S(f.cover)) setCover(b,S(f.cover)); if(ed.includes('cover')||ed.includes('imgHide')||ed.includes('imgOrder')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
       else if(ed.includes('stare')||ed.includes('*')){
         const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
         const cv=safeSrc(S(f.cover))!==PH?S(f.cover):'';

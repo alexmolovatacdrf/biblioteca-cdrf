@@ -152,6 +152,32 @@ details.sec .grid{padding-bottom:12px}details.sec fieldset{border:0;padding:0 0 
 .sitewarn{border:1px solid var(--warn);background:#fff8ed;padding:10px 14px;margin:0 0 12px;font-size:14px}.sitewarn ul{margin:4px 0 0 18px;padding:0}.sitewarn li{margin:2px 0}
 .rail .box{border:1px solid var(--rule);padding:12px 14px;margin-bottom:14px;font-size:14px}.rail .box .linkbtn{display:inline-block;margin-top:6px;font-size:13px}.rail .box .hist div{padding:5px 0}
 @media(max-width:860px){.lay,.flay,.two{grid-template-columns:1fr}.side{display:flex;gap:18px;overflow-x:auto}.side .grp{min-width:150px}}
+/* vedere calendar în Editorial */
+.cl{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--rule);margin-top:4px}
+.cl-labels{position:relative;border-right:1px solid var(--rule);background:#fff}
+.cl-corner{height:46px;border-bottom:1px solid var(--rule)}
+.cl-lane{position:absolute;left:0;right:0;padding:6px 10px;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.25;overflow:hidden}
+.cl-lane b{display:block;font-weight:600}.cl-lane .sub{font-size:12px}
+.cl-scroll{overflow-x:auto;position:relative}
+.cl-body{position:relative}
+.cl-head{position:absolute;top:0;left:0;right:0;height:46px;border-bottom:1px solid var(--rule);background:#fff}
+.cl-wk{position:absolute;top:0;height:46px;padding:5px 0 0 6px;font-size:12px;color:var(--muted);border-left:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.cl-wk i{display:block;font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.04em;height:14px}
+.cl-wk.now{color:var(--ink);font-weight:600}
+.cl-col{position:absolute;top:0;border-left:1px solid var(--rule)}
+.cl-col.now{background:#fffbe8}
+.cl-sep{position:absolute;left:0;right:0;height:1px;background:var(--rule)}
+.cl-gap{position:absolute;background:repeating-linear-gradient(135deg,transparent 0 5px,#f1c9cc 5px 6px);opacity:.9}
+.cl-bar{position:absolute;height:24px;font-size:12px;line-height:24px;padding:0 6px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:1px solid transparent}
+.cl-bar span{position:relative;z-index:1}
+.cl-bar.on{background:#e6f5ea;color:var(--ok);border-color:#bfe3c9}.cl-bar.pl{background:#e7f0ff;color:#1d4fb8;border-color:#c4d6f7}
+.cl-bar.pr{background:#fff4e0;color:var(--warn);border-color:#f3dcad}.cl-bar.off{background:#eee;color:#555;border-color:#ddd}.cl-bar.ex{background:#f5f5f6;color:#999;border-color:#e8e8ea}
+.cl-bar.guess{border-left-style:dotted;border-left-width:2px}
+.cl-bar.open{-webkit-mask-image:linear-gradient(90deg,#000 70%,transparent);mask-image:linear-gradient(90deg,#000 70%,transparent)}
+.cl-bar:hover{filter:brightness(.96)}
+.cl-ev{position:absolute;bottom:-1px;height:4px;background:var(--ink);z-index:2}
+.cl-leg{margin-top:10px;font-size:12px}.cl-leg .pst{font-style:normal;margin-right:2px}
+@media(max-width:760px){.cl{grid-template-columns:120px 1fr}.cl-lane{padding:6px}}
 </style>
 </head>
 <body>
@@ -564,12 +590,61 @@ const isProp=p=>!p.active&&/^propunere/i.test(p.src||'');
 function pStat(p){const d=today();if(isProp(p))return['pr','Propunere'];if(!p.active)return['off','Oprit'];if(p.from&&p.from>d)return['pl','Programat'];
   if(p.to?p.to<d:(p.date&&(p.end||p.date)<d))return['ex','Expirat'];return['on','Pe site acum'];}
 function pWin(p){const a=p.from?fmtD(p.from):'acum',b=p.to?fmtD(p.to):(p.end||p.date?fmtD(p.end||p.date)+' (sfârșitul evenimentului)':'fără termen');return 'pe site: '+a+' – '+b;}
+/* ---------- Editorial: vedere calendar (cronologie pe săptămâni) ----------
+ * Fiecare panou e o bară de la „Afișare de la” până la „Afișare până la”.
+ * Când lipsesc: începutul = data din „Actualizat” (de când e în tabel), marcat cu margine punctată;
+ * sfârșitul = „Până la” sau „Data”; fără niciuna = bară deschisă (săgeată).
+ * Punctul negru = ziua evenimentului („Data”, și până la „Până la” când are mai multe zile).
+ * Benzile sunt pe tipuri; într-o bandă, panourile care se suprapun în timp merg pe rânduri separate.
+ * La tipurile săptămânale (3+ panouri la ≤ 8 zile distanță), săptămânile viitoare fără panou sunt marcate.
+ */
+const isoDay=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dOf=iso=>new Date(iso+'T12:00');
+const monday=iso=>{const d=dOf(iso);d.setDate(d.getDate()-((d.getDay()+6)%7));return isoDay(d);};
+const dayDiff=(a,b)=>Math.round((dOf(b)-dOf(a))/864e5);
+const updIso=p=>{const m=String(p.updated||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?m[3]+'-'+m[2]+'-'+m[1]:'';};
+function pSpan(p){const start=p.from||updIso(p)||today(),end=p.to||p.end||p.date||'';return{start,end,guessed:!p.from,open:!end};}
+function renderPanCal(L){
+  const d=today(),W=56;                       // lățimea unei săptămâni, în px
+  if(!L.length)return '<div class="load">Niciun panou aici.</div>';
+  const spans=L.map(p=>Object.assign({p},pSpan(p)));
+  let min=monday(d),max=addDays(monday(d),7*8-1);
+  spans.forEach(s=>{if(s.start<min)min=s.start;const e=s.open?addDays(s.start,21):s.end;if(e>max)max=e;});
+  min=monday(addDays(min,-7));max=addDays(monday(max),13);
+  const weeks=[];for(let w=min;w<=max;w=addDays(w,7))weeks.push(w);
+  const x=iso=>Math.max(0,Math.min(weeks.length*W,dayDiff(min,iso)/7*W));
+  // benzi pe tip, în ordinea KINDS, apoi restul alfabetic
+  const kinds=[...new Set(spans.map(s=>s.p.kind||'(fără tip)'))].sort((a,b)=>{const i=KINDS.indexOf(a),j=KINDS.indexOf(b);return (i<0?99:i)-(j<0?99:j)||a.localeCompare(b,'ro');});
+  const lanes=kinds.map(k=>{
+    const ss=spans.filter(s=>(s.p.kind||'(fără tip)')===k).sort((a,b)=>a.start.localeCompare(b.start));
+    const rows=[];ss.forEach(s=>{const e=s.open?addDays(s.start,21):s.end;let r=rows.findIndex(last=>last<s.start);if(r<0){r=rows.length;rows.push(e);}else rows[r]=e;s.row=r;});
+    const dates=ss.map(s=>s.p.date||s.p.from).filter(Boolean).sort();const gaps=dates.slice(1).map((v,i)=>dayDiff(dates[i],v)).sort((a,b)=>a-b);
+    const weekly=dates.length>=3&&gaps[Math.floor(gaps.length/2)]<=8;
+    return{k,ss,n:rows.length,weekly};});
+  const RH=30,TOP=46;let y=TOP;
+  const lab=lanes.map(l=>{const h=l.n*RH+10,o=`<div class="cl-lane" style="top:${y}px;height:${h}px"><b>${esc(l.k)}</b><span class="sub">${l.ss.length}${l.weekly?' · săptămânal':''}</span></div>`;l.y=y;l.h=h;y+=h;return o;}).join('');
+  const H=y;
+  const head=weeks.map((w,i)=>{const m=dOf(w),first=i===0||m.getDate()<=7;return `<div class="cl-wk${w===monday(d)?' now':''}" style="left:${i*W}px;width:${W}px"><i>${first?m.toLocaleDateString('ro-RO',{month:'short'}):''}</i>${m.getDate()}</div>`;}).join('');
+  const grid=weeks.map((w,i)=>`<div class="cl-col${w===monday(d)?' now':''}" style="left:${i*W}px;width:${W}px;height:${H}px"></div>`).join('');
+  const sep=lanes.map(l=>`<div class="cl-sep" style="top:${l.y+l.h}px"></div>`).join('');
+  const horizon=addDays(monday(d),7*8);const gapsHtml=lanes.filter(l=>l.weekly).map(l=>weeks.filter(w=>w>=monday(d)&&w<horizon).filter(w=>!l.ss.some(s=>s.start<=addDays(w,6)&&(s.open||s.end>=w)))
+    .map(w=>`<div class="cl-gap" style="left:${x(w)}px;width:${W}px;top:${l.y+4}px;height:${l.h-8}px" title="Săptămâna de la ${fmtD(w)}: niciun panou „${esc(l.k)}”"></div>`).join('')).join('');
+  const bars=lanes.map(l=>l.ss.map(s=>{const p=s.p,[c,t]=pStat(p),x1=x(s.start),x2=s.open?x(addDays(s.start,21)):x(addDays(s.end,1)),top=l.y+5+s.row*RH;
+    const ev=p.date?`<i class="cl-ev" style="left:${x(p.date)-x1}px;width:${Math.max(8,x(addDays(p.end||p.date,1))-x(p.date))}px" title="Eveniment: ${esc(p.when||fmtD(p.date))}"></i>`:'';
+    const name=p.title||p.guest||((p.books||[]).length&&typeof bookRow==='function'&&bookRow(p.books[0])?bookRow(p.books[0])[C('Titlu')]:(p.books||[]).length?'cartea '+p.books[0]:'(fără titlu)');
+    return `<div class="cl-bar ${c}${s.guessed?' guess':''}${s.open?' open':''}" data-pe="${esc(p.id)}" style="left:${x1}px;width:${Math.max(10,x2-x1)}px;top:${top}px" title="${esc(p.id+' · '+name+'\n'+t+' · '+pWin(p)+(p.when?'\n'+p.when:'')+(s.guessed?'\nFără „Afișare de la”: începutul e data din Actualizat':''))}">${ev}<span>${esc(name)}</span></div>`;}).join('')).join('');
+  const warn=spans.filter(s=>s.p.date&&s.end&&s.end<s.p.date).map(s=>`<div class="sub flag">${esc(s.p.id)} · ${esc(s.p.title||s.p.guest||'')}: fereastra de afișare se închide pe ${fmtD(s.end)}, înainte de eveniment (${fmtD(s.p.date)}).</div>`).join('');
+  return `<div class="cl"><div class="cl-labels" style="height:${H}px"><div class="cl-corner"></div>${lab}</div>
+   <div class="cl-scroll"><div class="cl-body" style="width:${weeks.length*W}px;height:${H}px">${grid}${sep}<div class="cl-head">${head}</div>${gapsHtml}${bars}</div></div></div>
+   <div class="cl-leg sub"><i class="pst on">Pe site acum</i> <i class="pst pl">Programat</i> <i class="pst pr">Propunere</i> <i class="pst off">Oprit</i> <i class="pst ex">Expirat</i> · punctul negru = ziua evenimentului · margine punctată = fără „Afișare de la” · hașurat = săptămână fără panou la un tip săptămânal, pe următoarele 8 săptămâni · clic pe bară = deschide panoul</div>${warn}`;
+}
 const canPan=()=>['admin','editor'].indexOf(S.data.user.role)>=0;
 const canW=()=>S.data.user.role!=='vizitator';
 const bookRow=id=>S.data.rows.find(r=>r[C('ID')]===String(id));
 function panDirty(){if(!S.pe||!$('#psave'))return false;readPan();return JSON.stringify(S.pe)!==S.peOrig;}
 function renderPan(){
   if(S.pe)return renderPanEdit();
+  if(S.pcal===undefined){try{S.pcal=!!localStorage.getItem('adm_pcal')}catch(e){S.pcal=false}}
   if(!S.panels){$('#app').innerHTML='<div class="load">Se încarcă panourile…</div>';
     call('getPanels').then(p=>{S.panels=p;renderPan();}).catch(e=>{const m=String(e.message||e);
       $('#app').innerHTML='<div class="load msg err">'+(/getPanels|not found|nu a fost găsit|Script function/i.test(m)?'Panourile cer versiunea nouă a scriptului (Code.gs). Cere-i lui Alex să o publice.':esc(m))+'</div>';});return;}
@@ -584,14 +659,16 @@ function renderPan(){
   const sel=(S.psel||[]).filter(id=>L.some(p=>p.id===id));S.psel=sel;
   $('#app').innerHTML=`<div class="stats">${Object.keys(lab).map(k=>`<span data-pf="${k}" class="${f===k?'on':''}" title="Arată doar: ${lab[k]}">${lab[k]} · ${S.panels.filter(groups[k]).length}</span>`).join('')}</div>
   <div class="tools"><h2 class="pg" style="margin:0">Editorial</h2><span class="sub">Panourile de pe prima pagină: evenimente, cartea săptămânii, cărți noi. Pe site în câteva minute.</span>${canPan()?'<button class="btn" id="padd" style="margin-left:auto">+ Panou nou</button>':''}</div>
-  <div class="tools"><input type="search" id="pq" placeholder="Caută în panouri: titlu, invitat, tip…" value="${esc(S.pq||'')}" style="flex:1 1 220px"><select id="pf">${Object.keys(lab).map(k=>`<option value="${k}" ${f===k?'selected':''}>${lab[k]} · ${S.panels.filter(groups[k]).length}</option>`).join('')}</select><select id="pk"><option value="">Toate tipurile</option>${kinds.map(k=>`<option ${S.pk===k?'selected':''}>${esc(k)}</option>`).join('')}</select><select id="ps"><option value="date" ${srt==='date'?'selected':''}>După dată, cele apropiate întâi</option><option value="date_desc" ${srt==='date_desc'?'selected':''}>După dată, cele îndepărtate întâi</option><option value="upd" ${srt==='upd'?'selected':''}>Modificate recent întâi</option><option value="kind" ${srt==='kind'?'selected':''}>După tip</option><option value="title" ${srt==='title'?'selected':''}>După titlu</option></select><span class="sub">${L.length} panouri</span></div>
-  ${sel.length&&canPan()?`<div class="bulk"><label><input type="checkbox" id="pall" checked> ${sel.length} selectate</label> · <button class="linkbtn" data-pb="on">Pornește</button> <button class="linkbtn" data-pb="off">Oprește</button>${S.data.user.role==='admin'?' <button class="linkbtn" data-pb="del">Șterge</button>':''} <button class="linkbtn" data-pb="none" style="margin-left:auto">Deselectează</button></div>`:''}
+  <div class="tools"><input type="search" id="pq" placeholder="Caută în panouri: titlu, invitat, tip…" value="${esc(S.pq||'')}" style="flex:1 1 220px"><select id="pf">${Object.keys(lab).map(k=>`<option value="${k}" ${f===k?'selected':''}>${lab[k]} · ${S.panels.filter(groups[k]).length}</option>`).join('')}</select><select id="pk"><option value="">Toate tipurile</option>${kinds.map(k=>`<option ${S.pk===k?'selected':''}>${esc(k)}</option>`).join('')}</select><select id="ps"><option value="date" ${srt==='date'?'selected':''}>După dată, cele apropiate întâi</option><option value="date_desc" ${srt==='date_desc'?'selected':''}>După dată, cele îndepărtate întâi</option><option value="upd" ${srt==='upd'?'selected':''}>Modificate recent întâi</option><option value="kind" ${srt==='kind'?'selected':''}>După tip</option><option value="title" ${srt==='title'?'selected':''}>După titlu</option></select><div class="vtog"><button data-pv="l" aria-pressed="${!S.pcal}">Listă</button><button data-pv="c" aria-pressed="${!!S.pcal}">Calendar</button></div><span class="sub">${L.length} panouri</span></div>
+  ${S.pcal?renderPanCal(L):`${sel.length&&canPan()?`<div class="bulk"><label><input type="checkbox" id="pall" checked> ${sel.length} selectate</label> · <button class="linkbtn" data-pb="on">Pornește</button> <button class="linkbtn" data-pb="off">Oprește</button>${S.data.user.role==='admin'?' <button class="linkbtn" data-pb="del">Șterge</button>':''} <button class="linkbtn" data-pb="none" style="margin-left:auto">Deselectează</button></div>`:''}
   <table><thead><tr>${canPan()?'<th></th>':''}<th>Stare</th><th>Panou</th><th class="hide-m">Când</th><th class="hide-m">Cărți</th><th class="hide-m">Modificat</th><th></th></tr></thead><tbody>
   ${L.map(p=>{const [c,t]=pStat(p);return `<tr class="pr">${canPan()?`<td class="ck"><input type="checkbox" data-psel="${esc(p.id)}" ${sel.indexOf(p.id)>=0?'checked':''}></td>`:''}<td><span class="pst ${c}">${t}</span></td>
    <td><div class="pk">${esc(p.kind)} · ${esc(p.id)}</div><div class="t">${esc(p.title||p.guest||'(fără titlu)')}</div>${p.title&&p.guest?`<div class="sub">cu ${esc(p.guest)}</div>`:''}<div class="sub">${esc(pWin(p))}</div></td>
    <td class="hide-m sub">${esc(p.when)}</td><td class="hide-m sub">${p.books.length}</td><td class="hide-m sub">${esc(String(p.updated||'').replace(/, .*$/,''))}</td>
-   <td style="white-space:nowrap;text-align:right">${canPan()&&isProp(p)?`<button class="linkbtn" data-pok="${esc(p.id)}">Aprobă</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pno="${esc(p.id)}">Respinge</button>`:canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="7" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`;
+   <td style="white-space:nowrap;text-align:right">${canPan()&&isProp(p)?`<button class="linkbtn" data-pok="${esc(p.id)}">Aprobă</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pno="${esc(p.id)}">Respinge</button>`:canPan()?`<button class="linkbtn" data-pt="${esc(p.id)}">${p.active?'Oprește':'Pornește'}</button> · <button class="linkbtn" data-pe="${esc(p.id)}">Editează</button> · <button class="linkbtn" data-pd="${esc(p.id)}">Duplică</button>`:`<button class="linkbtn" data-pe="${esc(p.id)}">Vezi</button>`}</td></tr>`;}).join('')||'<tr><td colspan="7" class="sub">Niciun panou aici.</td></tr>'}</tbody></table>`}`;
   document.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{S.pf=b.dataset.pf;renderPan();});
+  document.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{S.pcal=b.dataset.pv==='c';try{localStorage.setItem('adm_pcal',S.pcal?'1':'')}catch(e){}renderPan();});
+  if(S.pcal){const sc=$('.cl-scroll'),now=$('.cl-col.now');if(sc&&now)sc.scrollLeft=Math.max(0,parseInt(now.style.left)-112);}
   const pq=$('#pq');pq.addEventListener('input',()=>{S.pq=pq.value;const c=pq.selectionStart;renderPan();const n=$('#pq');n.focus();n.setSelectionRange(c,c);});
   $('#pf').onchange=e=>{S.pf=e.target.value;renderPan();};$('#pk').onchange=e=>{S.pk=e.target.value;renderPan();};$('#ps').onchange=e=>{S.ps=e.target.value;renderPan();};
   document.querySelectorAll('[data-psel]').forEach(c=>c.onchange=()=>{const id=c.dataset.psel;S.psel=c.checked?S.psel.concat([id]):S.psel.filter(x=>x!==id);renderPan();});

@@ -504,7 +504,7 @@ function renderBook(id){
         <h1>${esc(b.title)}</h1>
         ${b.subtitle?`<div class="sub">${esc(b.subtitle)}</div>`:''}
         ${ppl?`<div class="people">${ppl}</div>`:''}
-        <div class="acts"><button class="savebig" data-save="${b.id}" aria-pressed="${isMine(b.id)}">${isMine(b.id)?BMF+'În lista mea':BM+'Adaugă în lista mea'}</button><button class="share" data-share title="Trimite linkul cărții" aria-label="Trimite linkul cărții"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3L13.5 21 21 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10.5 13.5 21 3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+        <div class="acts"><button class="savebig" data-save="${b.id}" aria-pressed="${isMine(b.id)}">${isMine(b.id)?BMF+'În lista mea':BM+'Adaugă în lista mea'}</button><button class="share" data-share title="Trimite linkul cărții"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3L13.5 21 21 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10.5 13.5 21 3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>${matchMedia('(pointer:coarse)').matches?'Trimite':'Copiază linkul'}</span></button></div>
       </div>
       <div class="gallery">
         <div class="stage${b.coverCheck?' chk':''}">${b.coverCheck?'<span class="chkb">Copertă de verificat</span>':''}<img id="mainimg"${b.cut?' class="cutc"':''} src="${safeSrc(b.cover)}" alt="Coperta: ${esc(b.title)}" width="${b.cw}" height="${b.ch}" data-open-cur>

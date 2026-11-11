@@ -1,6 +1,6 @@
 # Lotul 3 de cărți nepublicate (ID 297–400)
 
-Stare la 10 noiembrie 2026, seara: analizat și propus, **neaprobat încă de Alex**. Nimic publicat, nimic scris în tabel.
+**Gata pe 11 noiembrie 2026** (vezi mai jos); istoric: propus pe 10 nov.
 Procedura e în `claude/predare-biblioteca.md`, secțiunea 4b.
 
 ## Gata (11 nov., seara)

@@ -3,6 +3,10 @@
 Stare la 10 noiembrie 2026, seara: analizat și propus, **neaprobat încă de Alex**. Nimic publicat, nimic scris în tabel.
 Procedura e în `claude/predare-biblioteca.md`, secțiunea 4b.
 
+## Gata (11 nov., seara)
+- Publicate și celelalte 8: 297, 308, 310, 317, 363, 381, 391, 400. Editura la 317 și autorii la 400 au rămas ca în tabel; la 317 e notă în admin (Ilex/Octopus). La 391 nu s-a pus subtitlu (nu apare pe copertă). Coperțile Wix au marginea albă tăiată, ca la Punctum.
+- Note scrise în admin: 340–343, 349, 373; dubluri marcate: 383 (↔575), 242 (↔243), 162 (↔161), 484 (↔211), 509 (↔173), 530 (↔86), 546 (↔48).
+
 ## Decizii Alex (11 nov.)
 - Lista de mai jos aprobată (12 publicate / 8 cu notă). Punctum e în română.
 - Punctum 350–354 făcute primele: coperți Wix fără marginea albă (doar padding-ul alb tăiat, coperta întreagă), Limbă Română, Colaboratori „Cosmin Bumbuț – Editor”, descriere = text comun + ce e pe copertă / în surse. `lot_nepublicate_3.zip` (12 coperți) e în folderul de lucru.

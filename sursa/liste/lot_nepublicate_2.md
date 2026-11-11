@@ -1,6 +1,6 @@
 # Lotul 2 de cărți nepublicate (ID 203–293)
 
-Stare la 10 noiembrie 2026: analizat și propus, **neaprobat încă de Alex**. Nimic din lotul ăsta nu e publicat.
+**Gata pe 11 noiembrie 2026** (aprobat de Alex): publicate 217, 219, 230, 231, 248, 267, 270, 277, 281, 293, cu descrieri rescrise din surse (sursa și linkurile în tabel). 242 NU s-a publicat: e dublură a lui 243 (notă în admin). Notele pentru 203, 205, 206, 207, 236, 284, 287, 288, 291 nu sunt încă scrise (motivele nu fuseseră notate). La 267, legătura „broșată” nu a fost pusă (nicio sursă găsită acum).
 Procedura e în `claude/predare-biblioteca.md`, secțiunea 4b.
 
 ## De făcut înainte de orice

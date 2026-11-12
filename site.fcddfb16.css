@@ -120,14 +120,14 @@ body.vb .savebig{border:0;padding-left:0}
 body.vb .ahero h1::before{border-width:.084em}
 body.vb span.n{background:var(--stage-h)!important;color:var(--ink)!important}
 body.vb .right .nav span.n{background:var(--accent)!important;color:#fff!important;font-weight:500}
-body.vb .save{width:30px;height:30px;top:8px;right:8px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+body.vb .save{width:30px;height:30px;top:0;right:0;background:none;box-shadow:none;place-items:start end}
 body.vb .save svg,body.vb .savebig svg{display:none}
 body.vb .save::before,body.vb .savebig::before{content:"";width:12px;height:12px;border:1.5px solid #a9a9af;box-sizing:border-box;flex:none}
 body.vb .save:hover::before,body.vb .savebig:hover::before{border-color:#6e6e74}
-body.vb .save[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+body.vb .save[aria-pressed="true"]{background:none;color:var(--ink)}
 body.vb .save[aria-pressed="true"]::before,body.vb .savebig[aria-pressed="true"]::before{border:2.5px solid var(--accent)}
-body.vb .savebig[aria-pressed="true"]{background:var(--stage-h);color:var(--ink);border-color:var(--faint)}
-body.vb .toast{background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-left:3px solid var(--accent);box-shadow:0 10px 28px -12px rgba(0,0,0,.25)}
+body.vb .savebig[aria-pressed="true"]{background:none;color:var(--ink)}
+body.vb .toast{background:var(--paper);color:var(--ink);border:1px solid var(--rule);box-shadow:0 10px 28px -12px rgba(0,0,0,.25)}
 body.vb .toast button{background:var(--accent);border:0;color:#fff}
 body.vb .toast button:hover{background:#b80916}
 body.vb .list .acts .pbtn{background:var(--accent);color:#fff;border:0}
@@ -558,7 +558,7 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
   .card{gap:10px}
   .card .cap{font-size:15px}
   .card .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  body.vb .save{width:36px;height:36px;top:6px;right:6px}body.vb .save::before{width:14px;height:14px}
+  body.vb .save{width:36px;height:36px;top:0;right:0}body.vb .save::before{width:14px;height:14px}
   .gbar{justify-content:center;gap:14px}.gbar .counter::after{content:"·";margin-left:14px;color:var(--faint)}.gbar>span:empty{display:none}
   .list .acts{gap:12px 18px;flex-wrap:nowrap}.list .acts .pbtn{padding:11px 16px;font-size:15px;white-space:nowrap}
   /* footer scurt pe telefon: adresa și programul pe câte un rând, fără titluri; linkurile cdrf.ro curg pe un paragraf */

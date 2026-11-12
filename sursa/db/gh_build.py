@@ -84,7 +84,7 @@ import re as _re
 _old=open(R+'varianta.html').read() if os.path.exists(R+'varianta.html') else ''
 _cf=_re.search(r'<!-- Cloudflare Web Analytics -->.*?<!-- End Cloudflare Web Analytics -->',_old,_re.S)
 open(R+'varianta.html','w').write('<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=./"><title>Biblioteca CdRF</title>'+(_cf.group(0) if _cf else '')+'<a href="./">Biblioteca CdRF</a>')
-need={im['src'] for b in B for im in b['images']}|{b['cover'] for b in B}
+need={im['src'] for b in B for im in b['images']}|{b['cover'] for b in B}|{v['poster'] for b in B for v in (b.get('video') or []) if v.get('poster')}
 for d in ('covers','pages','fonts','brand'): os.makedirs(R+d,exist_ok=True)
 for s in need: shutil.copy2(P+s,R+s)
 for d in ('fonts','brand'):

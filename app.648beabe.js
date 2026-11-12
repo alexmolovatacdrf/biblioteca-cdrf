@@ -145,7 +145,8 @@ function applyBooks(j){
     const L=v=>Array.isArray(v)?v.map(S).filter(Boolean).slice(0,300):[];
     const KEYS=['title','subtitle','people','contrib','publisher','place','year','edition','series','vol','isbn','lang','type','category','tags','shelf','pages','dim','binding','desc','coverCheck','video','imgHide','hovImg','gridImg','imgOrder'];
     const dimA=v=>{if(Array.isArray(v)) return v.slice(0,2).map(Number).filter(n=>n>0); const m=String(v||'').replace(',','.').replace(',','.').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/i); return m?[parseFloat(m[1]),parseFloat(m[2])]:[];};
-    const clean=(k,v)=>k==='dim'?dimA(v):(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):(k==='imgHide'||k==='imgOrder')?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='gridImg'?(/^(covers|pages)\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt})):[]):S(v);
+    const clean=(k,v)=>k==='dim'?dimA(v):(k==='people'||k==='lang'||k==='tags')?L(v):k==='contrib'?(Array.isArray(v)?v.filter(c=>c&&c.n).slice(0,400).map(c=>({n:S(c.n),r:S(c.r)})):[]):(k==='imgHide'||k==='imgOrder')?L(v).filter(x=>/^(covers|pages)\/[\w.-]+$/.test(x)):k==='hovImg'?(/^pages\/[\w.-]+$/.test(S(v))?S(v):''):k==='gridImg'?(/^(covers|pages)\/[\w.-]+$/.test(S(v))?S(v):''):k==='coverCheck'?v===true:k==='video'?(Array.isArray(v)?v.filter(x=>x&&/^[\w-]{11}$/.test(x.yt||'')).map(x=>({yt:x.yt,from:vsec(x.from),to:vsec(x.to)})):[]):S(v);
+    const vsec=n=>Number.isInteger(n)&&n>=0&&n<36000?n:undefined;
     let ch=false;
     j.books.forEach(r=>{
       const id=String(r&&r.id||''); if(!/^\d+$/.test(id)) return;
@@ -154,7 +155,7 @@ function applyBooks(j){
       if(!b&&HID[id]&&r.stare==='Publicată'){b=HID[id]; delete HID[id]; B.push(b); byId[id]=b; ch=true;}
       if(r.stare!=='Publicată'){ if(b&&ed.includes('stare')){B.splice(B.indexOf(b),1); delete byId[id]; ch=true;} return; }
       const f=r.fields||{};
-      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)) b[k]=clean(k,f[k]); });
+      if(b){ const before=JSON.stringify(b); b.title=b.full; ed.forEach(k=>{ if(KEYS.includes(k)&&(k in f)){ const prev=b[k]; b[k]=clean(k,f[k]); if(k==='video'&&Array.isArray(prev)) b.video.forEach(x=>{const o=prev.find(p=>p.yt===x.yt); if(o){x.t=o.t; x.s=o.s;}}); } });
         if(ed.includes('cover')&&/^(covers|pages)\/[\w.-]+\.(webp|jpe?g|png)$/i.test(S(f.cover))&&b.cover!==S(f.cover)) setCover(b,S(f.cover)); if(ed.includes('cover')||ed.includes('imgHide')||ed.includes('imgOrder')||ed.includes('hovImg')||ed.includes('gridImg')) applyImgs(b); prepBook(b); if(JSON.stringify(b)!==before) ch=true; }
       else if(ed.includes('stare')||ed.includes('*')){
         const nb={id:id,related:[],editor:''}; KEYS.forEach(k=>nb[k]=clean(k,f[k]));
@@ -533,7 +534,7 @@ function renderBook(id){
       </div>
       <div>
         <p class="desc">${esc(b.desc)}</p>
-        ${(b.video||[]).filter(v=>/^[\w-]{11}$/.test(v.yt||'')).length?`<div class="vid"><h3>Video</h3>${b.video.filter(v=>/^[\w-]{11}$/.test(v.yt||'')).map(v=>`<div class="vitem"><button class="vplay" data-yt="${v.yt}" aria-label="Pornește video: ${esc(v.t)}"><img src="https://i.ytimg.com/vi/${v.yt}/hqdefault.jpg" alt="" loading="lazy"><span class="pl" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button><div class="vcap">${esc(v.t)}${v.s?` <span>· ${esc(v.s)}</span>`:''} <a href="https://www.youtube.com/watch?v=${v.yt}" target="_blank" rel="noopener noreferrer">pe YouTube</a></div></div>`).join('')}</div>`:''}
+        ${(b.video||[]).filter(v=>/^[\w-]{11}$/.test(v.yt||'')).length?`<div class="vid"><h3>Video</h3>${b.video.filter(v=>/^[\w-]{11}$/.test(v.yt||'')).map(v=>`<div class="vitem"><button class="vplay" data-yt="${v.yt}"${v.from>0?` data-from="${v.from}"`:''}${v.to>0?` data-to="${v.to}"`:''} aria-label="Pornește video: ${esc(v.t)}"><img src="https://i.ytimg.com/vi/${v.yt}/hqdefault.jpg" alt="" loading="lazy"><span class="pl" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button><div class="vcap">${esc(v.t)}${v.s?` <span>· ${esc(v.s)}</span>`:''} <a href="https://www.youtube.com/watch?v=${v.yt}${v.from>0?'&t='+v.from+'s':''}" target="_blank" rel="noopener noreferrer">pe YouTube</a></div></div>`).join('')}</div>`:''}
         ${b.descSrc?`<p class="dsrc">Text CdRF, ${esc(b.descSrc)}${(b.srcs||[]).filter(s=>safeUrl(s.u)).length?' · '+(b.srcs||[]).filter(s=>safeUrl(s.u)).map((s,k)=>`<a href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(s.t||('sursa '+(k+1)))}</a>`).join(', '):''}</p>`:''}
         ${(b.press||[]).filter(p=>safeUrl(p.u)).length?`<div class="press"><h3>Despre carte în presă</h3><ul>${b.press.filter(p=>safeUrl(p.u)).map(p=>`<li><a href="${esc(p.u)}" target="_blank" rel="noopener noreferrer">${esc(p.o)}</a>${p.a?` · ${esc(p.a)}`:''}${p.d?` <span>${esc(p.d)}</span>`:''}</li>`).join('')}</ul></div>`:''}
         ${fmt}
@@ -746,7 +747,7 @@ document.addEventListener('touchend',e=>{if(!sw) return; const t=e.changedTouche
 /* video: se încarcă abia la click, din youtube-nocookie */
 document.addEventListener('click',e=>{const m=e.target.closest('.nmorebtn'); if(!m) return; const s=m.previousElementSibling; if(s){s.hidden=false;} m.remove();});
 document.addEventListener('click',e=>{const b=e.target.closest('.vplay'); if(!b) return; const id=b.dataset.yt; if(!/^[\w-]{11}$/.test(id)) return;
-  const f=document.createElement('iframe'); f.className='vframe'; f.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0'; f.title=b.getAttribute('aria-label')||'Video';
+  const f=document.createElement('iframe'); f.className='vframe'; const fr=parseInt(b.dataset.from,10),to=parseInt(b.dataset.to,10); f.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0'+(fr>0?'&start='+fr:'')+(to>0?'&end='+to:''); f.title=b.getAttribute('aria-label')||'Video';
   f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen'; f.setAttribute('allowfullscreen',''); b.replaceWith(f);});
 /* în panou, coperta peste care treci cu mausul devine cea mare */
 document.addEventListener('mouseover',e=>{const im=e.target.closest('.meet .cv.many img'); if(!im||im.classList.contains('big')||!window.matchMedia('(hover:hover)').matches) return; im.parentElement.querySelectorAll('img.big').forEach(x=>x.classList.remove('big')); im.classList.add('big');});

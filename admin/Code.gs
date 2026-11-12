@@ -337,7 +337,10 @@ function apiVal_(k, v) {
   if (k === 'hovImg') return /^pages\/[\w.-]+$/.test(v) ? v : '';
   if (k === 'gridImg') return /^(covers|pages)\/[\w.-]+$/.test(v) ? v : '';
   if (k === 'coverCheck') return /^da$/i.test(v);
-  if (k === 'video') return list(v).map(u => { const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? { yt: m[1] } : null; }).filter(Boolean);
+  if (k === 'video') return list(v).map(u => {
+    const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); if (!m) return null;
+    const o = { yt: m[1] }, a = u.match(/[?&](?:start|t)=(\d+)/), b = u.match(/[?&]end=(\d+)/);   // tăiere: ?start=1&end=91 (secunde)
+    if (a) o.from = +a[1]; if (b) o.to = +b[1]; return o; }).filter(Boolean);
   if (k === 'cover') return /^(covers|pages)\/[\w.-]+\.(webp|jpe?g|png)$/i.test(v) ? v : '';
   if (k === 'dim') { const m = v.replace(/,/g, '.').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/i); return m ? [parseFloat(m[1]), parseFloat(m[2])] : []; }
   return v;

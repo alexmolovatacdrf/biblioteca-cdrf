@@ -306,6 +306,7 @@ img.cutc,.stage img.cutc,.lb .view img.cutc{background:transparent!important;box
 .vplay:hover img{opacity:1}
 .vplay .pl{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(255,255,255,.92);color:#111;display:grid;place-items:center;box-shadow:0 4px 18px rgba(0,0,0,.3)}
 .vframe{width:100%;aspect-ratio:16/9;border:0;display:block;background:#111}
+.vitem.vbox{position:relative}.vitem.vbox .vplay{position:absolute;left:0;top:0;width:100%;z-index:1}.vplay.off{display:none}.vplay.wait .pl svg{display:none}.vplay.wait .pl::after{content:"";width:22px;height:22px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:vspin .8s linear infinite}@keyframes vspin{to{transform:rotate(360deg)}}
 .vcap{font-size:15px;margin-top:8px;line-height:1.4}.vcap span{color:var(--muted)}.vcap a{color:var(--muted);text-underline-offset:3px;margin-left:6px}
 .dsrc{margin:12px 0 0;font-size:13px;color:var(--muted);max-width:62ch}.dsrc a{color:inherit}
 .press{margin-top:22px;max-width:62ch}.press h3{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 6px;letter-spacing:.02em}.press ul{list-style:none;margin:0;padding:0}.press li{font-size:15px;padding:5px 0;border-top:1px solid var(--rule)}.press li span{color:var(--muted);font-size:13px}

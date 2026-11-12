@@ -746,9 +746,25 @@ document.addEventListener('touchend',e=>{if(!sw) return; const t=e.changedTouche
   const d=dx<0?1:-1; if(z.classList.contains('meet')){meetShow(meetIdx+d);return;} if(z.classList.contains('view')){const btn=z.querySelector(d>0?'.next':'.prev'); if(btn) btn.click(); else {const lb=z.closest('.lb'); lb&&lb.dispatchEvent(new CustomEvent('swipe',{detail:d}));}} else if(document.getElementById('counter')) setImg(galIdx+d);},{passive:true});
 /* video: se încarcă abia la click, din youtube-nocookie */
 document.addEventListener('click',e=>{const m=e.target.closest('.nmorebtn'); if(!m) return; const s=m.previousElementSibling; if(s){s.hidden=false;} m.remove();});
+/* video: imaginea stă deasupra până rulează efectiv (fără negrul de la încărcare); tăierea from/to o controlăm noi prin mesajele player-ului YouTube (enablejsapi), pentru că parametrul end nu oprește sigur */
 document.addEventListener('click',e=>{const b=e.target.closest('.vplay'); if(!b) return; const id=b.dataset.yt; if(!/^[\w-]{11}$/.test(id)) return;
-  const f=document.createElement('iframe'); f.className='vframe'; const fr=parseInt(b.dataset.from,10),to=parseInt(b.dataset.to,10); f.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0'+(fr>0?'&start='+fr:'')+(to>0?'&end='+to:''); f.title=b.getAttribute('aria-label')||'Video';
-  f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen'; f.setAttribute('allowfullscreen',''); b.replaceWith(f);});
+  const fr=parseInt(b.dataset.from,10)||0,to=parseInt(b.dataset.to,10)||0,box=b.parentElement; let f=box.querySelector('iframe.vframe');
+  const send=(func,args)=>{if(f&&f.contentWindow) f.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:args||[]}),'*');};
+  b.classList.add('wait');
+  if(f){ send('seekTo',[fr,true]); send('playVideo'); return; }
+  f=document.createElement('iframe'); f.className='vframe'; f.title=b.getAttribute('aria-label')||'Video';
+  f.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin='+encodeURIComponent(location.origin)+(fr>0?'&start='+fr:'')+(to>0?'&end='+to:'');
+  f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen'; f.setAttribute('allowfullscreen','');
+  box.classList.add('vbox'); box.insertBefore(f,b);
+  const hello=()=>{if(f.contentWindow) f.contentWindow.postMessage(JSON.stringify({event:'listening',id:id,channel:'widget'}),'*');};
+  f.addEventListener('load',()=>{hello(); let n=0; const iv=setInterval(()=>{ if(f._ok||++n>40) clearInterval(iv); else hello(); },250);});
+  window.addEventListener('message',ev=>{ if(ev.source!==f.contentWindow) return; let d; try{d=typeof ev.data==='string'?JSON.parse(ev.data):ev.data}catch(_){return}
+    f._ok=1; const i=(d&&d.info)||{};
+    if(typeof i.currentTime==='number') f._t=i.currentTime; if(typeof i.playerState==='number') f._s=i.playerState;
+    if(f._s===1&&f._t>=fr-0.3&&(!to||f._t<to-0.3)) b.classList.add('off');
+    if((to&&f._t>=to-0.25&&f._s===1)||f._s===0){ send('pauseVideo'); send('seekTo',[fr,true]); f._t=fr; b.classList.remove('off','wait'); }
+  });
+});
 /* în panou, coperta peste care treci cu mausul devine cea mare */
 document.addEventListener('mouseover',e=>{const im=e.target.closest('.meet .cv.many img'); if(!im||im.classList.contains('big')||!window.matchMedia('(hover:hover)').matches) return; im.parentElement.querySelectorAll('img.big').forEach(x=>x.classList.remove('big')); im.classList.add('big');});
 /* caruselul de sus: tras cu mouse-ul, săgeți din tastatură */

@@ -2,7 +2,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: frame-ancestors 'self' https://cdrf.ro https://*.cdrf.ro
+  Content-Security-Policy: frame-ancestors 'self' https://cdrf.ro https://*.cdrf.ro https://cdrf-macheta.alex-molovata-cdrf.workers.dev
 
 /covers/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800

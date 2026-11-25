@@ -1,3 +1,4 @@
+try{if(window.top!==window)document.documentElement.classList.add("in-cadru")}catch(e){document.documentElement.classList.add("in-cadru")}
 
 (function(){
 const B=window.BOOKS, byId=Object.fromEntries(B.map(b=>[b.id,b]));

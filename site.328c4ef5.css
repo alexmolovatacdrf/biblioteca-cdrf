@@ -649,3 +649,6 @@ body.vb .cdrffoot{background:#ececef;box-shadow:0 0 0 100vmax #ececef}
 .fl input[type=checkbox]:checked,.dd .menu input[type=checkbox]:checked,.fpanel label input[type=checkbox]:checked{border:2.5px solid var(--accent)}
 .fl label:has(input:checked),.dd .menu label:has(input:checked),.fpanel label:has(input:checked){background:var(--stage-h)}
 .fl input[type=checkbox]:focus-visible,.dd .menu input[type=checkbox]:focus-visible,.fpanel label input[type=checkbox]:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* ramura macheta: în cadrul machetei CdRF, fără subsolul bibliotecii */
+.in-cadru footer{display:none!important}
